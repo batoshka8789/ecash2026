@@ -1,0 +1,240 @@
+/* Дизайн-токены ecash.
+ * Источник — палитры, задокументированные в макете Figma:
+ * «pallete surface / font / btns / stroke / divider / components»
+ * (design/screens/system). Значения перенесены 1:1 из подписей макета.
+ *
+ * Помеченные [swatch] значения: подпись в макете противоречила свотчу
+ * (опечатка дизайнера), взято значение по свотчу и смыслу токена.
+ */
+
+@theme inline {
+  /* поверхности */
+  --color-surface-page-bg: var(--surface-page-bg);
+  --color-surface-page-surf1: var(--surface-page-surf1);
+  --color-surface-page-surf1-alt: var(--surface-page-surf1-alt);
+  --color-surface-page-surf2: var(--surface-page-surf2);
+  --color-surface-page-surf3: var(--surface-page-surf3);
+  --color-surface-modal-bg: var(--surface-modal-bg);
+  --color-surface-modal-surf1: var(--surface-modal-surf1);
+  --color-surface-modal-surf1-hover: var(--surface-modal-surf1-hover);
+  --color-surface-modal-surf1-active: var(--surface-modal-surf1-active);
+  --color-surface-inverted: var(--surface-inverted);
+
+  /* текст */
+  --color-text-default: var(--text-default);
+  --color-text-always-white: var(--text-always-white);
+  --color-text-disabled: var(--text-disabled);
+  --color-text-inverted: var(--text-inverted);
+  --color-text-brand: var(--text-brand);
+  --color-text-positive: var(--text-positive);
+  --color-text-negative: var(--text-negative);
+  --color-text-additional: var(--text-additional);
+  --color-text-additional-2: var(--text-additional-2);
+  --color-text-additional-3: var(--text-additional-3);
+
+  /* кнопки */
+  --color-btn-brand: var(--btn-brand);
+  --color-btn-1: var(--btn-1);
+  --color-btn-2: var(--btn-2);
+  --color-btn-inverted: var(--btn-inverted);
+  --color-btn-always-white: var(--btn-always-white);
+
+  /* обводки */
+  --color-stroke-brand: var(--stroke-brand);
+  --color-stroke-surface1: var(--stroke-surface1);
+  --color-stroke-surface2: var(--stroke-surface2);
+  --color-stroke-surface3: var(--stroke-surface3);
+  --color-stroke-modal: var(--stroke-modal);
+
+  /* разделители */
+  --color-divider-hole: var(--divider-hole);
+  --color-divider-elevated: var(--divider-elevated);
+  --color-divider-additional: var(--divider-additional);
+
+  /* состояния компонентов */
+  --color-comp-surface1-hover: var(--comp-surface1-hover);
+  --color-comp-surface2-hover: var(--comp-surface2-hover);
+  --color-comp-surface2-active: var(--comp-surface2-active);
+  --color-comp-btn2-disabled: var(--comp-btn2-disabled);
+  --color-comp-btn3-disabled: var(--comp-btn3-disabled);
+
+  /* акценты (одинаковые в обеих темах) */
+  --color-brand: #f15a25;
+  --color-brand-soft: rgb(241 90 37 / 60%);
+  --color-brand-hardsoft: rgb(241 90 37 / 20%);
+  --color-negative: #fa5050;
+  --color-negative-hardsoft: rgb(250 80 80 / 20%);
+  --color-positive: #009944;
+  --color-positive-hardsoft: rgb(64 171 70 / 20%);
+  --color-alert: #ffcc00;
+  --color-alert-hardsoft: var(--alert-hardsoft);
+  --color-additional-2: #ad33ad;
+  --color-additional-3: #0066ff;
+  --color-competitor-1: #ed3e1e;
+  --color-competitor-2: #25a423;
+  --color-competitor-3: #1e9fed;
+
+  /* прочее */
+  --color-toast: var(--toast);
+  --color-scrim: var(--scrim);
+}
+
+/* ------------------------------------------------ Тёмная тема (основная) */
+:root {
+  --surface-page-bg: #1a1a1a;
+  --surface-page-surf1: #262626;
+  --surface-page-surf1-alt: #333333;
+  --surface-page-surf2: #333333;
+  --surface-page-surf3: #4c4c4c;
+  --surface-modal-bg: #333333;
+  --surface-modal-surf1: #4c4c4c;
+  --surface-modal-surf1-hover: #3b3b3b;
+  --surface-modal-surf1-active: #3b3b3b;
+  --surface-inverted: #eeeeee;
+
+  --text-default: #eeeeee;
+  --text-always-white: #ffffff;
+  --text-disabled: #6b6b6b;
+  --text-inverted: #1a1a1a;
+  --text-brand: #f15a25;
+  --text-positive: #009944;
+  --text-negative: #fa5050;
+  --text-additional: #ffcc00; /* [swatch] подпись в макете дублировала FA5050 */
+  --text-additional-2: #ad33ad;
+  --text-additional-3: #0066ff;
+
+  --btn-brand: #f15a25;
+  --btn-1: #333333;
+  --btn-2: #4c4c4c;
+  --btn-inverted: #eeeeee;
+  --btn-always-white: #f5f3f2;
+
+  --stroke-brand: #f15a25;
+  --stroke-surface1: #333333;
+  --stroke-surface2: #404040;
+  --stroke-surface3: #6b6b6b;
+  --stroke-modal: #404040;
+
+  --divider-hole: #1a1a1a; /* [swatch] подпись в макете дублировала F15A25 */
+  --divider-elevated: #333333;
+  --divider-additional: #4c4c4c;
+
+  --comp-surface1-hover: #2b2b2b;
+  --comp-surface2-hover: #3b3b3b;
+  --comp-surface2-active: #404040;
+  --comp-btn2-disabled: #2b2b2b;
+  --comp-btn3-disabled: #404040;
+
+  --alert-hardsoft: rgb(250 216 80 / 20%);
+  --toast: #4c4c4c;
+  --scrim: rgb(0 0 0 / 60%);
+}
+
+/* ------------------------------------------------ Светлая тема */
+:root[data-theme='light'] {
+  --surface-page-bg: #f5f5f5;
+  --surface-page-surf1: #ffffff;
+  --surface-page-surf1-alt: #e5e4e3;
+  --surface-page-surf2: #f5f3f2;
+  --surface-page-surf3: #e5e4e3;
+  --surface-modal-bg: #ffffff;
+  --surface-modal-surf1: #edeceb;
+  --surface-modal-surf1-hover: #f5f5f5;
+  --surface-modal-surf1-active: #f5f5f5;
+  --surface-inverted: #262626;
+
+  --text-default: #1a1a1a;
+  --text-always-white: #ffffff;
+  --text-disabled: #6b6b6b;
+  --text-inverted: #eeeeee;
+  --text-brand: #f15a25;
+  --text-positive: #009944;
+  --text-negative: #fa5050;
+  --text-additional: #db9f12;
+  --text-additional-2: #ad33ad;
+  --text-additional-3: #0066ff;
+
+  --btn-brand: #f15a25;
+  --btn-1: #f5f3f2;
+  --btn-2: #e5e4e3;
+  --btn-inverted: #1a1a1a;
+  --btn-always-white: #f5f3f2;
+
+  --stroke-brand: #f15a25;
+  --stroke-surface1: #f2f2f2;
+  --stroke-surface2: #f5f3f2;
+  --stroke-surface3: #d6d1cc;
+  --stroke-modal: #f2f2f2;
+
+  --divider-hole: #e0e0e0;
+  --divider-elevated: #eeeeee;
+  --divider-additional: #eeeeee;
+
+  --comp-surface1-hover: #fafafa;
+  /* В палитре макета hover/disabled для светлой темы продублированы тёмными
+   * значениями (#3B3B3B, #2B2B2B, #404040) — на светлом фоне это читается как
+   * поломка. Берём светлые эквиваленты той же ступени. */
+  --comp-surface2-hover: #e8e6e4;
+  --comp-surface2-active: #edeceb;
+  --comp-btn2-disabled: #e5e4e3;
+  --comp-btn3-disabled: #d6d1cc;
+
+  --alert-hardsoft: rgb(250 216 80 / 40%);
+  --toast: #ffffff;
+  --scrim: rgb(0 0 0 / 40%);
+}
+
+/**
+ * Лендинг франшизы нарисован только в тёмной теме — светлого режима
+ * в макете нет. Класс форсирует тёмные токены независимо от data-theme.
+ * Двойной класс нужен, чтобы перебить специфичность :root[data-theme='light'].
+ */
+.theme-dark.theme-dark {
+  --surface-page-bg: #1a1a1a;
+  --surface-page-surf1: #262626;
+  --surface-page-surf1-alt: #333333;
+  --surface-page-surf2: #333333;
+  --surface-page-surf3: #4c4c4c;
+  --surface-modal-bg: #333333;
+  --surface-modal-surf1: #4c4c4c;
+  --surface-modal-surf1-hover: #3b3b3b;
+  --surface-modal-surf1-active: #3b3b3b;
+  --surface-inverted: #eeeeee;
+
+  --text-default: #eeeeee;
+  --text-always-white: #ffffff;
+  --text-disabled: #6b6b6b;
+  --text-inverted: #1a1a1a;
+  --text-brand: #f15a25;
+  --text-positive: #009944;
+  --text-negative: #fa5050;
+  --text-additional: #ffcc00; /* [swatch] подпись в макете дублировала FA5050 */
+  --text-additional-2: #ad33ad;
+  --text-additional-3: #0066ff;
+
+  --btn-brand: #f15a25;
+  --btn-1: #333333;
+  --btn-2: #4c4c4c;
+  --btn-inverted: #eeeeee;
+  --btn-always-white: #f5f3f2;
+
+  --stroke-brand: #f15a25;
+  --stroke-surface1: #333333;
+  --stroke-surface2: #404040;
+  --stroke-surface3: #6b6b6b;
+  --stroke-modal: #404040;
+
+  --divider-hole: #1a1a1a; /* [swatch] подпись в макете дублировала F15A25 */
+  --divider-elevated: #333333;
+  --divider-additional: #4c4c4c;
+
+  --comp-surface1-hover: #2b2b2b;
+  --comp-surface2-hover: #3b3b3b;
+  --comp-surface2-active: #404040;
+  --comp-btn2-disabled: #2b2b2b;
+  --comp-btn3-disabled: #404040;
+
+  --alert-hardsoft: rgb(250 216 80 / 20%);
+  --toast: #4c4c4c;
+  --scrim: rgb(0 0 0 / 60%);
+}

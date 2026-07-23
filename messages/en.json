@@ -1,0 +1,531 @@
+{
+  "common": {
+    "brand": "ecash",
+    "login": "Log in",
+    "notifications": "Notifications",
+    "profile": "Profile"
+  },
+  "home": {
+    "toast": {
+      "link": "Choose an address",
+      "rest": "we'll find the nearest exchange offices",
+      "close": "Close"
+    },
+    "actions": {
+      "individualRate": "Request an individual rate",
+      "booking": "Book a rate",
+      "notify": "Notify about rate changes",
+      "franchise": "Open a franchise",
+      "news": "View news"
+    },
+    "calculator": {
+      "title": "Currency calculator",
+      "dynamics": "Rate dynamics",
+      "give": "I give",
+      "get": "I get",
+      "swap": "Swap",
+      "exchangeRate": "Exchange rate",
+      "book": "Book",
+      "periods": {
+        "year": "Year",
+        "month": "Month",
+        "week": "Week",
+        "day": "Day"
+      }
+    },
+    "months": {
+      "0": "Jan",
+      "1": "Feb",
+      "2": "Mar",
+      "3": "Apr",
+      "4": "May",
+      "5": "Jun",
+      "6": "Jul",
+      "7": "Aug",
+      "8": "Sep",
+      "9": "Oct",
+      "10": "Nov",
+      "11": "Dec"
+    },
+    "rates": {
+      "title": "Exchange rates",
+      "buy": "Buy",
+      "sell": "Sell",
+      "book": "Book",
+      "bookmark": "Bookmark",
+      "compareIcon": "Compare rates",
+      "exchangeRate": "Exchange rate",
+      "compare": "Compare with competitors",
+      "collapse": "Collapse",
+      "showAll": "Show all currencies",
+      "hideAll": "Collapse",
+      "currencies": {
+        "usd": "US Dollar",
+        "eur": "Euro",
+        "rub": "Russian Ruble",
+        "cny": "Chinese Yuan",
+        "gold": "Gold",
+        "gbp": "Pound Sterling",
+        "aed": "UAE Dirham",
+        "try": "Turkish Lira",
+        "uzs": "Uzbek Som",
+        "kgs": "Kyrgyz Som"
+      },
+      "competitors": {
+        "blue": "Blue exchange",
+        "green": "Green exchange",
+        "red": "Red exchange"
+      }
+    }
+  },
+  "footer": {
+    "schedule": "Working hours",
+    "scheduleValue": "Mon - Sun; 9:00 AM — 10:00 PM",
+    "additional": "More",
+    "documents": "Documents",
+    "rights": "All rights reserved"
+  },
+  "appBanner": {
+    "text": "Even better in the app! Rate notifications, banknote orders, booking",
+    "close": "Close"
+  },
+  "auth": {
+    "tabs": {
+      "login": "Log in",
+      "signup": "Sign up"
+    },
+    "emailPlaceholder": "Phone number or email",
+    "passwordPlaceholder": "Password",
+    "password2Placeholder": "Repeat password",
+    "forgot": "Forgot password?",
+    "continue": "Continue",
+    "withTelegram": "Continue with Telegram",
+    "withGoogle": "Continue with Google",
+    "close": "Close",
+    "errors": {
+      "emailInvalid": "This email does not exist",
+      "passwordMin": "At least 8 characters",
+      "passwordDigit": "At least one digit",
+      "passwordMatch": "Passwords do not match"
+    },
+    "confirm": {
+      "title": "Email confirmation",
+      "text": "We sent a code to {email}. Enter the code from the email to finish registration",
+      "codePlaceholder": "Code from email",
+      "submit": "Sign up",
+      "devCode": "Test code: {code}",
+      "phonePlaceholder": "Phone number"
+    }
+  },
+  "recovery": {
+    "title": "Password recovery",
+    "back": "Back",
+    "steps": {
+      "email": "Enter the email your account is registered to — we will send a recovery code",
+      "code": "Enter the code from the email",
+      "password": "Create a new password"
+    },
+    "emailPlaceholder": "Email",
+    "codePlaceholder": "Code from email",
+    "passwordPlaceholder": "New password",
+    "password2Placeholder": "Repeat password",
+    "continue": "Continue"
+  },
+  "sidebar": {
+    "profile": "My profile",
+    "notifications": "Notifications",
+    "news": "News",
+    "franchise": "Open a franchise"
+  },
+  "profile": {
+    "myData": "My data",
+    "myAddress": "My address",
+    "logout": "Log out",
+    "form": {
+      "edit": "Edit",
+      "save": "Save",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "middleName": "Middle name",
+      "iin": "IIN",
+      "contact": "Phone number / Email",
+      "about": "Tell us about your experience",
+      "occupation": "What do you do at the moment?",
+      "removeTag": "Remove",
+      "tags": {
+        "entrepreneur": "Entrepreneur",
+        "investor": "Investor",
+        "director": "Director / Top manager"
+      }
+    },
+    "address": {
+      "title": "Enter your address",
+      "subtitle": "We will show the nearest exchange offices",
+      "placeholder": "Address",
+      "save": "Save",
+      "clear": "Clear",
+      "mapAlt": "Map",
+      "saved": "Saved"
+    }
+  },
+  "notifications": {
+    "tabs": {
+      "actual": "Current",
+      "history": "History"
+    },
+    "badges": {
+      "booking30": "Booking · 30min",
+      "number": "Your number: 7 704 *** ** 84",
+      "rateAlert": "Rate notifications",
+      "individual": "Individual rate",
+      "numberValue": "Your number: {value}"
+    },
+    "titles": {
+      "bookedPair": "You booked a currency pair",
+      "alertsOn": "Rate notifications enabled",
+      "alertsOff": "Notifications disabled",
+      "rateReached": "The rate reached your mark",
+      "offerReviewed": "Your offer has been reviewed",
+      "offerSent": "Your offer has been sent"
+    },
+    "min": "min",
+    "sec": "sec",
+    "cancelled": "Booking cancelled",
+    "buy": "Buy",
+    "sell": "Sell",
+    "actions": {
+      "resume": "Resume notifications",
+      "individual": "Request an individual rate",
+      "book": "Book"
+    },
+    "loading": "Loading…",
+    "needLogin": "Log in to see notifications",
+    "empty": "Nothing here yet"
+  },
+  "news": {
+    "travelers": {
+      "title": "Travelers",
+      "text": "When preparing for a trip, it is important to think everything through in advance, including currency exchange. Our services help you get the amount you need quickly and hassle-free, so you can focus on your vacation or work instead of looking for exchange offices upon arrival. We offer favorable terms and professional advice for those who want to be confident at every stage of their journey."
+    },
+    "cityDwellers": {
+      "title": "City dwellers",
+      "text": "Everyone needs currency exchange — whether for savings, profitable investments or large purchases. We help you exchange money easily and quickly, guaranteeing favorable terms and value at every step."
+    },
+    "loading": "Loading…"
+  },
+  "locations": {
+    "title": "Ecash branches",
+    "asList": "As list",
+    "onMap": "On map",
+    "breadcrumbHome": "Home",
+    "breadcrumbCalc": "Calculator",
+    "badges": {
+      "best": "Best rate",
+      "happyHours": "Happy hours",
+      "nearest": "Nearest"
+    },
+    "km": "km",
+    "copy": "Copy address",
+    "buyUsd": "Buy ($)",
+    "sellUsd": "Sell ($)",
+    "showOnMap": "Show on map",
+    "book": "Book",
+    "fullscreen": "Expand to full screen"
+  },
+  "crumbs": {
+    "home": "Home",
+    "booking": "Book a rate",
+    "individual": "Request an individual rate",
+    "subscribe": "Notify about rate changes",
+    "franchise": "Open a franchise"
+  },
+  "flows": {
+    "fillRequired": "Please fill in the required fields",
+    "close": "Close",
+    "pair": {
+      "title": "Currency pair",
+      "individualHint": "Enter the amount you want to exchange — we will review your offer and propose an individual rate",
+      "dynamics": "Rate dynamics",
+      "give": "I give",
+      "get": "I get",
+      "underReview": "Under review",
+      "currentRate": "Current Ecash rate"
+    },
+    "address": {
+      "title": "Address",
+      "nearest": "Nearest",
+      "km": "km",
+      "open": "Open",
+      "betterAt": "At the branch on",
+      "betterRate": "the rate is better"
+    },
+    "banknotes": {
+      "choose": "Choose banknote type",
+      "label": "Banknote type",
+      "small": "Small banknotes",
+      "large": "Large banknotes"
+    },
+    "data": {
+      "title": "Fill in your details",
+      "phone": "Phone number*",
+      "name": "Name",
+      "requestIndividual": "Request an individual rate",
+      "book": "Book",
+      "requestIndividualCta": "Request an individual rate"
+    },
+    "done": {
+      "booking30": "Booking · 30min",
+      "yourNumber": "Your number: 7 704 *** ** 84",
+      "titleBooking": "You booked a currency pair",
+      "titleIndividual": "Your offer is under review",
+      "min": "min",
+      "sec": "sec",
+      "yourRequest": "Your request",
+      "sentAt": "Request sent",
+      "rateAtSubmit": "Ecash rate at the time of request",
+      "onMap": "On map",
+      "yourData": "Your details",
+      "yourNumberValue": "Your number: {value}"
+    }
+  },
+  "subscribe": {
+    "pairTitle": "Currency pair",
+    "dynamics": "Rate dynamics",
+    "desiredRate": "Enter the desired rate",
+    "rateLabel": "Rate",
+    "currentRate": "Current Ecash rate",
+    "dateTitle": "Date and time",
+    "notifyUntil": "Send notifications until",
+    "day": "Day",
+    "month": "Month",
+    "year": "Year",
+    "cta": "Send notifications",
+    "fillRequired": "Please fill in the required fields",
+    "doneToast": "Notifications enabled",
+    "close": "Close",
+    "months": {
+      "0": "January",
+      "1": "February",
+      "2": "March",
+      "3": "April",
+      "4": "May",
+      "5": "June",
+      "6": "July",
+      "7": "August",
+      "8": "September",
+      "9": "October",
+      "10": "November",
+      "11": "December"
+    }
+  },
+  "franchise": {
+    "title": "Open an ecash franchise",
+    "subtitle": "Leave a request — we will tell you about the terms, support and payback",
+    "name": "Name*",
+    "phone": "Phone number*",
+    "city": "City",
+    "cta": "Send request",
+    "done": "Request sent! We will contact you"
+  },
+  "landing": {
+    "login": "Log in",
+    "hero": {
+      "badge": "Together with the Ecash franchise",
+      "line1": "Start your",
+      "line2": "successful",
+      "line3": "business"
+    },
+    "intro": {
+      "title": "Ecash is a network of modern currency exchange offices",
+      "text": "We give you a ready-made solution for building a profitable business with full professional support",
+      "cta": "Get in touch"
+    },
+    "advantages": [
+      {
+        "title": "Modern technology and software",
+        "text": "You get access to unique software that covers every aspect of running an exchange office — from transaction accounting to profit analysis."
+      },
+      {
+        "title": "Strong growth of loyal customers",
+        "text": "Service quality and transparent operations — so important to our customers — make electronic money a market leader and ensure a steady flow of visitors."
+      },
+      {
+        "title": "Teamwork",
+        "text": "We understand that opening a business takes teamwork. That is why we are always by your side: together we pick the best location, set up the processes and train the staff. We will grow and improve the business at every stage, working as one team."
+      },
+      {
+        "title": "A recognisable brand",
+        "text": "Electronic money is the new standard in currency exchange. Reliability, security and service quality — principles proven over the years.",
+        "accent": true
+      }
+    ],
+    "package": {
+      "titleLine1": "What the",
+      "titleLine2": "franchise package includes",
+      "titleAccent": "Ecash",
+      "text": "The Ecash franchise includes everything you need to launch your exchange office: from step-by-step instructions to automated business management solutions",
+      "items": [
+        {
+          "title": "Right to use the brand",
+          "text": "The right to use the brand helps you attract more customers, raise awareness and reach profit faster."
+        },
+        {
+          "title": "Support in choosing a location",
+          "text": "We help you pick the best location for your business — higher customer flow, convenient access and a favourable competitive environment."
+        },
+        {
+          "title": "Exchange office design and branding",
+          "text": "We provide a complete brand book for your business: a distinctive identity, signage, logos and interior elements that highlight your brand."
+        },
+        {
+          "title": "Training for owners and staff",
+          "text": "Our experts train you and your team, covering all key aspects of running the business, and arrange ongoing support."
+        },
+        {
+          "title": "A full set of documents and business processes",
+          "text": "We provide ready instructions for organising the business, covering every stage: from opening an account to working effectively with customers and staff."
+        },
+        {
+          "title": "Access to unique software",
+          "text": "You get access to unique software that handles currency operations, transaction tracking and end-to-end reporting."
+        }
+      ]
+    },
+    "steps": {
+      "titleLine1": "Stages of opening",
+      "titleLine2": "a currency exchange office",
+      "text": "Opening your business with Ecash is transparent and simple. We support you at every stage so you start earning sooner.",
+      "items": [
+        {
+          "title": "Submit a request through the form on the site",
+          "text": "Start with a simple step — fill in the form on our website with basic information about yourself and your interest in the franchise."
+        },
+        {
+          "title": "Have an interview and clarify the details",
+          "text": "We discuss your plans, opportunities and expectations. You also receive full information about the franchise and the terms of cooperation."
+        },
+        {
+          "title": "Sign the partnership agreement",
+          "text": "Once all terms are agreed, we draw up the official contract that secures your right to operate under the Ecash brand."
+        },
+        {
+          "title": "Choose a location with our help",
+          "text": "We help you pick the right place for the exchange office, with analysis of foot traffic, the competitive environment and customer convenience."
+        },
+        {
+          "title": "Complete the training and set up processes",
+          "text": "Before you start, you and your team go through full training, including legal, operational and marketing aspects."
+        },
+        {
+          "title": "Start earning",
+          "text": "After the preparation we open the exchange office together with you, set up marketing and organise the first working processes. We open the office together and start earning."
+        }
+      ]
+    },
+    "contact": {
+      "titleLine1": "Talk to our specialist and",
+      "titleLine2": "start earning",
+      "titleLine3": " in your city.",
+      "text": "Opening your business with Ecash is transparent and simple. We support you at every stage so you start earning sooner.",
+      "cta": "Get in touch"
+    },
+    "support": {
+      "title": "Support for partners",
+      "text": "We work to keep your business growing steadily and efficiently, providing resources, tools and help at every stage.",
+      "items": [
+        {
+          "title": "Consulting on any question",
+          "text": "We help you pick the best location for your business — higher customer flow, convenient access and a favourable competitive environment."
+        },
+        {
+          "title": "Staff training",
+          "text": "Our experts train you and your team, covering all key aspects of running the business, and arrange ongoing support."
+        },
+        {
+          "title": "Design and renovation of premises",
+          "text": "We provide ready instructions for organising the business, covering every stage: from opening an account to working effectively with customers and staff."
+        },
+        {
+          "title": "Accounting",
+          "text": "You get access to unique software that handles currency operations, transaction tracking and end-to-end reporting."
+        },
+        {
+          "title": "Treasury",
+          "text": "The right to use the brand helps you attract more customers, raise awareness and reach profit faster."
+        },
+        {
+          "title": "Equipment purchasing",
+          "text": "Partners get help selecting and purchasing the equipment needed to run the exchange office."
+        },
+        {
+          "title": "Legal and technical matters",
+          "text": "We provide ready instructions for organising the business, covering every stage: from opening an account to working effectively with customers and staff."
+        },
+        {
+          "title": "Marketing",
+          "text": "You get access to unique software that handles currency operations, transaction tracking and end-to-end reporting."
+        },
+        {
+          "title": "Regulator liaison and reporting",
+          "text": "We provide ready instructions for organising the business, covering every stage: from opening an account to working effectively with customers and staff."
+        },
+        {
+          "title": "HR",
+          "text": "We provide a complete brand book for your business: a distinctive identity, signage, logos and interior elements that highlight your brand."
+        },
+        {
+          "title": "Cash collection and security",
+          "text": "You get access to unique software that handles currency operations, transaction tracking and end-to-end reporting."
+        },
+        {
+          "title": "Gold operations with the National Bank",
+          "text": "We advise and work together with partners on gold operations with the National Bank."
+        }
+      ]
+    },
+    "faq": {
+      "title": "Questions and answers",
+      "items": [
+        {
+          "q": "How do I choose a suitable location?",
+          "a": "We help you pick the right place for the exchange office, with analysis of foot traffic, the competitive environment and customer convenience."
+        },
+        {
+          "q": "How long does it take to open an exchange office?",
+          "a": "It usually takes 1.5–3 months from application to opening — the timeline depends on finding premises and obtaining documents. We support you at every stage."
+        },
+        {
+          "q": "What are the franchise requirements?",
+          "a": "We look for partners with an entrepreneurial mindset who are ready to meet our standards. Business management experience is welcome, but we provide training and support even for newcomers."
+        }
+      ]
+    }
+  },
+  "errors": {
+    "unknown": "Something went wrong",
+    "required": "This field is required",
+    "wrongPassword": "Wrong password",
+    "emailTaken": "This email is already registered",
+    "codeInvalid": "Invalid code",
+    "codeExpired": "The code has expired, request a new one",
+    "unauthorized": "Please log in",
+    "phoneRequired": "Enter a phone number",
+    "amountRequired": "Enter an amount",
+    "rateRequired": "Enter the desired rate",
+    "dateRequired": "Choose a date",
+    "nameRequired": "Enter your name",
+    "notFound": "Not found",
+    "badBody": "Malformed request",
+    "branchUnknown": "Branch not found",
+    "unknownStep": "Unknown step"
+  },
+  "addressModal": {
+    "title": "Enter your address",
+    "subtitle": "We will show the nearest exchange offices",
+    "placeholder": "Address",
+    "save": "Save",
+    "clear": "Clear",
+    "close": "Close",
+    "mapAlt": "Branch map"
+  }
+}

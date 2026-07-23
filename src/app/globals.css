@@ -1,0 +1,284 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+@theme {
+  --font-sans: var(--font-roboto), system-ui, sans-serif;
+
+  /* Градиент обводок лендинга (макет: linear #F6844B → #BF5AF5) */
+  --gradient-accent: linear-gradient(135deg, #f6844b, #bf5af5);
+}
+
+/* Контентная колонка макета — ровно 1200px при любом вьюпорте ≥1232. */
+@utility container-page {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1232px;
+  padding-inline: calc(var(--spacing) * 4);
+}
+
+/**
+ * Градиентная обводка поверх полупрозрачного фона.
+ * Обычный border-image ломает backdrop-blur, поэтому рисуем рамку
+ * псевдоэлементом с маской — как во фреймах «cards new» макета.
+ */
+@utility grad-border {
+  position: relative;
+}
+@utility grad-border-3 {
+  position: relative;
+}
+
+.grad-border::before,
+.grad-border-3::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--gradient-accent);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.grad-border::before {
+  padding: 1px;
+}
+.grad-border-3::before {
+  padding: 3px;
+}
+
+/* Шумовая текстура секции «Свяжитесь…» (эффект NOISE в макете). */
+@utility noise {
+  position: relative;
+}
+.noise::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.25;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+
+html {
+  color-scheme: dark;
+}
+
+html[data-theme='light'] {
+  color-scheme: light;
+}
+
+body {
+  background: var(--surface-page-bg);
+  font-family: var(--font-sans);
+}
+
+/**
+ * Живая градиентная обводка: тот же градиент макета, но с медленным
+ * смещением угла — даёт «дыхание» акцентным карточкам.
+ */
+@utility grad-border-anim {
+  position: relative;
+}
+.grad-border-anim::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--grad-angle, 0deg),
+    #f6844b,
+    #bf5af5,
+    #f6844b
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: grad-spin 8s linear infinite;
+}
+
+@property --grad-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes grad-spin {
+  to {
+    --grad-angle: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grad-border-anim::before {
+    animation: none;
+  }
+}
+
+
+.glass-card-solid:hover {
+  border-color: rgb(255 255 255 / 0.24);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.18),
+    0 32px 80px -24px rgb(0 0 0 / 0.8);
+}
+
+/** Текст с фирменным градиентом — для акцентных слов в заголовках. */
+@utility text-gradient {
+  background: linear-gradient(100deg, #f6844b, #bf5af5 60%, #f6844b);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: text-shimmer 6s linear infinite;
+}
+
+@keyframes text-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .text-gradient {
+    animation: none;
+  }
+}
+
+/**
+ * Единый стеклянный кант карточек лендинга.
+ *
+ * Заливка и радиусы — из макета (#262626 40/60 %, backdrop-blur 45.8).
+ * Граница нарисована псевдоэлементом с маской: сверху светлее, снизу гаснет —
+ * так ведёт себя реальная фаска матового стекла. Одинаковая логика для всех
+ * карточек, поэтому ряды выглядят как одна система, а не набор разных рамок.
+ */
+@utility glass {
+  position: relative;
+  background: color-mix(in srgb, #262626 42%, transparent);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.06),
+    0 20px 60px -28px rgb(0 0 0 / 0.75);
+  transition:
+    box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@utility glass-dense {
+  position: relative;
+  background: color-mix(in srgb, #262626 62%, transparent);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.06),
+    0 20px 60px -28px rgb(0 0 0 / 0.75);
+  transition:
+    box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.glass::before,
+.glass-dense::before,
+.glass-accent::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    160deg,
+    rgb(255 255 255 / 0.22) 0%,
+    rgb(255 255 255 / 0.08) 28%,
+    rgb(255 255 255 / 0.03) 60%,
+    rgb(255 255 255 / 0.06) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  transition: background 0.4s ease;
+}
+
+.glass:hover,
+.glass-dense:hover {
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.1),
+    0 32px 80px -28px rgb(0 0 0 / 0.85);
+}
+
+.glass:hover::before,
+.glass-dense:hover::before {
+  background: linear-gradient(
+    160deg,
+    rgb(255 255 255 / 0.38) 0%,
+    rgb(255 255 255 / 0.14) 30%,
+    rgb(255 255 255 / 0.05) 62%,
+    rgb(255 255 255 / 0.1) 100%
+  );
+}
+
+/**
+ * Акцентная обводка: тот же кант, но с фирменным градиентом.
+ * Используется и на карточках, и отдельно — на плашке героя (border 3px).
+ */
+@utility glass-accent {
+  position: relative;
+}
+
+@utility glass-accent-3 {
+  position: relative;
+}
+
+.glass-accent-3::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 3px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #f6844b, #bf5af5);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.glass-accent::before {
+  background: linear-gradient(
+    160deg,
+    #f6844b 0%,
+    rgb(191 90 245 / 0.55) 34%,
+    rgb(255 255 255 / 0.06) 70%,
+    rgb(246 132 75 / 0.22) 100%
+  );
+}
+
+.glass-accent:hover::before {
+  background: linear-gradient(
+    160deg,
+    #f6844b 0%,
+    #bf5af5 38%,
+    rgb(255 255 255 / 0.12) 74%,
+    rgb(246 132 75 / 0.4) 100%
+  );
+}
