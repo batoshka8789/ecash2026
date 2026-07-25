@@ -12,13 +12,57 @@ import {
   useScroll,
 } from "framer-motion";
 import { clsx } from "clsx";
-import { useRef, type PointerEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent,
+  type ReactNode,
+} from "react";
 
 /**
  * Интерактивные эффекты лендинга.
  * Все уважают prefers-reduced-motion и не меняют вёрстку макета —
  * они добавляют глубину поверх точных размеров и цветов Figma.
  */
+
+/* ------------------------------------------------- готовность анимаций */
+
+/**
+ * true — только после первого тика requestAnimationFrame в видимой вкладке.
+ *
+ * Скрывающие контент entrance-анимации можно включать лишь тогда, когда
+ * они гарантированно отыграют. В prerender-вкладке, фоновой вкладке или
+ * при замороженном rAF хук остаётся false — и компоненты рендерят контент
+ * видимым, без анимации. Иначе страница может навсегда остаться пустой.
+ */
+export function useAnimReady(): boolean {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    let raf = 0;
+
+    const arm = () => {
+      raf = requestAnimationFrame(() => setReady(true));
+    };
+
+    if (document.visibilityState === "visible") {
+      arm();
+    }
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") arm();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
+
+  return ready;
+}
 
 /* ------------------------------------------------------------- спотлайт */
 

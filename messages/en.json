@@ -3,13 +3,20 @@
     "brand": "ecash",
     "login": "Log in",
     "notifications": "Notifications",
-    "profile": "Profile"
+    "profile": "Profile",
+    "skipToContent": "Skip to content",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "cancel": "Cancel",
+    "nothingFound": "Nothing found"
   },
   "home": {
     "toast": {
       "link": "Choose an address",
       "rest": "we'll find the nearest exchange offices",
-      "close": "Close"
+      "close": "Close",
+      "cta": "Set your address",
+      "change": "Change"
     },
     "actions": {
       "individualRate": "Request an individual rate",
@@ -87,7 +94,8 @@
   },
   "appBanner": {
     "text": "Even better in the app! Rate notifications, banknote orders, booking",
-    "close": "Close"
+    "close": "Close",
+    "soon": "soon"
   },
   "auth": {
     "tabs": {
@@ -115,21 +123,43 @@
       "submit": "Sign up",
       "devCode": "Test code: {code}",
       "phonePlaceholder": "Phone number"
-    }
+    },
+    "loginLabel": "Phone number or IIN",
+    "phoneLabel": "Phone number",
+    "otpTitle": "Verify your number",
+    "otpSent": "We sent an SMS code to {phone}. Enter it to continue",
+    "otpPlaceholder": "SMS code",
+    "resend": "Resend code",
+    "resendIn": "Resend available in {sec} s",
+    "byOtp": "Sign in with SMS code",
+    "byPassword": "Sign in with password",
+    "devCodeHint": "Demo mode: code {code}",
+    "iinOptional": "IIN (optional)",
+    "register": "Sign up",
+    "completeTitle": "Set a password"
   },
   "recovery": {
     "title": "Password recovery",
     "back": "Back",
     "steps": {
       "email": "Enter the email your account is registered to — we will send a recovery code",
-      "code": "Enter the code from the email",
+      "code": "Enter the SMS code",
       "password": "Create a new password"
     },
     "emailPlaceholder": "Email",
-    "codePlaceholder": "Code from email",
+    "codePlaceholder": "SMS code",
     "passwordPlaceholder": "New password",
     "password2Placeholder": "Repeat password",
-    "continue": "Continue"
+    "continue": "Continue",
+    "phoneStep": "Enter your phone number — we will send an SMS code",
+    "newPassword": "New password",
+    "newPassword2": "Repeat new password",
+    "done": "Password changed. Sign in with the new password",
+    "phonePlaceholder": "Phone number",
+    "resend": "Resend code",
+    "resendIn": "Resend available in {sec} s",
+    "devCode": "Demo mode: code {code}",
+    "toLogin": "To sign in"
   },
   "sidebar": {
     "profile": "My profile",
@@ -149,6 +179,7 @@
       "middleName": "Middle name",
       "iin": "IIN",
       "contact": "Phone number / Email",
+      "readonlyHint": "This data is linked to your Ecash account and can only be changed at a branch",
       "about": "Tell us about your experience",
       "occupation": "What do you do at the moment?",
       "removeTag": "Remove",
@@ -165,7 +196,13 @@
       "save": "Save",
       "clear": "Clear",
       "mapAlt": "Map",
-      "saved": "Saved"
+      "saved": "Saved",
+      "mapEmpty": "No branches found",
+      "locate": "Near me",
+      "locating": "Detecting your location…",
+      "locateDenied": "Could not detect your location — enter the address manually",
+      "locateEmpty": "No branches with coordinates found",
+      "mapLoading": "Loading branches…"
     }
   },
   "notifications": {
@@ -196,7 +233,8 @@
     "actions": {
       "resume": "Resume notifications",
       "individual": "Request an individual rate",
-      "book": "Book"
+      "book": "Book",
+      "disable": "Disable notifications"
     },
     "loading": "Loading…",
     "needLogin": "Log in to see notifications",
@@ -211,7 +249,10 @@
       "title": "City dwellers",
       "text": "Everyone needs currency exchange — whether for savings, profitable investments or large purchases. We help you exchange money easily and quickly, guaranteeing favorable terms and value at every step."
     },
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "loadError": "Failed to load news",
+    "retry": "Retry",
+    "empty": "No news yet"
   },
   "locations": {
     "title": "Ecash branches",
@@ -230,7 +271,21 @@
     "sellUsd": "Sell ($)",
     "showOnMap": "Show on map",
     "book": "Book",
-    "fullscreen": "Expand to full screen"
+    "fullscreen": "Expand to full screen",
+    "fullscreenExit": "Exit full screen",
+    "closeCard": "Close card",
+    "found": "Branches: {count}",
+    "searchPlaceholder": "Search by address or name",
+    "clearSearch": "Clear search",
+    "allCities": "All cities",
+    "nothingFound": "No branches found",
+    "resetFilters": "Reset filters",
+    "close": "Close",
+    "route": "Get directions",
+    "myLocation": "My location",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "gestureHint": "Use two fingers to move the map, Ctrl + scroll to zoom"
   },
   "crumbs": {
     "home": "Home",
@@ -249,7 +304,11 @@
       "give": "I give",
       "get": "I get",
       "underReview": "Under review",
-      "currentRate": "Current Ecash rate"
+      "currentRate": "Current Ecash rate",
+      "pickCurrency": "Choose currency",
+      "searchCurrency": "Search by currency",
+      "swap": "Swap direction",
+      "desiredRate": "Desired rate"
     },
     "address": {
       "title": "Address",
@@ -271,7 +330,9 @@
       "name": "Name",
       "requestIndividual": "Request an individual rate",
       "book": "Book",
-      "requestIndividualCta": "Request an individual rate"
+      "requestIndividualCta": "Request an individual rate",
+      "phoneFromAccount": "Number from your account",
+      "loginToBook": "Sign in to reserve a rate"
     },
     "done": {
       "booking30": "Booking · 30min",
@@ -286,7 +347,8 @@
       "onMap": "On map",
       "yourData": "Your details",
       "yourNumberValue": "Your number: {value}"
-    }
+    },
+    "openExisting": "Open request"
   },
   "subscribe": {
     "pairTitle": "Currency pair",
@@ -316,7 +378,24 @@
       "9": "October",
       "10": "November",
       "11": "December"
-    }
+    },
+    "targetLabel": "Notify at rate (₸)",
+    "perOneLabel": "Per unit",
+    "untilTitle": "Notify until",
+    "loginToSubscribe": "Sign in to subscribe to rate alerts",
+    "successTitle": "Rate notifications enabled",
+    "sentAtLabel": "Request sent",
+    "ecashRateAtCreation": "Ecash rate at the time of the request:",
+    "disable": "Turn off notifications",
+    "toHome": "Go to home page",
+    "disabledToast": "Notifications turned off",
+    "myAlerts": "My subscriptions",
+    "noAlerts": "No subscriptions yet",
+    "untilDate": "until {date}",
+    "removeAlert": "Remove subscription",
+    "confirmRemove": "Really turn off?",
+    "cancelRemove": "Keep subscription",
+    "dateError": "Choose the day, month and year"
   },
   "franchise": {
     "title": "Open an ecash franchise",
@@ -325,7 +404,8 @@
     "phone": "Phone number*",
     "city": "City",
     "cta": "Send request",
-    "done": "Request sent! We will contact you"
+    "done": "Request sent! We will contact you",
+    "close": "Close"
   },
   "landing": {
     "login": "Log in",
@@ -418,7 +498,7 @@
         },
         {
           "title": "Start earning",
-          "text": "After the preparation we open the exchange office together with you, set up marketing and organise the first working processes. We open the office together and start earning."
+          "text": "After the preparation we open the exchange office together with you, set up marketing and organise the first working processes."
         }
       ]
     },
@@ -435,23 +515,23 @@
       "items": [
         {
           "title": "Consulting on any question",
-          "text": "We help you pick the best location for your business — higher customer flow, convenient access and a favourable competitive environment."
+          "text": "Our specialists are available at every stage — from choosing a location to serving your first customers. We respond quickly and look at your case individually."
         },
         {
           "title": "Staff training",
-          "text": "Our experts train you and your team, covering all key aspects of running the business, and arrange ongoing support."
+          "text": "We run regular training for cashiers and administrators: cash handling, security procedures and Ecash customer-service standards."
         },
         {
           "title": "Design and renovation of premises",
-          "text": "We provide ready instructions for organising the business, covering every stage: from opening an account to working effectively with customers and staff."
+          "text": "We help design the exchange office layout and find contractors for renovation — from floor planning to signage installation."
         },
         {
           "title": "Accounting",
-          "text": "You get access to unique software that handles currency operations, transaction tracking and end-to-end reporting."
+          "text": "We handle accounting and tax reporting for your exchange office, so you can focus on customers instead of paperwork."
         },
         {
           "title": "Treasury",
-          "text": "The right to use the brand helps you attract more customers, raise awareness and reach profit faster."
+          "text": "Ecash's centralised treasury sets your rates and arranges cash collection, taking currency risk off the partner's shoulders."
         },
         {
           "title": "Equipment purchasing",
@@ -459,23 +539,23 @@
         },
         {
           "title": "Legal and technical matters",
-          "text": "We provide ready instructions for organising the business, covering every stage: from opening an account to working effectively with customers and staff."
+          "text": "We support licensing and permit paperwork, and resolve technical matters — from cash-handling equipment to internet connectivity."
         },
         {
           "title": "Marketing",
-          "text": "You get access to unique software that handles currency operations, transaction tracking and end-to-end reporting."
+          "text": "We launch advertising campaigns for your opening and share the network's marketing materials — from signage to social media posts."
         },
         {
           "title": "Regulator liaison and reporting",
-          "text": "We provide ready instructions for organising the business, covering every stage: from opening an account to working effectively with customers and staff."
+          "text": "We prepare and file the mandatory reports to the National Bank and other regulators, so your exchange office always operates within the law."
         },
         {
           "title": "HR",
-          "text": "We provide a complete brand book for your business: a distinctive identity, signage, logos and interior elements that highlight your brand."
+          "text": "We help you find and hire cashiers and administrators: ready-made job profiles, contract templates and hiring guidance."
         },
         {
           "title": "Cash collection and security",
-          "text": "You get access to unique software that handles currency operations, transaction tracking and end-to-end reporting."
+          "text": "We arrange regular cash collection and connect your premises to security — alarm systems, video surveillance and a panic button."
         },
         {
           "title": "Gold operations with the National Bank",
@@ -517,7 +597,55 @@
     "notFound": "Not found",
     "badBody": "Malformed request",
     "branchUnknown": "Branch not found",
-    "unknownStep": "Unknown step"
+    "unknownStep": "Unknown step",
+    "timeout": "Server is not responding. Try again",
+    "network": "No connection to the server",
+    "serverError": "Server error. Try again later",
+    "tooManyRequests": "Too many requests. Wait a minute",
+    "forbiddenOrigin": "Request rejected",
+    "dateInPast": "This date has already passed",
+    "iinInvalid": "IIN is 12 digits",
+    "passwordMin": "At least 8 characters",
+    "passwordDigit": "At least one digit",
+    "passwordMatch": "Passwords do not match",
+    "INVALID_CREDENTIALS": "Wrong login or password",
+    "INVALID_TOKEN": "Session expired. Sign in again",
+    "INVALID_OTP": "Wrong code",
+    "OTP_EXPIRED": "Code expired — more than 5 minutes passed",
+    "OTP_COOLDOWN": "You can request a new code in a minute",
+    "OTP_SEND_FAILED": "Failed to send SMS. Try again later",
+    "PHONE_ALREADY_REGISTERED": "This number is already registered",
+    "ACCOUNT_NOT_FOUND": "No account with this number",
+    "CLIENT_NOT_LINKED": "Account is not linked to an Ecash client",
+    "REQUEST_NOT_FOUND": "Request not found",
+    "DEPARTMENT_NOT_FOUND": "Branch not found",
+    "STATISTICS_NOT_FOUND": "Branch statistics unavailable",
+    "RATES_NOT_FOUND": "Rates not found",
+    "KASSA_NOT_FOUND": "Cash desk not found",
+    "REQUEST_ALREADY_EXISTS": "An active request for this pair already exists",
+    "REQUEST_NOT_ACTIVE": "Request already processed",
+    "REQUEST_NOT_CANCELLABLE": "This request can no longer be cancelled",
+    "BOOKING_ALREADY_REQUESTED": "Booking already requested for this request",
+    "RATE_NOT_CONFIRMED": "The treasurer has not answered yet",
+    "RATE_REJECTED": "The treasurer declined the individual rate",
+    "RATE_EXPIRED": "Decision time expired. Create a new request",
+    "NOT_INDIVIDUAL_REQUEST": "Not an individual-rate request",
+    "ACCEPT_CREATE_FAILED": "Failed to create the request. Try later",
+    "CURRENCY_REQUIRED": "Choose a currency",
+    "CURRENCY_INVALID": "Currencies must differ",
+    "VALUE_REQUIRED": "Enter the amount",
+    "AMOUNT_REQUIRED": "Enter the amount",
+    "RATE_REQUIRED": "Enter the rate",
+    "DEPARTMENT_REQUIRED": "Choose a branch",
+    "BODY_REQUIRED": "Fill in the form",
+    "OTP_REQUIRED": "Enter the SMS code",
+    "VALIDATION": "Check the highlighted fields",
+    "FORBIDDEN": "Access denied",
+    "NOT_FOUND": "Not found",
+    "UPSTREAM_UNAVAILABLE": "Ecash service is temporarily unavailable",
+    "UPSTREAM_TIMEOUT": "Ecash service is not responding. Try again",
+    "UPSTREAM_UNREACHABLE": "Cannot reach the Ecash service",
+    "UNKNOWN": "Unexpected error"
   },
   "addressModal": {
     "title": "Enter your address",
@@ -526,6 +654,166 @@
     "save": "Save",
     "clear": "Clear",
     "close": "Close",
-    "mapAlt": "Branch map"
+    "mapAlt": "Branch map",
+    "mapEmpty": "No branches found",
+    "locate": "Near me",
+    "locating": "Detecting your location…",
+    "locateDenied": "Could not detect your location — enter the address manually",
+    "locateEmpty": "No branches with coordinates found",
+    "mapExpand": "Expand to full screen",
+    "mapCollapse": "Collapse map",
+    "mapLoading": "Loading branches…"
+  },
+  "addressDropdown": {
+    "cta": "Set your address",
+    "title": "Enter your address",
+    "subtitle": "We will show the nearest exchange offices",
+    "placeholder": "Address",
+    "save": "Save",
+    "clear": "Clear",
+    "country": "Kazakhstan",
+    "suggestions": "Address suggestions",
+    "cities": {
+      "almaty": "Almaty",
+      "astana": "Astana",
+      "shymkent": "Shymkent"
+    }
+  },
+  "system": {
+    "errorTitle": "Something went wrong",
+    "errorText": "An unexpected error occurred. Please try again.",
+    "retry": "Try again",
+    "notFoundTitle": "Page not found",
+    "notFoundText": "This page does not exist or has been moved.",
+    "toHome": "Go home",
+    "loading": "Loading…"
+  },
+  "requests": {
+    "title": "My requests",
+    "empty": "No requests yet",
+    "needLogin": "Sign in to see your requests",
+    "status0": "Under review",
+    "status8": "Reserved",
+    "status1": "Completed",
+    "status3": "Cancelled",
+    "awaiting": "Request sent to the treasurer. Expect an answer within a couple of minutes",
+    "offerTitle": "The treasurer offered a rate",
+    "offerText": "You have {min} minutes to decide",
+    "accept": "Accept",
+    "decline": "Decline",
+    "cancel": "Cancel request",
+    "cancelled": "Booking cancelled",
+    "reason": "Reason",
+    "ticket": "Ticket",
+    "history": "Change history",
+    "timeLeft": "Reservation valid for",
+    "expired": "Reservation expired",
+    "pair": "Currency pair",
+    "details": "Details",
+    "rate": "Rate",
+    "sentAt": "Request sent",
+    "number": "Request #{id}",
+    "toList": "Back to requests",
+    "loadMore": "Show more",
+    "loadError": "Failed to load requests",
+    "retry": "Retry",
+    "branch": "Branch address",
+    "yourData": "Your details",
+    "commentLabel": "Comment",
+    "onMapBtn": "On map"
+  },
+  "rates": {
+    "gold": "Gold bar {grams} g",
+    "updatedAt": "Rates updated: {time}",
+    "perUnit": "{rate} ₸ = 1 {code}",
+    "noHistory": "Not enough data for this period yet",
+    "marketSource": "Official NBK rate",
+    "currency": "Currency",
+    "chart": {
+      "group": "Chart period",
+      "caption": "{code} rate dynamics, period: {period}.",
+      "time": "Date",
+      "summary": "Points: {count}, min {min}, max {max}.",
+      "changeUp": "up {value} %",
+      "changeDown": "down {value} %",
+      "changeFlat": "unchanged"
+    }
+  },
+  "nav": {
+    "menu": "Menu",
+    "home": "Home",
+    "locations": "Branches",
+    "booking": "Reserve a rate",
+    "individualRate": "Individual rate",
+    "subscribe": "Rate alerts",
+    "requests": "My requests",
+    "news": "News",
+    "profile": "Profile",
+    "franchise": "Franchise",
+    "close": "Close menu"
+  },
+  "branches": {
+    "open": "Open",
+    "closed": "Closed",
+    "copy": "Copy address",
+    "copied": "Address copied",
+    "onMap": "On the map",
+    "km": "km",
+    "geoHint": "Allow geolocation to see distances",
+    "bestBuy": "Best to buy",
+    "bestSell": "Best to sell",
+    "loadError": "Failed to load branches",
+    "retry": "Retry"
+  },
+  "theme": {
+    "label": "Toggle theme"
+  },
+  "meta": {
+    "siteName": "ecash — currency exchange",
+    "home": {
+      "title": "ecash — currency exchange in Kazakhstan",
+      "description": "Live exchange rates, 60-minute rate reservation, individual rates and exchange offices near you"
+    },
+    "locations": {
+      "title": "ecash branches — rates and addresses",
+      "description": "All ecash branches on the map: addresses, opening hours, live rates and the best rate in town"
+    },
+    "booking": {
+      "title": "Reserve a rate — ecash",
+      "description": "Lock the exchange rate for 60 minutes: the amount is reserved at the chosen branch"
+    },
+    "individualRate": {
+      "title": "Individual rate — ecash",
+      "description": "Request a personal rate for a large amount — the treasurer replies in minutes"
+    },
+    "subscribe": {
+      "title": "Rate alerts — ecash",
+      "description": "Subscribe to rate changes: we will notify you when the rate hits your target"
+    },
+    "franchise": {
+      "title": "ecash franchise — your exchange business",
+      "description": "Open an exchange office with the ecash franchise: technology, support and a recognizable brand"
+    },
+    "login": {
+      "title": "Sign in — ecash"
+    },
+    "signup": {
+      "title": "Sign up — ecash"
+    },
+    "recovery": {
+      "title": "Password recovery — ecash"
+    },
+    "profile": {
+      "title": "Profile — ecash"
+    },
+    "notifications": {
+      "title": "Notifications — ecash"
+    },
+    "news": {
+      "title": "News — ecash"
+    },
+    "requests": {
+      "title": "My requests — ecash"
+    }
   }
 }

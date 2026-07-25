@@ -534,13 +534,10 @@ function LandingFooter() {
             <div className="text-xl leading-8 text-text-disabled">
               {t("additional")}
             </div>
-            <a
-              href="#"
-              className="inline-flex items-center gap-2 text-xl leading-8 text-text-default transition-colors hover:text-text-brand"
-            >
+            <span className="inline-flex items-center gap-2 text-xl leading-8 text-text-default">
               {t("documents")}
               <Icon name="arrow_outward" size={20} />
-            </a>
+            </span>
           </div>
         </div>
 

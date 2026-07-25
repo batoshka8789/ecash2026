@@ -1,37 +1,41 @@
-import { currentUser } from '@/server/session';
-import { body, fail, ok } from '@/server/http';
-import type { User } from '@/lib/types';
+import { NextResponse } from 'next/server';
+import { db } from '@/server/db/client';
+import { profiles } from '@/server/db/schema';
+import { withUser } from '@/server/api/guard';
+import { body, fromError, ok } from '@/server/api/respond';
+import { profilePatchBody } from '@/shared/schemas';
+import { profileFromRow } from '@/server/db/profile';
+import { readSession } from '@/server/session';
 
-/** Анкета «Мои данные»: чтение и сохранение. */
-export async function GET() {
-  const user = await currentUser();
-  if (!user) return fail('errors.unauthorized', 401);
-  return ok({ user });
-}
+/**
+ * Анкета — наш слой (в API Ecash её нет, документация относит
+ * профиль/аватар «в мобильный слой»). Ключ — accountId из токена.
+ */
 
-const EDITABLE = [
-  'firstName',
-  'lastName',
-  'middleName',
-  'iin',
-  'phone',
-  'about',
-  'occupation',
-  'address',
-] as const;
+export const PATCH = withUser(async (req) => {
+  const parsed = await body(req, profilePatchBody);
+  if (parsed instanceof NextResponse) return parsed;
 
-export async function PATCH(req: Request) {
-  const user = await currentUser();
-  if (!user) return fail('errors.unauthorized', 401);
+  const s = await readSession();
+  const accountId = s!.accountId;
 
-  const data = await body<Partial<User>>(req);
-  if (!data) return fail('errors.badBody');
+  try {
+    const [row] = await db
+      .insert(profiles)
+      .values({ accountId, ...clean(parsed), updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: profiles.accountId,
+        set: { ...clean(parsed), updatedAt: new Date() },
+      })
+      .returning();
 
-  for (const field of EDITABLE) {
-    const value = data[field];
-    if (typeof value === 'string') user[field] = value;
+    return ok({ profile: profileFromRow(row) });
+  } catch (e) {
+    return fromError(e);
   }
-  if (Array.isArray(data.tags)) user.tags = data.tags.filter((t) => typeof t === 'string');
+});
 
-  return ok({ user });
+/** undefined-поля не должны затирать существующие значения. */
+function clean(p: Record<string, unknown>) {
+  return Object.fromEntries(Object.entries(p).filter(([, v]) => v !== undefined));
 }

@@ -1,6 +1,7 @@
 import { SidebarLayout } from '@/components/profile/SidebarLayout';
 import { ProfileCard } from '@/components/profile/ProfileCard';
 import { AddressCard } from '@/components/profile/AddressCard';
+import { pageMetadata } from '@/lib/metadata';
 
 export default function ProfileAddressPage() {
   return (
@@ -11,4 +12,9 @@ export default function ProfileAddressPage() {
       </div>
     </SidebarLayout>
   );
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  return pageMetadata(locale, 'profile', '/profile/address', { noIndex: true });
 }

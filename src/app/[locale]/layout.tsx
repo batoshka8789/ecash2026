@@ -6,6 +6,8 @@ import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
 import { AuthProvider } from '@/lib/auth';
+import { RealtimeProvider } from '@/lib/realtime';
+import { SkipLink } from '@/components/layout/SkipLink';
 import 'material-symbols/rounded.css';
 import 'flag-icons/css/flag-icons.min.css';
 import '../globals.css';
@@ -47,7 +49,10 @@ export default async function LocaleLayout({
     >
       <body className="min-h-full">
         <NextIntlClientProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <SkipLink />
+          <AuthProvider>
+            <RealtimeProvider>{children}</RealtimeProvider>
+          </AuthProvider>
         </NextIntlClientProvider>
       </body>
     </html>

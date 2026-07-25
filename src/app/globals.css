@@ -66,6 +66,57 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
 }
 
+/**
+ * Видимый фокус клавиатуры на всём интерактивном.
+ * Кистевые состояния (focus-within у инпутов) сохраняются,
+ * а :focus-visible срабатывает только при навигации с клавиатуры.
+ */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/**
+ * Появление снизу чистым CSS: fill-mode both гарантирует конечное
+ * состояние даже при заторможенном rAF; при reduced-motion — без движения.
+ */
+.rise-in {
+  animation: rise-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rise-in {
+    animation: none;
+  }
+}
+
+/* Скиплинк: невидим до фокуса, первым в табе на каждой странице. */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 16px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--color-brand);
+  color: #fff;
+  font-size: 14px;
+  transition: top 0.15s ease;
+}
+.skip-link:focus-visible {
+  top: 16px;
+}
+
 html {
   color-scheme: dark;
 }
@@ -281,4 +332,229 @@ body {
     rgb(255 255 255 / 0.12) 74%,
     rgb(246 132 75 / 0.4) 100%
   );
+}
+
+/* ------------------------------------------------------------------ */
+/* Входные анимации лендинга — чистый CSS.                             */
+/* Нарочно не на JS: контент обязан появиться даже если гидрация или   */
+/* rAF не сработали (prerender, фоновая вкладка, слабое устройство).   */
+/* fill-mode: both держит начальное состояние без FOUC и гарантирует   */
+/* конечное — видимое.                                                 */
+
+@keyframes landing-rise {
+  from {
+    transform: translateY(110%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes landing-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes landing-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.anim-rise {
+  animation: landing-rise 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--anim-delay, 0s);
+}
+
+.anim-fade-up {
+  animation: landing-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--anim-delay, 0s);
+}
+
+.anim-pop {
+  animation: landing-pop 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--anim-delay, 0s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-rise,
+  .anim-fade-up,
+  .anim-pop {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Модалки — тот же принцип, что и у входных анимаций лендинга: чистый  */
+/* CSS, а не JS-драйвер (framer-motion opacity 0→1). JS-анимация зависит */
+/* от rAF, а он ставится на паузу в свёрнутой/неактивной вкладке — если  */
+/* пользователь переключился в момент открытия, framer-motion застревает */
+/* на промежуточном кадре (напр. opacity: 0.42) НАВСЕГДА: подложка и     */
+/* карточка модалки остаются полупрозрачными, страница просвечивает      */
+/* насквозь. fill-mode: both гарантирует конечное состояние без анимации. */
+
+@keyframes modal-scrim-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.anim-modal-scrim {
+  animation: modal-scrim-in 0.2s ease-out both;
+}
+
+.anim-modal-card {
+  animation: modal-card-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-modal-scrim,
+  .anim-modal-card {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* График «Динамика курса» — тот же принцип: framer-motion (pathLength  */
+/* у линии, scale/opacity у точек, height/opacity у самой панели) висел */
+/* на rAF и застревал навсегда, если вкладка уходила в фон в момент      */
+/* раскрытия или смены периода — линия/точки оставались невидимыми,     */
+/* график выглядел как «не работает», хотя данные приходили верно.      */
+
+@keyframes chart-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes chart-path-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes chart-dot-in {
+  from {
+    scale: 0;
+    opacity: 0;
+  }
+  to {
+    scale: 1;
+    opacity: 1;
+  }
+}
+
+.anim-chart-panel {
+  animation: chart-panel-in 0.25s ease-out both;
+}
+
+.anim-chart-path {
+  animation: chart-path-in 0.4s ease-out both;
+}
+
+.anim-chart-dot {
+  /* смещение к центру точки данных — статичное свойство, а не часть   */
+  /* анимации, поэтому центрирование остаётся и при отключённой анимации */
+  translate: -50% -50%;
+  animation: chart-dot-in 0.25s ease-out both;
+  animation-delay: var(--anim-delay, 0s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-chart-panel,
+  .anim-chart-path,
+  .anim-chart-dot {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Тост, добавление строки в список курсов, разворачивание панели      */
+/* сравнения/FAQ — тот же принцип: JS-анимация (opacity/y/scale/height) */
+/* виснет навсегда, если вкладка уходит в фон в момент монтирования.    */
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.anim-toast-in {
+  animation: toast-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.anim-row-in {
+  animation: row-in 0.3s ease-out both;
+}
+
+.anim-panel-in {
+  animation: panel-in 0.25s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-toast-in,
+  .anim-row-in,
+  .anim-panel-in {
+    animation: none;
+  }
 }

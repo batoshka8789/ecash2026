@@ -1,120 +1,244 @@
 import type {
-  Booking,
-  Branch,
+  AccountWithProfile,
+  BestRate,
   Competitor,
-  Currency,
   CurrencyCode,
-  FranchiseLead,
+  Department,
+  DepartmentInfo,
+  ExchangeRequest,
   NewsPost,
-  Notification,
-  Subscription,
-  User,
-} from './types';
+  OperationsPage,
+  RateAlert,
+  RateStat,
+} from './domain';
+import { noteServerTime } from './time';
 
-/** Ошибка запроса с кодом поля — чтобы форма подсветила нужный инпут. */
+/** Ошибка запроса: code — ключ i18n, field — какой инпут подсветить. */
 export class ApiError extends Error {
   constructor(
     message: string,
     readonly field?: string,
     readonly status?: number,
+    /** полезная нагрузка — напр. существующая заявка при REQUEST_ALREADY_EXISTS */
+    readonly data?: unknown,
   ) {
     super(message);
     this.name = 'ApiError';
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`/api${path}`, {
-    ...init,
-    headers: init?.body ? { 'content-type': 'application/json', ...init?.headers } : init?.headers,
-  });
+const DEFAULT_TIMEOUT_MS = 15_000;
 
-  const data = await res.json().catch(() => null);
-  if (!res.ok) {
-    throw new ApiError(data?.error ?? 'errors.unknown', data?.field, res.status);
+async function request<T>(path: string, init?: RequestInit & { timeoutMs?: number }): Promise<T> {
+  const { timeoutMs = DEFAULT_TIMEOUT_MS, ...rest } = init ?? {};
+  const signal = rest.signal
+    ? AbortSignal.any([rest.signal, AbortSignal.timeout(timeoutMs)])
+    : AbortSignal.timeout(timeoutMs);
+
+  let res: Response;
+  try {
+    res = await fetch(`/api${path}`, {
+      ...rest,
+      signal,
+      headers: rest.body ? { 'content-type': 'application/json', ...rest.headers } : rest.headers,
+    });
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'TimeoutError') {
+      throw new ApiError('errors.timeout', undefined, 0);
+    }
+    throw new ApiError('errors.network', undefined, 0);
   }
+
+  noteServerTime(res.headers.get('x-server-time'));
+
+  const isJson = res.headers.get('content-type')?.includes('application/json') ?? false;
+  const data = isJson ? await res.json().catch(() => null) : null;
+
+  if (!res.ok) {
+    throw new ApiError(
+      (data?.error as string) ?? httpFallback(res.status),
+      data?.field as string | undefined,
+      res.status,
+      data?.data,
+    );
+  }
+  if (data === null) throw new ApiError('errors.unknown', undefined, res.status);
   return data as T;
 }
 
-const post = <T>(path: string, payload?: unknown) =>
-  request<T>(path, { method: 'POST', body: payload ? JSON.stringify(payload) : undefined });
+function httpFallback(status: number): string {
+  if (status === 401) return 'errors.unauthorized';
+  if (status === 404) return 'errors.notFound';
+  if (status === 429) return 'errors.tooManyRequests';
+  if (status >= 500) return 'errors.serverError';
+  return 'errors.unknown';
+}
 
-/** Единая точка доступа к мок-бэкенду. Внешних API нет. */
+const post = <T>(path: string, payload?: unknown) =>
+  request<T>(path, { method: 'POST', body: payload !== undefined ? JSON.stringify(payload) : '{}' });
+
+/** Единая точка доступа к BFF. Браузер никогда не ходит в api-dev.quiq.kz напрямую. */
 export const api = {
-  rates: () =>
-    request<{
-      marketRate: number;
-      currencies: Currency[];
-      competitors: Competitor[];
-      favorites: string[];
-    }>('/rates'),
+  departments: {
+    list: (signal?: AbortSignal) =>
+      request<{ departments: Department[] }>('/departments', { signal }),
+    info: (depId: number, signal?: AbortSignal) =>
+      request<{ department: DepartmentInfo }>(`/departments/${depId}`, { signal }),
+  },
+
+  rates: {
+    forDep: (depId: number, signal?: AbortSignal) =>
+      request<{
+        depId: number;
+        /** курс НБ РК по USD — историческая совместимость */
+        marketRate: number | null;
+        /** «Курс на бирже» по каждой валюте отделения (НБ РК) */
+        marketRates: Record<string, number>;
+        rates: RateStat[];
+        favorites: string[];
+        competitors: Competitor[];
+      }>(`/rates?depId=${depId}`, { signal }),
+    history: (
+      params: { depId: number; code: CurrencyCode; period: 'day' | 'week' | 'month' | 'year' },
+      signal?: AbortSignal,
+    ) =>
+      request<{
+        depId: number;
+        code: CurrencyCode;
+        period: string;
+        current: { buy: number; sell: number; change: number } | null;
+        points: { t: string; buy: number; sell: number }[];
+      }>(`/rates/history?depId=${params.depId}&code=${params.code}&period=${params.period}`, {
+        signal,
+      }),
+    best: (currency: CurrencyCode, city?: string, signal?: AbortSignal) =>
+      request<{ best: BestRate }>(
+        `/rates/best?currency=${currency}${city ? `&city=${encodeURIComponent(city)}` : ''}`,
+        { signal },
+      ),
+  },
 
   toggleFavorite: (code: CurrencyCode) => post<{ favorites: string[] }>('/favorites', { code }),
 
-  branches: (sort?: 'distance') =>
-    request<{ branches: Branch[] }>(`/branches${sort ? `?sort=${sort}` : ''}`),
-
-  news: () => request<{ posts: NewsPost[] }>('/news'),
+  news: (signal?: AbortSignal) => request<{ posts: NewsPost[] }>('/news', { signal }),
 
   auth: {
-    me: () => request<{ user: User | null }>('/auth/me'),
-    login: (login: string, password: string) => post<{ user: User }>('/auth/login', { login, password }),
-    signup: (email: string, password: string, password2: string) =>
-      post<{ email: string; devCode: string }>('/auth/signup', { email, password, password2 }),
-    verify: (email: string, code: string, phone?: string) =>
-      post<{ user: User }>('/auth/verify', { email, code, phone }),
-    recovery: (payload: {
-      step: 'request' | 'confirm' | 'reset';
-      email: string;
-      code?: string;
-      password?: string;
-      password2?: string;
-    }) => post<{ sent?: boolean; devCode?: string; confirmed?: boolean; reset?: boolean }>('/auth/recovery', payload),
+    me: (signal?: AbortSignal) =>
+      request<{ account: AccountWithProfile | null }>('/auth/me', { signal }),
+    login: (login: string, password: string) =>
+      post<{ account: AccountWithProfile }>('/auth/login', { login, password }),
+    register: (payload: {
+      phoneNumber: string;
+      otp: string;
+      password: string;
+      password2: string;
+      iin?: string;
+    }) => post<{ account: AccountWithProfile }>('/auth/register', payload),
     logout: () => post<{ ok: true }>('/auth/logout'),
+    otp: {
+      send: (phoneNumber: string, purpose: 0 | 1 | 2) =>
+        post<{
+          phoneNumber: string;
+          ttlSeconds: number;
+          resendAfterSeconds: number;
+          digits: number;
+          devCode?: string;
+        }>('/auth/otp/send', { phoneNumber, purpose }),
+      login: (phoneNumber: string, otp: string) =>
+        post<{ account: AccountWithProfile }>('/auth/otp/login', { phoneNumber, otp }),
+      resetPassword: (payload: {
+        phoneNumber: string;
+        otp: string;
+        newPassword: string;
+        newPassword2: string;
+      }) => post<{ reset: boolean }>('/auth/otp/reset-password', payload),
+    },
   },
 
   profile: {
-    get: () => request<{ user: User }>('/profile'),
-    save: (patch: Partial<User>) =>
-      request<{ user: User }>('/profile', { method: 'PATCH', body: JSON.stringify(patch) }),
+    save: (patch: {
+      avatar?: string | null;
+      about?: string;
+      occupation?: string;
+      tags?: string[];
+      address?: string;
+    }) =>
+      request<{ profile: AccountWithProfile['profile'] }>('/profile', {
+        method: 'PATCH',
+        body: JSON.stringify(patch),
+      }),
   },
 
-  bookings: {
-    list: () => request<{ bookings: Booking[] }>('/bookings'),
+  requests: {
+    list: (page = 1, pageSize = 20, signal?: AbortSignal) =>
+      request<OperationsPage>(`/requests?page=${page}&pageSize=${pageSize}`, { signal }),
+    get: (id: number, signal?: AbortSignal) =>
+      request<{ request: ExchangeRequest }>(`/requests/${id}`, { signal }),
     create: (payload: {
-      type: 'booking' | 'individual';
-      from: CurrencyCode;
-      to: CurrencyCode;
+      currencyFrom: CurrencyCode;
+      currencyTo: CurrencyCode;
+      value: number;
+      rate: number;
       amount: number;
-      banknotes: 'small' | 'large' | null;
-      branchId: string;
-      side: 'buy' | 'sell';
-      phone: string;
-      name: string;
-    }) => post<{ booking: Booking }>('/bookings', payload),
-    cancel: (id: string) => request<{ booking: Booking }>(`/bookings/${id}`, { method: 'DELETE' }),
+      depId?: number;
+      kassaId?: number;
+      fullName?: string;
+      comment?: string;
+    }) => post<{ request: ExchangeRequest }>('/requests', payload),
+    createIndividual: (payload: {
+      currencyFrom: CurrencyCode;
+      currencyTo: CurrencyCode;
+      value: number;
+      rate: number;
+      amount: number;
+      depId?: number;
+      kassaId?: number;
+      fullName?: string;
+      comment?: string;
+    }) => post<{ request: ExchangeRequest }>('/requests/individual-rate', payload),
+    cancel: (id: number, comment?: string) =>
+      post<{ request: ExchangeRequest }>(`/requests/${id}/cancel`, comment ? { comment } : {}),
+    confirmIndividual: (id: number) =>
+      post<{ request: ExchangeRequest }>(`/requests/${id}/individual-rate/confirm`),
+    rejectIndividual: (id: number) =>
+      post<{ request: ExchangeRequest }>(`/requests/${id}/individual-rate/reject`),
   },
 
   notifications: {
-    list: (tab: 'actual' | 'history') =>
-      request<{ notifications: Notification[]; unread: number; bookings: Booking[] }>(
-        `/notifications?tab=${tab}`,
-      ),
-    markAllRead: () => post<{ ok: true }>('/notifications'),
+    list: (tab: 'actual' | 'history', signal?: AbortSignal) =>
+      request<{
+        notifications: NotificationDto[];
+        unread: number;
+        requests: ExchangeRequest[];
+      }>(`/notifications?tab=${tab}`, { signal }),
   },
 
-  subscriptions: {
-    list: () => request<{ subscriptions: Subscription[] }>('/subscriptions'),
+  rateAlerts: {
+    list: (signal?: AbortSignal) => request<{ alerts: RateAlert[] }>('/rate-alerts', { signal }),
     create: (payload: {
-      from: CurrencyCode;
-      to: CurrencyCode;
+      currencyFrom: CurrencyCode;
+      currencyTo: CurrencyCode;
       targetRate: number;
-      day: string;
-      month: string;
-      year: string;
-    }) => post<{ subscription: Subscription }>('/subscriptions', payload),
+      until: string;
+    }) => post<{ alert: RateAlert }>('/rate-alerts', payload),
+    remove: (id: string) => request<{ ok: true }>(`/rate-alerts/${id}`, { method: 'DELETE' }),
   },
 
   franchiseLead: (payload: { name: string; phone: string; city?: string }) =>
-    post<{ lead: FranchiseLead }>('/franchise-leads', payload),
+    post<{ lead: { id: string; createdAt: string } }>('/franchise-leads', payload),
+};
+
+export type NotificationDto = {
+  id: string;
+  badges: string[];
+  titleKey: string;
+  createdAt: string | null;
+  side: 'buy' | 'sell';
+  amount: string;
+  requestId: number | null;
+  reservedUntil: string | null;
+  needsClientConfirmation: boolean;
+  phase: string;
+  actions: string[];
+  alertId: string | null;
 };

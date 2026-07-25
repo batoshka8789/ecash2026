@@ -1,10 +1,14 @@
 'use client';
 
 import { motion, useReducedMotion } from 'framer-motion';
+import { useAnimReady } from '@/components/landing/effects';
 
 /**
  * Появление секции при скролле: лёгкий подъём + fade.
- * Уважает prefers-reduced-motion — тогда просто показывает контент.
+ *
+ * Уважает prefers-reduced-motion, а до первого тика rAF в видимой вкладке
+ * (useAnimReady) рендерит контент видимым — иначе в prerender/фоновой
+ * вкладке секция осталась бы скрытой навсегда.
  */
 export function Reveal({
   children,
@@ -16,8 +20,9 @@ export function Reveal({
   className?: string;
 }) {
   const reduced = useReducedMotion();
+  const ready = useAnimReady();
 
-  if (reduced) return <div className={className}>{children}</div>;
+  if (reduced || !ready) return <div className={className}>{children}</div>;
 
   return (
     <motion.div

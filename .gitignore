@@ -44,3 +44,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 /design/assets
+tsconfig.tsbuildinfo
+
+# playwright
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+
+# изолированные git worktree фоновых агентов
+/.claude/worktrees

@@ -1,15 +1,17 @@
 'use client';
 
 import { useCallback, useSyncExternalStore } from 'react';
-import { Button } from '@/components/ui/Button';
+import { useTranslations } from 'next-intl';
 import { Icon } from '@/components/ui/Icon';
 
 const listeners = new Set<() => void>();
 
 /**
- * Тема хранится в cookie и проставляется на <html> сервером — поэтому
- * нет ни мигания, ни расхождения гидратации. Здесь только чтение
- * текущего значения из DOM и переключение.
+ * Тема хранится в cookie и проставляется на <html> сервером.
+ * Иконка переключается ЧИСТО через CSS-селектор по html[data-theme] —
+ * сервер и клиент рендерят одинаковую разметку (обе иконки), поэтому
+ * ни мигания, ни расхождения гидратации нет. JS здесь только переключает
+ * атрибут/cookie и обновляет aria-pressed.
  */
 const themeStore = {
   subscribe(l: () => void) {
@@ -20,6 +22,7 @@ const themeStore = {
 };
 
 export function ThemeToggle() {
+  const t = useTranslations('theme');
   const light = useSyncExternalStore(themeStore.subscribe, themeStore.get, () => false);
 
   const toggle = useCallback(() => {
@@ -34,8 +37,23 @@ export function ThemeToggle() {
   }, []);
 
   return (
-    <Button variant="surf1" size="icon-lg" onClick={toggle} aria-label="Сменить тему">
-      <Icon name={light ? 'dark_mode' : 'light_mode'} filled />
-    </Button>
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={t('label')}
+      // pressed = включена светлая тема (тёмная — состояние по умолчанию)
+      aria-pressed={light}
+      suppressHydrationWarning
+      className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl bg-btn-1 text-text-default transition-colors hover:bg-comp-surface2-hover sm:h-[50px] sm:w-[50px] sm:rounded-2xl"
+    >
+      {/* тёмная тема (нет data-theme) → предлагаем светлую */}
+      <span className="inline-flex [html[data-theme=light]_&]:hidden">
+        <Icon name="light_mode" size={20} filled className="sm:text-2xl" />
+      </span>
+      {/* светлая тема → предлагаем тёмную */}
+      <span className="hidden [html[data-theme=light]_&]:inline-flex">
+        <Icon name="dark_mode" size={20} filled className="sm:text-2xl" />
+      </span>
+    </button>
   );
 }

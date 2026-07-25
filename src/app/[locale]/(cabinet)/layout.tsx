@@ -1,6 +1,6 @@
 import { redirect } from '@/i18n/navigation';
 import { getLocale } from 'next-intl/server';
-import { currentUser } from '@/server/session';
+import { isAuthenticated } from '@/server/session';
 
 /**
  * Личный кабинет доступен только по сессии.
@@ -12,8 +12,7 @@ export default async function CabinetLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await currentUser();
-  if (!user) {
+  if (!(await isAuthenticated())) {
     const locale = await getLocale();
     redirect({ href: '/login', locale });
   }

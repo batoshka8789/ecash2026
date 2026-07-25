@@ -5,26 +5,45 @@ import { Footer } from '@/components/layout/Footer';
 import { AppBanner } from '@/components/layout/AppBanner';
 import { Icon } from '@/components/ui/Icon';
 
-/** Обёртка внутренних страниц: шапка + хлебные крошки + футер + баннер. */
+/**
+ * Обёртка внутренних страниц: шапка + хлебные крошки + футер + баннер.
+ * Крошку задаёт либо crumbKey (ключ из namespace `crumbs`), либо
+ * готовая строка crumbLabel — для страниц, чей заголовок живёт
+ * в другом namespace (например, /locations).
+ */
 export function PageShell({
   crumbKey,
+  crumbLabel,
   children,
 }: {
-  crumbKey: string;
+  crumbKey?: string;
+  crumbLabel?: string;
   children: React.ReactNode;
 }) {
   const t = useTranslations('crumbs');
+  const label = crumbLabel ?? (crumbKey ? t(crumbKey) : '');
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="flex-1 pb-4">
-        <nav className="container-page flex items-center gap-2 pt-6 text-sm">
-          <Link href="/" className="text-text-disabled transition-colors hover:text-text-default">
-            {t('home')}
-          </Link>
-          <Icon name="chevron_right" size={16} className="text-text-disabled" />
-          <span className="border-b-2 border-brand pb-0.5 text-text-default">{t(crumbKey)}</span>
+      <main id="main" className="flex-1 pb-4">
+        <nav aria-label="Breadcrumb" className="container-page pt-6 text-sm">
+          <ol className="flex items-center gap-2">
+            <li>
+              <Link
+                href="/"
+                className="text-text-disabled transition-colors hover:text-text-default"
+              >
+                {t('home')}
+              </Link>
+            </li>
+            <li className="flex items-center gap-2">
+              <Icon name="chevron_right" size={16} className="text-text-disabled" />
+              <span aria-current="page" className="border-b-2 border-brand pb-0.5 text-text-default">
+                {label}
+              </span>
+            </li>
+          </ol>
         </nav>
         {children}
       </main>

@@ -2,8 +2,13 @@ import { useTranslations } from 'next-intl';
 import { Icon } from '@/components/ui/Icon';
 
 /**
- * Футер: контакты + график работы + документы, ниже копирайт.
+ * Футер — 1:1 по мастер-компоненту Figma (footer, 847:49658): контакты
+ * (соцсети + телефон) / график работы / документы, ниже копирайт.
  * На мобильных — одна колонка с выравниванием влево (как во фреймах 480/360).
+ *
+ * Ссылки на разделы сюда не добавляем — в макете их нет ни в шапке, ни в
+ * футере (роль навигационного хаба играют карточки-действий, хлебные крошки
+ * и сайдбар кабинета, см. Header.tsx). Переключатель языка — там же, в шапке.
  */
 export function Footer() {
   const t = useTranslations('footer');
@@ -26,15 +31,9 @@ export function Footer() {
                   <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 1.8a8.2 8.2 0 1 1-4.2 15.3l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 0 1 12 3.8Zm-3.1 4c-.2 0-.5 0-.7.3-.2.3-.9.9-.9 2.1s.9 2.4 1 2.6c.1.2 1.8 2.9 4.4 3.9 2.2.9 2.6.7 3.1.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2l-.4-.2-1.5-.7c-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.1-.2 0-.4.1-.5l.5-.6c.1-.2.1-.3.2-.5v-.4L10.3 8c-.1-.3-.3-.3-.5-.3h-.4l-.5.1Z" />
                 </svg>
               </a>
-              <a
-                href="https://t.me/ecash"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Telegram"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-btn-2 text-text-default transition-colors hover:bg-comp-surface2-hover sm:h-10 sm:w-10"
-              >
-                <Icon name="send" size={18} filled />
-              </a>
+              {/* Telegram скрыт: t.me/ecash — чужой крипто-проект (eCash/XEC,
+                  19k подписчиков), не наша компания. Вернуть, когда у бизнеса
+                  появится собственный handle. */}
             </div>
             <a
               href="tel:+77059089073"
@@ -53,13 +52,12 @@ export function Footer() {
 
           <div className="md:text-right">
             <div className="text-sm text-text-disabled sm:text-base">{t('additional')}</div>
-            <a
-              href="#"
-              className="mt-2 inline-flex items-center gap-1 text-lg font-bold text-text-default transition-colors hover:text-text-brand sm:mt-3 sm:text-xl"
-            >
+            {/* Реального адреса документов пока нет: текст без маркеров ссылки,
+                чтобы не выглядел кликабельным. */}
+            <span className="mt-2 inline-flex items-center gap-1 text-lg font-bold text-text-default sm:mt-3 sm:text-xl">
               {t('documents')}
               <Icon name="arrow_outward" size={20} />
-            </a>
+            </span>
           </div>
         </div>
 

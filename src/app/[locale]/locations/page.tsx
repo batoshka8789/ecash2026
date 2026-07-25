@@ -1,35 +1,27 @@
-import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/navigation';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { AppBanner } from '@/components/layout/AppBanner';
+import { getTranslations } from 'next-intl/server';
+import { PageShell } from '@/components/layout/PageShell';
 import { Calculator } from '@/components/sections/Calculator';
 import { Branches } from '@/components/sections/Branches';
-import { Icon } from '@/components/ui/Icon';
+import { pageMetadata } from '@/lib/metadata';
 
-export default function LocationsPage() {
-  const t = useTranslations('locations');
+/** ?view=map — вид «На карте» как URL-состояние: живёт back/reload и шэринг ссылки.
+ *  В Next 16 searchParams в пропсах страницы — Promise (чтение делает страницу динамической). */
+export default async function LocationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string | string[] }>;
+}) {
+  const [t, { view }] = await Promise.all([getTranslations('locations'), searchParams]);
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <main className="flex-1 pb-4">
-        <nav className="container-page flex items-center gap-2 pt-6 text-sm">
-          <Link href="/" className="text-text-disabled transition-colors hover:text-text-default">
-            {t('breadcrumbHome')}
-          </Link>
-          <Icon name="chevron_right" size={16} className="text-text-disabled" />
-          <span className="border-b-2 border-brand pb-0.5 text-text-default">
-            {t('breadcrumbCalc')}
-          </span>
-        </nav>
-        <Calculator />
-        <Branches />
-      </main>
-      <Footer />
-      <div className="sticky bottom-0 z-40">
-        <AppBanner />
-      </div>
-    </div>
+    <PageShell crumbLabel={t('breadcrumbCalc')}>
+      <Calculator />
+      <Branches initialView={view === 'map' ? 'map' : 'list'} />
+    </PageShell>
   );
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  return pageMetadata(locale, 'locations', '/locations');
 }

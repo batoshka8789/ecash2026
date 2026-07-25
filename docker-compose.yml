@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:17-alpine
+    # Docker Desktop периодически перезапускает VM (Exited 255) — поднимаемся сами
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ecash
+      POSTGRES_PASSWORD: ecash
+      POSTGRES_DB: ecash
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ecash']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    profiles: ['prod']
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env.local
+    environment:
+      DATABASE_URL: postgres://ecash:ecash@db:5432/ecash
+    ports:
+      - '3000:3000'
+
+volumes:
+  pgdata:

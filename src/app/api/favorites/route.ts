@@ -1,17 +1,31 @@
-import { db } from '@/server/db';
-import { ownerKey } from '@/server/session';
-import { body, fail, ok } from '@/server/http';
+import { NextResponse } from 'next/server';
+import { and, eq } from 'drizzle-orm';
+import { db } from '@/server/db/client';
+import { favorites } from '@/server/db/schema';
+import { withUser } from '@/server/api/guard';
+import { body, fromError, ok } from '@/server/api/respond';
+import { favoriteToggleBody } from '@/shared/schemas';
+import { readSession } from '@/server/session';
 
-/** Переключает валюту в избранном (иконка-закладка в строке курса). */
-export async function POST(req: Request) {
-  const data = await body<{ code?: string }>(req);
-  if (!data?.code) return fail('code обязателен');
+/** Переключение избранной валюты; возвращает полный список. */
+export const POST = withUser(async (req) => {
+  const parsed = await body(req, favoriteToggleBody);
+  if (parsed instanceof NextResponse) return parsed;
 
-  const key = await ownerKey();
-  const set = db.favorites.get(key) ?? new Set<string>();
-  if (set.has(data.code)) set.delete(data.code);
-  else set.add(data.code);
-  db.favorites.set(key, set);
+  const s = await readSession();
+  const accountId = s!.accountId;
 
-  return ok({ favorites: [...set] });
-}
+  try {
+    const deleted = await db
+      .delete(favorites)
+      .where(and(eq(favorites.accountId, accountId), eq(favorites.currencyCode, parsed.code)))
+      .returning();
+    if (deleted.length === 0) {
+      await db.insert(favorites).values({ accountId, currencyCode: parsed.code });
+    }
+    const rows = await db.select().from(favorites).where(eq(favorites.accountId, accountId));
+    return ok({ favorites: rows.map((r) => r.currencyCode) });
+  } catch (e) {
+    return fromError(e);
+  }
+});
