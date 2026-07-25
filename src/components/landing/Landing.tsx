@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { clsx } from "clsx";
@@ -238,7 +238,45 @@ export function Landing() {
 
         <LandingFooter />
       </div>
+
+      <ScrollToTopButton label={t("scrollTop")} />
     </div>
+  );
+}
+
+/**
+ * Круглая 3D-кнопка «наверх»: глянцевый шар в брендовом градиенте с двойной
+ * внутренней тенью (блик сверху-слева, затемнение снизу-справа) — появляется
+ * после прокрутки. Кнопка всегда в DOM, видимость переключается через CSS
+ * (opacity/translate), а не unmount/mount — чистый transition, без риска
+ * «зависнуть» невидимой, если вкладка уйдёт в фон в момент появления.
+ */
+function ScrollToTopButton({ label }: { label: string }) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 600);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return (
+    <button
+      type="button"
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      aria-label={label}
+      aria-hidden={!visible}
+      tabIndex={visible ? 0 : -1}
+      className={clsx(
+        "fixed bottom-6 right-6 z-40 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-[radial-gradient(circle_at_32%_28%,#ff9466,var(--color-brand)_58%,#c2410c_100%)] text-text-always-white shadow-[0_14px_32px_rgb(241_90_37/0.55),inset_0_2px_3px_rgb(255_255_255/0.45),inset_0_-6px_10px_rgb(0_0_0/0.28)] transition-all duration-300 ease-out hover:brightness-110 active:scale-95 md:bottom-10 md:right-10",
+        visible
+          ? "translate-y-0 opacity-100"
+          : "pointer-events-none translate-y-4 opacity-0",
+      )}
+    >
+      <Icon name="arrow_upward" size={26} />
+    </button>
   );
 }
 
