@@ -16,7 +16,7 @@ ARG ECASH_CLIENT_ID=build
 ARG ECASH_CLIENT_SECRET=build
 ARG SESSION_SECRET=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
 ARG DATABASE_URL=postgres://build:build@localhost:5432/build
-ARG APP_ORIGIN=http://localhost:3000
+ARG APP_ORIGIN=https://localhost:3000
 RUN npm run build
 
 FROM node:22-alpine AS run
