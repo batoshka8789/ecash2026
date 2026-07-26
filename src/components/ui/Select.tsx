@@ -258,8 +258,10 @@ export function Select({
         <span className={clsx('truncate', !selected && 'text-text-disabled')}>
           {selected ? (renderValue ? renderValue(selected) : selected.label) : (placeholder ?? '—')}
         </span>
+        {/* в макете это заливной треугольник arrow_down (10.67×6), не «птичка»
+            keyboard_arrow_down — ближайший аналог в Material Symbols */}
         <Icon
-          name="keyboard_arrow_down"
+          name="arrow_drop_down"
           size={20}
           className={clsx('shrink-0 transition-transform', open && 'rotate-180')}
         />

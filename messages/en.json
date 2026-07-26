@@ -83,7 +83,8 @@
         "green": "Green exchange",
         "red": "Red exchange"
       },
-      "allBranches": "All branches"
+      "allBranches": "All branches",
+      "showOnMap": "Show on map"
     }
   },
   "footer": {

@@ -263,7 +263,20 @@ function RateRow({
           </div>
         </div>
 
-        <div className="flex w-full items-center gap-3 sm:w-auto">
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          {/* «list-map» из макета — своей иконки под комбо документ+карта в
+              Material Symbols нет, ближайший по смыслу — map (тот же, что и
+              на переключателе Списком/На карте). Ведёт туда же, куда и общая
+              ссылка «Все отделения» — своего параметра под конкретную
+              валюту в /locations нет. */}
+          <Link
+            href="/locations"
+            aria-label={t('showOnMap')}
+            title={t('showOnMap')}
+            className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-stroke-surface2 text-text-default transition-colors hover:bg-comp-surface1-hover sm:h-12 sm:w-12"
+          >
+            <Icon name="map" size={22} />
+          </Link>
           <Button
             size="md"
             className="h-11 flex-1 sm:h-12 sm:min-w-40"
