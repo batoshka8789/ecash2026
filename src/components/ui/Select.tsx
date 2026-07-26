@@ -175,7 +175,7 @@ export function Select({
       className={
         searchable
           ? 'max-h-72 overflow-auto'
-          : 'absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-[20px] border border-stroke-modal bg-surface-page-surf2 p-2 shadow-xl'
+          : 'absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-[20px] border border-stroke-modal bg-surface-page-surf2 p-2 shadow-[0_0_6px_rgba(0,0,0,0.12)]'
       }
     >
       {visible.map((opt, idx) => (
@@ -270,10 +270,10 @@ export function Select({
       {open &&
         (searchable ? (
           // Попап с поиском: обёртка несёт стили списка, ul остаётся listbox.
-          <div className="absolute left-0 right-0 top-full z-30 mt-1 rounded-[20px] border border-stroke-modal bg-surface-page-surf2 p-2 shadow-xl">
+          <div className="absolute left-0 right-0 top-full z-30 mt-1 rounded-[20px] border border-stroke-modal bg-surface-page-surf2 p-2 shadow-[0_0_6px_rgba(0,0,0,0.12)]">
             {/* «search field S»: 52×r12 на surf1 модалки, брендовая обводка в фокусе */}
             <div className="mb-4 flex h-13 items-center gap-3 rounded-xl border border-transparent bg-surface-modal-surf1 px-4 transition-colors focus-within:border-stroke-brand">
-              <Icon name="search" size={24} className="shrink-0 text-text-disabled" />
+              <Icon name="search" size={24} className="shrink-0 text-text-default" />
               <input
                 ref={searchRef}
                 type="text"

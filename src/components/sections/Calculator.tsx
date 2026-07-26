@@ -235,12 +235,14 @@ export function Calculator() {
             aria-expanded={graphOpen}
             aria-controls={graphOpen ? graphId : undefined}
             onClick={() => setGraphOpen((v) => !v)}
-            className="inline-flex h-10 w-fit cursor-pointer items-center gap-2 rounded-2xl border border-stroke-surface2 px-3 text-sm text-text-default transition-colors hover:bg-comp-surface1-hover sm:h-11 sm:px-4"
+            className="inline-flex h-10 w-fit cursor-pointer items-center gap-2 rounded-2xl border border-stroke-surface2 px-3 text-sm text-text-default transition-colors hover:bg-comp-surface1-hover sm:h-[46px] sm:border-divider-additional sm:px-4"
           >
             <Icon name={graphOpen ? 'visibility' : 'visibility_off'} size={20} />
             {t('dynamics')}
+            {/* в макете это заливной треугольник (Figma-слой «arrow_down», 8×4.5 в рамке 12×12) —
+                arrow_drop_down в Material Symbols, как в Select.tsx */}
             <motion.span animate={{ rotate: graphOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-              <Icon name="keyboard_arrow_down" size={20} />
+              <Icon name="arrow_drop_down" size={12} />
             </motion.span>
           </button>
         </div>
@@ -313,11 +315,15 @@ export function Calculator() {
           )}
           {activeRate !== null && (
             <>
-              <span className="rounded-full bg-brand-hardsoft px-3 py-1.5 text-sm font-medium text-text-brand">
-                {tRates('perUnit', {
-                  rate: formatNumber(activeRate, locale, 2),
-                  code: currencySymbol(foreign),
-                })}
+              {/* «Курс на бирже» + badge — из макета: fill surf1-alt, текст брендовым цветом */}
+              <span className="flex items-center gap-2 text-xs text-text-disabled sm:gap-3 sm:text-sm">
+                {t('exchangeRate')}
+                <span className="rounded-xl bg-surface-page-surf1-alt px-3 py-1 font-medium text-text-brand">
+                  {tRates('perUnit', {
+                    rate: formatNumber(activeRate, locale, 2),
+                    code: currencySymbol(foreign),
+                  })}
+                </span>
               </span>
               {marketRate !== null && (
                 <span className="text-xs text-text-disabled sm:text-sm">
@@ -339,15 +345,19 @@ export function Calculator() {
   );
 }
 
-/** Флаг валюты 40×32 — «Currency» из макета (в строке списка стоит слева). */
-function renderCurrencyFlag(opt: SelectOption) {
+/** Флаг валюты — «Currency» из макета: 50×40 в строке списка, 40×32 в закрытой пилюле. */
+function renderCurrencyFlag(opt: SelectOption, variant: 'list' | 'pill' = 'list') {
   const flag = opt.value.startsWith('GOLD') ? 'gold' : currencyFlagClass(opt.value);
+  const dims = variant === 'list' ? 'h-10 w-[50px]' : 'h-8 w-10';
   return flag ? (
-    <CurrencyFlag flag={flag} className="h-8 w-10 shrink-0" />
+    <CurrencyFlag flag={flag} className={clsx(dims, 'shrink-0')} />
   ) : (
     <span
       aria-hidden
-      className="flex h-8 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-modal-surf1 text-[10px] font-bold text-text-disabled"
+      className={clsx(
+        dims,
+        'flex shrink-0 items-center justify-center rounded-lg bg-surface-modal-surf1 text-[10px] font-bold text-text-disabled',
+      )}
     >
       {opt.value.slice(0, 3)}
     </span>
@@ -358,7 +368,7 @@ function renderCurrencyFlag(opt: SelectOption) {
 function renderCurrencyOption(opt: SelectOption) {
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
-      {renderCurrencyFlag(opt)}
+      {renderCurrencyFlag(opt, 'pill')}
       <span className="truncate font-medium">{opt.value}</span>
     </span>
   );

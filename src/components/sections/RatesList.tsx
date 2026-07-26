@@ -155,7 +155,7 @@ export function RatesList() {
                 aria-expanded={showAll}
                 aria-controls={listId}
                 onClick={() => setShowAll((v) => !v)}
-                className="mx-auto mt-3 flex h-[46px] cursor-pointer items-center gap-2 rounded-[20px] border border-stroke-surface1 bg-surface-page-surf1 pl-6 pr-4 text-sm font-medium text-text-brand transition-colors hover:bg-comp-surface1-hover sm:mt-4"
+                className="mx-auto mt-3 flex h-[46px] cursor-pointer items-center gap-2 rounded-[20px] border border-surface-page-surf1 bg-surface-page-surf1 pl-6 pr-4 text-sm font-medium text-text-brand transition-colors hover:bg-comp-surface1-hover sm:mt-4"
               >
                 {showAll ? t('hideAll') : t('showAll')}
                 <motion.span
@@ -163,7 +163,7 @@ export function RatesList() {
                   transition={{ duration: 0.2 }}
                   className="flex"
                 >
-                  <Icon name="keyboard_arrow_down" size={20} />
+                  <Icon name="arrow_drop_down" size={20} />
                 </motion.span>
               </button>
             )}
@@ -207,9 +207,10 @@ function RateRow({
   return (
     <div
       className={clsx(
-        // «Component 14»: r20 на surf2, паддинги 24/24/12/24
-        'rounded-[20px] border bg-surface-page-surf2 px-4 pb-3 pt-4 transition-colors sm:px-6 sm:pt-6',
-        open ? 'border-stroke-surface2' : 'border-transparent',
+        // «Component 14»/«Component 21»: r20 на surf2, БЕЗ обводки в макете;
+        // паддинги 24/24/12/24 закрыт, 24 со всех сторон открыт
+        'rounded-[20px] bg-surface-page-surf2 px-4 pb-3 pt-4 transition-colors sm:px-6 sm:pt-6',
+        open && 'sm:pb-6',
       )}
     >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-3 sm:flex-nowrap sm:gap-4">
@@ -225,17 +226,17 @@ function RateRow({
             )}
           >
             <motion.span whileTap={{ scale: 0.8 }} className="flex">
-              <Icon name="bookmark" size={22} filled={favorite} />
+              <Icon name="bookmark" size={24} filled={favorite} />
             </motion.span>
           </button>
         )}
 
         {flag ? (
-          <CurrencyFlag flag={flag} className="h-7 w-10 shrink-0 sm:h-8 sm:w-11" />
+          <CurrencyFlag flag={flag} className="h-7 w-10 shrink-0 sm:h-10 sm:w-[50px]" />
         ) : (
           <span
             aria-hidden
-            className="flex h-7 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-modal-surf1 text-[10px] font-bold text-text-disabled sm:h-8 sm:w-11"
+            className="flex h-7 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-modal-surf1 text-[10px] font-bold text-text-disabled sm:h-10 sm:w-[50px]"
           >
             {code.slice(0, 3)}
           </span>
@@ -273,13 +274,13 @@ function RateRow({
             href="/locations"
             aria-label={t('showOnMap')}
             title={t('showOnMap')}
-            className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-stroke-surface2 text-text-default transition-colors hover:bg-comp-surface1-hover sm:h-12 sm:w-12"
+            className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-divider-additional text-text-default transition-colors hover:bg-comp-surface1-hover sm:h-[46px] sm:w-[46px]"
           >
-            <Icon name="map" size={22} />
+            <Icon name="map" size={28} />
           </Link>
           <Button
             size="md"
-            className="h-11 flex-1 sm:h-12 sm:min-w-40"
+            className="h-11 flex-1 sm:h-[46px] sm:min-w-40"
             onClick={() => router.push('/booking')}
           >
             {t('book')}
@@ -287,9 +288,9 @@ function RateRow({
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         {marketRate !== null ? (
-          <div className="flex items-center gap-2 text-xs text-text-disabled sm:gap-3 sm:text-sm">
+          <div className="flex items-center gap-2 text-xs text-text-disabled sm:gap-3 sm:pl-12 sm:text-sm">
             {t('exchangeRate')}
             <span className="rounded-xl bg-surface-modal-surf1 px-3 py-1 font-medium text-text-default">
               {tRates('perUnit', {
@@ -306,7 +307,7 @@ function RateRow({
           aria-expanded={open}
           aria-controls={open ? panelId : undefined}
           onClick={() => setOpen((v) => !v)}
-          className="ml-auto flex cursor-pointer items-center gap-1 text-xs text-text-disabled transition-colors hover:text-text-default sm:text-sm"
+          className="ml-auto flex cursor-pointer items-center gap-1 text-xs text-text-disabled transition-colors hover:text-text-default"
         >
           {open ? t('collapse') : t('compare')}
           <motion.span
@@ -314,7 +315,7 @@ function RateRow({
             transition={{ duration: 0.2 }}
             className="flex"
           >
-            <Icon name="keyboard_arrow_down" size={18} />
+            <Icon name="arrow_drop_down" size={12} />
           </motion.span>
         </button>
       </div>
@@ -322,16 +323,17 @@ function RateRow({
       {open && (
         <div id={panelId} className="anim-panel-in overflow-hidden">
           {/* «Rectangle 555» — разделитель цветом divider-hole, затем строки конкурентов */}
-          <div className="mt-4 border-t border-divider-hole pt-4 sm:mt-8">
+          <div className="mt-4 border-t border-divider-hole pt-4 sm:mt-8 sm:pt-8">
             <div className="flex flex-col gap-4 sm:gap-6">
               {competitors.map((comp) => (
                 <div key={comp.id} className="flex items-center gap-3 sm:gap-4">
+                  {/* «logo»: 50×42 r14 на modal-surf1, обводка цветом конкурента, глиф вместо точки */}
                   <span
                     aria-hidden
-                    className="inline-flex h-9 w-11 shrink-0 items-center justify-center rounded-xl border bg-surface-modal-surf1 sm:h-10 sm:w-12"
+                    className="inline-flex h-9 w-11 shrink-0 items-center justify-center rounded-xl border bg-surface-modal-surf1 sm:h-[42px] sm:w-[50px] sm:rounded-[14px]"
                     style={{ borderColor: comp.color }}
                   >
-                    <span className="h-3 w-3 rounded-full" style={{ background: comp.color }} />
+                    <Icon name="location_on" size={24} className="text-text-default" />
                   </span>
                   <span className="min-w-0 truncate text-sm text-text-disabled sm:text-base">
                     {t(`competitors.${comp.nameKey}`)}
