@@ -54,8 +54,15 @@ function load() {
     throw new Error(`Некорректное серверное окружение:\n${lines}\n\nСм. .env.example`);
   }
   if (r.data.NODE_ENV === 'production') {
-    if (r.data.ECASH_OTP_MOCK) {
-      throw new Error('ECASH_OTP_MOCK=1 запрещён в продакшене');
+    // Двойной явный флаг — временная витрина/выставка, не обычный прод.
+    // Один ECASH_OTP_MOCK=1 в проде по-прежнему падает: демо-режим не должен
+    // включиться случайно на настоящем запуске.
+    const allowDemo = process.env.ALLOW_DEMO_IN_PRODUCTION === '1';
+    if (r.data.ECASH_OTP_MOCK && !allowDemo) {
+      throw new Error(
+        'ECASH_OTP_MOCK=1 запрещён в продакшене (для временного стенда ' +
+          'дополнительно задайте ALLOW_DEMO_IN_PRODUCTION=1)',
+      );
     }
     if (!r.data.APP_ORIGIN.startsWith('https:')) {
       throw new Error('APP_ORIGIN в продакшене должен быть https');
