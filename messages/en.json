@@ -82,7 +82,8 @@
         "blue": "Blue exchange",
         "green": "Green exchange",
         "red": "Red exchange"
-      }
+      },
+      "allBranches": "All branches"
     }
   },
   "footer": {

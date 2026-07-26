@@ -8,7 +8,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { CurrencyFlag } from '@/components/ui/CurrencyFlag';
-import { useRouter } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { currencyFlagClass, currencyName, currencySymbol, formatNumber } from '@/lib/format';
@@ -89,7 +89,19 @@ export function RatesList() {
   return (
     <section className="container-page pt-6 sm:pt-8">
       <div className="rounded-2xl border border-stroke-surface1 bg-surface-page-surf1 p-5 sm:rounded-[28px] sm:p-8">
-        <h2 className="text-xl font-medium text-text-default sm:text-[32px]">{t('title')}</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xl font-medium text-text-default sm:text-[32px]">{t('title')}</h2>
+          {/* Единственная точка входа на /locations с главной — в макете
+              этого перехода нет ни на одном фрейме, но без него страница
+              со списком/картой отделений недостижима из приложения вообще. */}
+          <Link
+            href="/locations"
+            className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-text-brand transition-colors hover:bg-comp-surface1-hover sm:h-10 sm:px-4"
+          >
+            <Icon name="location_on" size={18} />
+            {t('allBranches')}
+          </Link>
+        </div>
 
         {isPending && (
           <div className="mt-5 flex flex-col gap-1 sm:mt-10" role="status">
