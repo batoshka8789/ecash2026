@@ -21,6 +21,15 @@
  * Обычный border-image ломает backdrop-blur, поэтому рисуем рамку
  * псевдоэлементом с маской — как во фреймах «cards new» макета.
  */
+/* Свайп-ряд карточек действий: скролл живой, полоса прокрутки не нужна визуально. */
+@utility scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @utility grad-border {
   position: relative;
 }

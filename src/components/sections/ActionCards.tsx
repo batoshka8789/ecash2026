@@ -15,10 +15,13 @@ const actions = [
 ] as const;
 
 /**
- * Пять карточек-действий под шапкой (224×141 в макете).
- * Это основная навигация приложения — БЕЗ анимации появления:
- * контент обязан быть видимым мгновенно (фоновые вкладки замораживают
- * таймлайны анимаций, и навигация «зависала» невидимой).
+ * Пять карточек-действий под шапкой — в макете это горизонтальный ряд
+ * фиксированных 224×142 карточек, а не резиновая сетка: на узких экранах
+ * и когда окну не хватает ширины на все пять (1200px), ряд не сжимается
+ * и не переносится, а прокручивается свайпом/колесом со scroll-snap на
+ * каждую карточку. Это основная навигация приложения — БЕЗ анимации
+ * появления: контент обязан быть видимым мгновенно (фоновые вкладки
+ * замораживают таймлайны анимаций, и навигация «зависала» невидимой).
  *
  * «Открыть франшизу» — это ярлык быстрого действия, как и остальные
  * четыре карточки, а не переход на маркетинговую страницу: открывает
@@ -30,32 +33,30 @@ export function ActionCards() {
 
   return (
     <>
-      <div className="container-page grid grid-cols-2 gap-3 pt-6 sm:grid-cols-3 sm:gap-4 sm:pt-7 lg:grid-cols-5 lg:gap-5">
-        {actions.map(({ key, icon, href }) => {
-          const content = (
-            <>
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface-page-surf3 text-text-default transition-transform duration-200 group-hover:scale-110 sm:h-10 sm:w-10">
-                <Icon name={icon} size={20} filled className="sm:text-[22px]" />
-              </span>
-              <span className="text-xs leading-tight text-text-default sm:text-sm">{t(key)}</span>
-            </>
-          );
-          const cardCls =
-            'group flex h-28 w-full cursor-pointer flex-col items-center justify-center gap-2.5 rounded-[20px] border border-stroke-surface2 bg-surface-page-surf2 px-4 text-center shadow-[0_8px_16px_rgb(0_0_0/0.25)] transition-[background,transform] duration-200 hover:-translate-y-0.5 hover:bg-comp-surface2-hover sm:h-[142px] sm:gap-4 sm:px-8 sm:py-5';
-          return (
-            <div key={key}>
-              {href ? (
-                <Link href={href} className={cardCls}>
-                  {content}
-                </Link>
-              ) : (
-                <button type="button" onClick={() => setFranchiseOpen(true)} className={cardCls}>
-                  {content}
-                </button>
-              )}
-            </div>
-          );
-        })}
+      <div className="container-page">
+        <div className="scrollbar-hide flex snap-x snap-mandatory gap-5 overflow-x-auto pt-6 sm:pt-7">
+          {actions.map(({ key, icon, href }) => {
+            const content = (
+              <>
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-page-surf3 text-text-default transition-transform duration-200 group-hover:scale-110">
+                  <Icon name={icon} size={22} filled />
+                </span>
+                <span className="text-sm leading-tight text-text-default">{t(key)}</span>
+              </>
+            );
+            const cardCls =
+              'group flex h-[142px] w-56 shrink-0 snap-start cursor-pointer flex-col items-center justify-center gap-4 rounded-[20px] border border-stroke-surface2 bg-surface-page-surf2 px-8 py-5 text-center shadow-[0_16px_32px_-8px_rgba(12,12,13,0.4)] transition-[background,transform] duration-200 hover:-translate-y-0.5 hover:bg-comp-surface2-hover';
+            return href ? (
+              <Link key={key} href={href} className={cardCls}>
+                {content}
+              </Link>
+            ) : (
+              <button key={key} type="button" onClick={() => setFranchiseOpen(true)} className={cardCls}>
+                {content}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <FranchiseModal open={franchiseOpen} onClose={() => setFranchiseOpen(false)} />
