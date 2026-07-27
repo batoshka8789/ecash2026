@@ -281,8 +281,7 @@ export function Calculator() {
               transition={{ type: 'spring', stiffness: 400, damping: 25 }}
               className="flex"
             >
-              <Icon name="swap_vert" size={22} className="lg:hidden" />
-              <Icon name="sync_alt" size={20} className="hidden lg:inline" />
+              <Icon name="sync_alt" size={20} />
             </motion.span>
           </button>
           <AmountField
