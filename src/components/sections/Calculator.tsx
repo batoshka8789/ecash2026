@@ -228,7 +228,7 @@ export function Calculator() {
       searchPlaceholder={tRoot('flows.pair.searchCurrency')}
       noResultsText={tRoot('common.nothingFound')}
       buttonClassName={code === 'KZT' ? '!border-surface-page-surf1-alt' : '!border-stroke-brand'}
-      className="m-1 w-32 shrink-0 self-center sm:m-2 sm:w-40 [&>div]:left-auto [&>div]:right-0 [&>div]:w-[290px] [&>span]:sr-only"
+      className="m-1 w-32 shrink-0 self-center sm:m-2 sm:w-40 sm:[&>div]:left-auto sm:[&>div]:right-0 sm:[&>div]:w-[290px] [&>span]:sr-only"
     />
   );
 

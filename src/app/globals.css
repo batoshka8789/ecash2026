@@ -440,6 +440,31 @@ body {
 }
 
 /* ------------------------------------------------------------------ */
+/* Нижний шит Select на мобильных — тот же принцип, чистый CSS: сама   */
+/* анимация въезда снизу конечна и не зависит от rAF/фонового таба.    */
+/* Подложку переиспользует anim-modal-scrim (тот же fade). Драг пальцем */
+/* двигает transform инлайн-стилем поверх уже завершённой анимации.    */
+
+@keyframes sheet-slide-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.anim-sheet-slide {
+  animation: sheet-slide-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-sheet-slide {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* График «Динамика курса» — тот же принцип: framer-motion (pathLength  */
 /* у линии, scale/opacity у точек, height/opacity у самой панели) висел */
 /* на rAF и застревал навсегда, если вкладка уходила в фон в момент      */
