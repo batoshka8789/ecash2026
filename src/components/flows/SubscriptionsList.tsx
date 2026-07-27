@@ -56,35 +56,40 @@ export function SubscriptionsList() {
   );
 
   return (
-    <div className="container-page pb-6 pt-5">
+    <div className="container-page pb-6 pt-1">
       <section
         aria-live="polite"
-        className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8"
+        className="rounded-[22px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:rounded-[28px] md:p-8"
       >
-        <h2 className="text-lg font-bold text-text-default sm:text-2xl">{t('myAlerts')}</h2>
+        <h2 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+          {t('myAlerts')}
+        </h2>
 
         {q.isPending ? (
-          <div className="mt-4 h-16 animate-pulse rounded-2xl bg-surface-page-surf2" aria-busy />
+          <div
+            className="mt-6 h-16 animate-pulse rounded-[20px] bg-surface-page-surf2 md:mt-10"
+            aria-busy
+          />
         ) : listError ? (
-          <p role="alert" className="mt-4 text-sm text-text-negative">
+          <p role="alert" className="mt-6 text-sm text-text-negative md:mt-10">
             {listError}
           </p>
         ) : alerts.length === 0 ? (
-          <p className="mt-4 text-sm text-text-disabled">{t('noAlerts')}</p>
+          <p className="mt-6 text-sm text-text-disabled md:mt-10">{t('noAlerts')}</p>
         ) : (
-          <ul className="mt-4 flex flex-col gap-3">
+          <ul className="mt-6 flex flex-col gap-2 md:mt-10">
             {alerts.map((a) => {
               const armed = confirmId === a.id;
               return (
                 <li
                   key={a.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-surface-page-surf2 px-4 py-3"
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] bg-surface-page-surf2 px-4 py-3"
                 >
                   <div className="min-w-0">
-                    <div className="text-base font-medium text-text-default">
+                    <div className="text-base font-semibold leading-5 text-text-default">
                       {formatNumber(a.targetRate, locale)} ₸ = 1 {currencySymbol(a.currencyTo)}
                     </div>
-                    <div className="mt-0.5 text-sm text-text-disabled">
+                    <div className="mt-1.5 text-xs font-medium leading-4 text-text-disabled">
                       {t('untilDate', { date: dateFmt.format(new Date(a.until)) })}
                     </div>
                   </div>

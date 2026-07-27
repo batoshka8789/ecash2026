@@ -27,16 +27,20 @@ const FOCUSABLE =
  * карточка 1404:111750); адаптивы 768 `1395:104269`, 480 `1395:106025`,
  * 360 `1395:104750`.
  *
- * Спека ≥1024: подложка #000000 60 %, карточка 952×818, p40, gap36, r20,
- * fill #262626, border 1px #333333; заголовок 32/500 lh38.4 по центру,
- * подпись 16/400; строка «поле 741×54 + кнопка 121×54» (поле — `dropdown
- * location poned`, то есть с РАСКРЫТЫМ списком подсказок 741×580 @0,58:
- * fill #333333, border 1px #404040, r20, строки 49 r12); карта 869×548 r20;
- * крестик 44×44 r40 вне карточки справа сверху (+16 по x, +14.5 по y).
+ * Спека 1920: подложка #000000 60 %, карточка 952×818, p40, gap36, r20,
+ * fill #262626, border 1px #333333; заголовок 32/500 lh38.4, подпись 16/400
+ * (обе строки по левому краю); строка «поле 741×54 + кнопка 121×54» (поле —
+ * `dropdown location poned`, то есть с РАСКРЫТЫМ списком подсказок 741×580
+ * @0,58: fill #333333, border 1px #404040, r20, строки 49 r12); карта 869×548
+ * r20; крестик 44×44 r40 вне карточки справа сверху (+16 по x, +14.5 по y).
+ *
+ * Спека 1024 (1355:102553) и 768 (1395:104269): карточка во весь экран без
+ * радиуса, p40, gap36, крестик в правом верхнем углу листа, карта 498.
  *
  * Спека ≤480: карточка во весь экран без радиуса, p 44/16/16/16, main:between —
  * «заголовок + поле» сверху (внутренний gap 20), карта тянется, «Сохранить»
  * на всю ширину прижата к низу, крестик внутри правого верхнего угла.
+ * Заголовок 24/500, подпись 14/400.
  * На карте — пилюля «Развернуть на весь экран» (242×38, r20, 14/500).
  */
 export function AddressModal({
@@ -175,7 +179,7 @@ export function AddressModal({
       if (e.key !== 'Tab') return;
       const root = containerRef.current;
       if (!root) return;
-      // Скрытые кнопки (пилюля карты на ≥640, контролы под раскрытой картой)
+      // Скрытые кнопки (пилюля карты на ≥768, контролы под раскрытой картой)
       // тоже попадают в querySelectorAll, но фокус на display:none не встаёт —
       // берём только отрисованные, иначе Tab упирается в невидимый элемент.
       const focusables = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
@@ -255,7 +259,7 @@ export function AddressModal({
           стандартный паттерн «клик по подложке закрывает модалку»; клавиатурный
           выход — Esc (обработан ниже), мышиный — сюда, обе не мешают друг другу */}
       <div
-        className="anim-modal-scrim fixed inset-0 z-50 flex justify-center overflow-y-auto bg-scrim sm:p-4 sm:py-10"
+        className="anim-modal-scrim fixed inset-0 z-50 flex justify-center overflow-y-auto bg-scrim xl:p-4 xl:py-10"
         onMouseDown={(e) => e.target === e.currentTarget && onClose()}
         role="dialog"
         aria-modal="true"
@@ -263,46 +267,46 @@ export function AddressModal({
       >
         <div
           ref={containerRef}
-          // sm:items-center на подложке нельзя: карточка выше вьюпорта (832
+          // xl:items-center на подложке нельзя: карточка выше вьюпорта (832
           // против 720 на ноутбуках 1366×768) обрезалась бы сверху и
           // доскроллить до заголовка было бы нельзя. Авто-маржины на самой
           // карточке центрируют, когда она влезает, и честно скроллятся,
           // когда нет.
-          className="anim-modal-card relative flex w-full sm:my-auto sm:max-w-[952px]"
+          className="anim-modal-card relative flex w-full xl:my-auto xl:max-w-[952px]"
         >
-            {/* ≤1024 крестик внутри правого верхнего угла листа, ≥1024 — снаружи */}
+            {/* ≤1024 крестик внутри правого верхнего угла листа, 1920 — снаружи */}
             <button
               type="button"
               onClick={onClose}
               aria-label={t('close')}
-              className="absolute right-0 top-0 z-30 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-surface-page-surf1 text-text-default transition-colors hover:bg-comp-surface2-hover sm:right-2 sm:top-2 lg:-right-[60px] lg:top-3.5"
+              className="absolute right-0 top-0 z-30 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-surface-page-surf1 text-text-default transition-colors hover:bg-comp-surface2-hover xl:-right-[60px] xl:top-3.5"
             >
               <Icon name="close" size={20} />
             </button>
 
-            <div className="flex min-h-[100dvh] w-full flex-col gap-5 border-stroke-surface1 bg-surface-page-surf1 p-4 pt-11 sm:min-h-0 sm:gap-9 sm:rounded-[20px] sm:border sm:p-10">
-              <div
-                className={clsx('flex flex-col gap-1 text-center', expanded && 'hidden sm:flex')}
-              >
+            <div className="flex min-h-[100dvh] w-full flex-col gap-5 border-stroke-surface1 bg-surface-page-surf1 p-4 pt-11 md:justify-center md:gap-9 md:p-10 xl:min-h-0 xl:rounded-[20px] xl:border">
+              <div className={clsx('flex flex-col gap-1', expanded && 'hidden md:flex')}>
                 <h2
                   id={titleId}
-                  className="text-xl font-medium leading-tight text-text-default sm:text-[32px]"
+                  className="text-2xl font-medium leading-[1.2] text-text-default md:text-[32px]"
                 >
                   {t('title')}
                 </h2>
-                <p className="text-sm text-text-default sm:text-base">{t('subtitle')}</p>
+                <p className="text-sm leading-[1.1] text-text-default md:text-base md:leading-[1.24]">
+                  {t('subtitle')}
+                </p>
               </div>
 
-              {/* ≤640 поле и «Сохранить» — прямые дети листа (contents), поэтому
+              {/* ≤768 поле и «Сохранить» — прямые дети листа (contents), поэтому
                   кнопка уезжает к нижнему краю (main:between макета) */}
-              <div className="contents sm:flex sm:items-start sm:gap-2">
+              <div className="contents md:flex md:items-start md:gap-2">
                 <div
                   className={clsx(
-                    'relative order-2 sm:order-none sm:flex-1',
-                    expanded && 'hidden sm:block',
+                    'relative order-2 md:order-none md:flex-1',
+                    expanded && 'hidden md:block',
                   )}
                 >
-                  <div className="flex h-[54px] items-center gap-2 rounded-[20px] border border-stroke-surface3 px-4 transition-colors focus-within:border-stroke-brand">
+                  <div className="flex h-[54px] items-center gap-2 rounded-[20px] border border-surface-page-surf3 px-4 transition-colors focus-within:border-stroke-brand">
                     <label htmlFor={inputId} className="sr-only">
                       {t('placeholder')}
                     </label>
@@ -341,7 +345,7 @@ export function AddressModal({
                       aria-activedescendant={
                         nav.activeIndex >= 0 ? `${listId}-opt-${nav.activeIndex}` : undefined
                       }
-                      className="w-full bg-transparent text-base font-medium text-text-default outline-none placeholder:text-text-disabled"
+                      className="w-full bg-transparent text-base font-semibold leading-5 text-text-default outline-none placeholder:text-text-disabled"
                     />
                     {address && (
                       <button
@@ -387,8 +391,8 @@ export function AddressModal({
                   onClick={submit}
                   disabled={save.isPending}
                   className={clsx(
-                    'order-4 mt-auto inline-flex h-[54px] w-full shrink-0 cursor-pointer items-center justify-center rounded-[20px] bg-btn-brand px-6 text-sm font-medium text-text-always-white transition-[filter] hover:brightness-110 disabled:opacity-60 sm:order-none sm:mt-0 sm:w-[121px]',
-                    expanded && 'hidden sm:inline-flex',
+                    'order-4 mt-auto inline-flex h-[54px] w-full shrink-0 cursor-pointer items-center justify-center rounded-[20px] bg-btn-brand px-6 text-sm font-medium text-text-always-white transition-[filter] hover:brightness-110 disabled:opacity-60 md:order-none md:mt-0 md:w-[121px]',
+                    expanded && 'hidden md:inline-flex',
                   )}
                 >
                   {t('save')}
@@ -400,10 +404,10 @@ export function AddressModal({
               <div
                 className={clsx(
                   'overflow-hidden bg-surface-page-surf2',
-                  // высоты по адаптивам макета: 768 → 498, ≥1024 → 548
+                  // высоты по адаптивам макета: 768 и 1024 → 498, 1920 → 548
                   expanded
-                    ? 'absolute inset-0 z-20 sm:relative sm:inset-auto sm:z-auto sm:h-[420px] sm:rounded-[20px] md:h-[498px] lg:h-[548px]'
-                    : 'relative order-3 min-h-[220px] flex-1 rounded-[20px] sm:h-[420px] sm:min-h-0 sm:flex-none md:h-[498px] lg:h-[548px]',
+                    ? 'absolute inset-0 z-20 md:relative md:inset-auto md:z-auto md:h-[498px] md:rounded-[20px] xl:h-[548px]'
+                    : 'relative order-3 min-h-[220px] flex-1 rounded-[20px] md:h-[498px] md:min-h-0 md:flex-none xl:h-[548px]',
                 )}
               >
                 <BranchMap
@@ -438,7 +442,7 @@ export function AddressModal({
                     size={18}
                     className={clsx(geo.status === 'pending' && 'animate-spin')}
                   />
-                  <span className="hidden sm:inline">{t('locate')}</span>
+                  <span className="hidden md:inline">{t('locate')}</span>
                 </button>
 
                 {/* пилюля из адаптива ≤480: карта на весь лист и обратно */}
@@ -447,7 +451,7 @@ export function AddressModal({
                   onClick={() => setExpanded((v) => !v)}
                   // bottom-8, а не 16 по макету: ниже проходит полоса атрибуции
                   // OpenStreetMap, которой в макете нет
-                  className="absolute bottom-8 left-1/2 z-10 inline-flex h-[38px] -translate-x-1/2 cursor-pointer items-center gap-2 whitespace-nowrap rounded-[20px] bg-surface-inverted pl-4 pr-6 text-sm font-medium text-text-inverted shadow-[0_2px_8px_rgb(0_0_0/0.25)] transition-opacity hover:opacity-90 sm:hidden"
+                  className="absolute bottom-8 left-1/2 z-10 inline-flex h-[38px] -translate-x-1/2 cursor-pointer items-center gap-2 whitespace-nowrap rounded-[20px] bg-surface-inverted pl-4 pr-6 text-sm font-medium text-text-inverted shadow-[0_2px_8px_rgb(0_0_0/0.25)] transition-opacity hover:opacity-90 md:hidden"
                 >
                   <Icon name={expanded ? 'close_fullscreen' : 'open_in_full'} size={20} />
                   {expanded ? t('mapCollapse') : t('mapExpand')}

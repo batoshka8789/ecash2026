@@ -27,19 +27,22 @@ export function PageShell({
     <div className="flex min-h-screen flex-col">
       <Header />
       <main id="main" className="flex-1 pb-4">
-        <nav aria-label="Breadcrumb" className="container-page pt-6 text-sm">
-          <ol className="flex items-center gap-2">
+        <nav aria-label="Breadcrumb" className="container-page pt-6 text-base font-medium">
+          <ol className="flex items-center gap-3">
             <li>
               <Link
                 href="/"
-                className="text-text-disabled transition-colors hover:text-text-default"
+                className="block py-3 leading-5 text-text-disabled transition-colors hover:text-text-default"
               >
                 {t('home')}
               </Link>
             </li>
-            <li className="flex items-center gap-2">
+            <li className="flex items-center gap-3">
               <Icon name="chevron_right" size={16} className="text-text-disabled" />
-              <span aria-current="page" className="border-b-2 border-brand pb-0.5 text-text-default">
+              <span
+                aria-current="page"
+                className="block border-b-2 border-brand py-3 leading-5 text-text-default"
+              >
                 {label}
               </span>
             </li>

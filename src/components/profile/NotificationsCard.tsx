@@ -30,7 +30,7 @@ export function NotificationsCard() {
   const errorStatus = query.error instanceof ApiError ? query.error.status : undefined;
 
   return (
-    <div className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
+    <div className="rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 px-4 py-8 md:px-8">
       <PillTabs
         value={tab}
         onChange={setTab}
@@ -41,10 +41,10 @@ export function NotificationsCard() {
       />
 
       {query.isPending && (
-        <div aria-hidden className="mt-2 flex flex-col gap-5 py-6">
+        <div aria-hidden className="mt-10 flex flex-col gap-7">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="flex animate-pulse gap-4">
-              <span className="h-10 w-10 shrink-0 rounded-xl bg-surface-page-surf2" />
+            <div key={i} className="flex animate-pulse gap-3">
+              <span className="h-[50px] w-[50px] shrink-0 rounded-2xl bg-surface-page-surf2" />
               <div className="flex flex-1 flex-col gap-2">
                 <span className="h-4 w-2/5 rounded-full bg-surface-page-surf2" />
                 <span className="h-4 w-3/5 rounded-full bg-surface-page-surf2" />
@@ -80,7 +80,7 @@ export function NotificationsCard() {
       {data && data.notifications.length > 0 && (
         <div
           className={clsx(
-            'mt-2 divide-y divide-divider-additional transition-opacity',
+            '-mx-4 mt-10 divide-y divide-divider-additional transition-opacity md:-mx-8',
             query.isFetching && 'opacity-60',
           )}
         >
@@ -94,9 +94,9 @@ export function NotificationsCard() {
 }
 
 const badgeStyles: Record<string, string> = {
-  booking30: 'bg-alert text-text-inverted',
-  rateAlert: 'bg-alert text-text-inverted',
-  individual: 'bg-alert text-text-inverted',
+  booking30: 'bg-alert-hardsoft text-text-additional',
+  rateAlert: 'bg-alert-hardsoft text-text-additional',
+  individual: 'bg-alert-hardsoft text-text-additional',
 };
 
 /** Бейджи с известным переводом; чужой бейдж показываем как есть. */
@@ -104,10 +104,10 @@ const knownBadges = new Set(['booking30', 'rateAlert', 'individual']);
 
 const actionCls = (variant: 'solid' | 'outline') =>
   clsx(
-    'cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-colors disabled:cursor-default disabled:opacity-60',
+    'inline-flex h-[38px] cursor-pointer items-center justify-center rounded-[20px] border px-4 text-sm font-medium leading-5 transition-colors disabled:cursor-default disabled:opacity-60',
     variant === 'solid'
-      ? 'bg-btn-brand text-text-always-white hover:brightness-110'
-      : 'border border-stroke-brand text-text-brand hover:bg-brand-hardsoft',
+      ? 'border-btn-brand bg-btn-brand text-text-always-white hover:brightness-110'
+      : 'border-stroke-brand text-text-brand hover:bg-brand-hardsoft',
   );
 
 function NotificationRow({ n }: { n: NotificationDto }) {
@@ -147,43 +147,49 @@ function NotificationRow({ n }: { n: NotificationDto }) {
   const canDisable = n.alertId !== null && n.actions.includes('disable');
 
   return (
-    <div className="py-5 first:pt-6">
-      <div className="flex gap-4">
-        <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-surface-modal-surf1">
-          <CurrencyFlag flag="kz" className="absolute left-0 top-0 h-5 w-7 rounded-none" />
-          <CurrencyFlag flag="us" className="absolute bottom-0 right-0 h-5 w-7 rounded-none" />
+    <div className="px-4 py-4 md:px-8 md:py-7">
+      <div className="flex gap-3">
+        <span className="relative h-[50px] w-[50px] shrink-0 rounded-2xl border border-surface-page-surf3">
+          <CurrencyFlag
+            flag="kz"
+            className="absolute left-[9px] top-[9px] h-5 w-[25px] rounded-[5px]"
+          />
+          <CurrencyFlag
+            flag="us"
+            className="absolute bottom-[9px] right-[9px] h-5 w-[25px] rounded-[5px]"
+          />
         </span>
 
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1">
             {n.badges.map((b) => (
               <span
                 key={b}
                 className={clsx(
-                  'rounded-md px-2 py-0.5 text-[11px] font-medium',
+                  'rounded-xl px-2 py-0.5 text-xs font-bold leading-[18px]',
                   badgeStyles[b] ?? 'bg-surface-page-surf2 text-text-default',
                 )}
               >
                 {knownBadges.has(b) ? t(`badges.${b}`) : b}
               </span>
             ))}
-            <span className="ml-auto text-xs text-text-disabled">
+            <span className="ml-auto text-xs font-medium leading-4 text-text-default">
               {formatDateTime(n.createdAt, locale)}
             </span>
           </div>
 
-          <div className="mt-1.5 text-base font-bold text-text-default">
+          <div className="mt-1 text-lg font-bold leading-6 text-text-default">
             {t(`titles.${n.titleKey}`)}
           </div>
 
           {n.phase === 'held' && n.reservedUntil && <HoldCountdown until={n.reservedUntil} />}
           {n.phase === 'cancelled' && (
-            <span className="mt-2 inline-block rounded-lg bg-surface-page-surf2 px-2.5 py-1 text-sm text-text-disabled">
+            <span className="mt-3 inline-block rounded-xl bg-surface-modal-surf1 px-3 py-2 text-sm font-semibold text-text-disabled">
               {t('cancelled')}
             </span>
           )}
 
-          <div className="mt-3 flex flex-col gap-1.5 text-sm">
+          <div className="mt-3 flex flex-col gap-1.5 border-t border-divider-elevated pt-3 text-sm font-semibold">
             <span
               className={clsx(
                 'flex items-center gap-2',
@@ -204,7 +210,7 @@ function NotificationRow({ n }: { n: NotificationDto }) {
           </div>
 
           {(canConfirm || canCancel || canResume || canDisable) && (
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-6 flex flex-wrap gap-2">
               {requestId !== null && (
                 <>
                   {canConfirm && (
@@ -276,12 +282,12 @@ function HoldCountdown({ until }: { until: string }) {
   const ss = String(left % 60).padStart(2, '0');
 
   return (
-    <div className="mt-2 flex items-center gap-1 text-sm text-text-default">
-      <span className="rounded-lg bg-surface-page-surf2 px-2.5 py-1">
+    <div className="mt-3 flex w-fit items-center gap-1 rounded-xl bg-surface-modal-surf1 p-1 text-base leading-[1.24] text-text-default">
+      <span className="rounded-2xl px-2 py-1">
         {mm} {t('min')}
       </span>
       :
-      <span className="rounded-lg bg-surface-page-surf2 px-2.5 py-1">
+      <span className="rounded-2xl px-2 py-1">
         {ss} {t('sec')}
       </span>
     </div>

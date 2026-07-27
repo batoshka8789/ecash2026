@@ -56,12 +56,12 @@ export function ProfileCard() {
   };
 
   return (
-    <div className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
+    <div className="rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 px-4 pb-4 pt-8 md:p-8">
       <div className="flex flex-col items-center gap-6">
         {loading ? (
           // скелет повторяет размеры контента — без скачка раскладки
           <>
-            <span className="h-[84px] w-[84px] animate-pulse rounded-[25px] bg-surface-page-surf2" />
+            <span className="h-[84px] w-[84px] animate-pulse rounded-[25.2px] bg-surface-page-surf2" />
             <div className="flex flex-col items-center gap-2">
               <span className="h-[22px] w-40 animate-pulse rounded-full bg-surface-page-surf2" />
               <span className="h-[15px] w-28 animate-pulse rounded-full bg-surface-page-surf2" />
@@ -77,10 +77,10 @@ export function ProfileCard() {
                 height={84}
                 unoptimized={!avatar.startsWith('/')}
                 onError={() => setFailedSrc(avatar)}
-                className="h-[84px] w-[84px] rounded-[25px] object-cover"
+                className="h-[84px] w-[84px] rounded-[25.2px] object-cover"
               />
             ) : (
-              <span className="flex h-[84px] w-[84px] items-center justify-center rounded-[25px] bg-brand text-2xl font-bold text-text-always-white">
+              <span className="flex h-[84px] w-[84px] items-center justify-center rounded-[25.2px] bg-brand text-2xl font-bold text-text-always-white">
                 {initials || <Icon name="person" size={32} />}
               </span>
             )}
@@ -100,10 +100,10 @@ export function ProfileCard() {
                 key={tab.href}
                 href={tab.href}
                 className={clsx(
-                  'flex flex-1 flex-col items-center justify-center gap-2 rounded-3xl border bg-surface-page-surf2 px-1 py-4 text-center text-xs font-medium transition-colors sm:text-sm',
+                  'flex flex-1 flex-col items-center justify-center gap-2 rounded-3xl border bg-surface-page-surf2 px-1 py-4 text-center text-sm font-medium leading-5 transition-colors',
                   active
                     ? 'border-stroke-brand text-text-brand'
-                    : 'border-transparent text-text-default hover:bg-comp-surface2-hover',
+                    : 'border-stroke-surface1 text-text-default hover:bg-comp-surface2-hover',
                 )}
               >
                 <Icon name={tab.icon} size={24} filled={active} />
@@ -115,7 +115,7 @@ export function ProfileCard() {
             type="button"
             onClick={onLogout}
             disabled={busy}
-            className="flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-3xl border border-transparent bg-surface-page-surf2 px-1 py-4 text-center text-xs font-medium text-text-default transition-colors hover:bg-comp-surface2-hover disabled:cursor-default disabled:opacity-60 sm:text-sm"
+            className="flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-3xl border border-stroke-surface1 bg-surface-page-surf2 px-1 py-4 text-center text-sm font-medium leading-5 text-text-default transition-colors hover:bg-comp-surface2-hover disabled:cursor-default disabled:opacity-60"
           >
             <Icon name="logout" size={24} />
             {t('logout')}

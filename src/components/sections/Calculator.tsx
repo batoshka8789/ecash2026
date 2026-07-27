@@ -221,28 +221,30 @@ export function Calculator() {
       searchable
       searchPlaceholder={tRoot('flows.pair.searchCurrency')}
       noResultsText={tRoot('common.nothingFound')}
-      className="m-1 w-32 shrink-0 self-center sm:m-2 sm:w-40 [&>div]:left-auto [&>div]:right-0 [&>div]:w-[290px] [&>span]:sr-only"
+      className="w-[140px] shrink-0 self-stretch border-l border-l-surface-page-surf1 [&>button]:aria-expanded:inset-ring-1 [&>button]:aria-expanded:inset-ring-stroke-brand [&>button]:h-full [&>button]:gap-1 [&>button]:rounded-none [&>button]:border-0 [&>button]:px-4 [&>div]:left-auto [&>div]:right-0 [&>div]:w-[290px] [&>span]:sr-only"
     />
   );
 
   return (
-    <section className="container-page pt-6 sm:pt-8">
-      <div className="rounded-2xl border border-stroke-surface1 bg-surface-page-surf1 p-5 sm:rounded-[28px] sm:p-8">
+    <section className="container-page bleed-mobile pt-8 sm:pt-13">
+      <div className="rounded-[22px] border border-stroke-surface1 bg-surface-page-surf1 p-4 sm:rounded-[28px] sm:p-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <h2 className="text-xl font-medium text-text-default sm:text-[32px]">{t('title')}</h2>
+          <h2 className="text-xl font-medium leading-[1.2] text-text-default sm:text-[32px]">
+            {t('title')}
+          </h2>
           <button
             type="button"
             aria-expanded={graphOpen}
             aria-controls={graphOpen ? graphId : undefined}
             onClick={() => setGraphOpen((v) => !v)}
-            className="inline-flex h-10 w-fit cursor-pointer items-center gap-2 rounded-2xl border border-stroke-surface2 px-3 text-sm text-text-default transition-colors hover:bg-comp-surface1-hover sm:h-[46px] sm:border-divider-additional sm:px-4"
+            className="inline-flex h-[34px] w-fit cursor-pointer items-center gap-2 rounded-[20px] border border-divider-elevated px-3 text-sm text-text-default transition-colors hover:bg-comp-surface1-hover sm:h-[46px] sm:px-4"
           >
             <Icon name={graphOpen ? 'visibility' : 'visibility_off'} size={20} />
             {t('dynamics')}
-            {/* в макете это заливной треугольник (Figma-слой «arrow_down», 8×4.5 в рамке 12×12) —
+            {/* в макете это заливной треугольник (Figma-слой «arrow_down», 8×4.5 в рамке 20×20) —
                 arrow_drop_down в Material Symbols, как в Select.tsx */}
             <motion.span animate={{ rotate: graphOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-              <Icon name="arrow_drop_down" size={12} />
+              <Icon name="arrow_drop_down" size={20} />
             </motion.span>
           </button>
         </div>
@@ -253,7 +255,14 @@ export function Calculator() {
           </div>
         )}
 
-        <div className="relative mt-6 flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div
+          className={clsx(
+            'relative flex flex-col gap-3 lg:flex-row lg:items-center',
+            // в макете заголовок отбит от содержимого на 40; раскрытый график
+            // забирает этот отступ себе, и до полей остаётся 24
+            graphOpen ? 'mt-6' : 'mt-6 sm:mt-10',
+          )}
+        >
           <AmountField
             id={`${uid}-give`}
             label={`${t('give')} (${currencySymbol(giveCode)})`}
@@ -267,15 +276,15 @@ export function Calculator() {
             type="button"
             onClick={onSwap}
             aria-label={t('swap')}
-            className="mx-auto inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-default transition-colors hover:bg-comp-surface1-hover"
+            className="absolute left-1/2 top-1/2 z-10 inline-flex h-9 w-9 shrink-0 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-[20px] border border-stroke-surface2 bg-surface-page-surf2 text-text-default shadow-[0_1px_4px_rgb(12_12_13/0.05),0_1px_4px_rgb(12_12_13/0.1)] transition-colors hover:bg-comp-surface2-hover lg:static lg:mx-auto lg:h-10 lg:w-10 lg:translate-x-0 lg:translate-y-0 lg:rounded-full lg:border-0 lg:bg-transparent lg:shadow-none lg:hover:bg-comp-surface1-hover"
           >
             <motion.span
               animate={{ rotate: direction === 'foreignToKzt' ? 180 : 0 }}
               transition={{ type: 'spring', stiffness: 400, damping: 25 }}
               className="flex"
             >
-              <Icon name="swap_vert" size={22} className="lg:hidden" />
-              <Icon name="sync_alt" size={22} className="hidden lg:inline" />
+              <Icon name="swap_vert" size={20} className="lg:hidden" />
+              <Icon name="sync_alt" size={20} className="hidden lg:inline" />
             </motion.span>
           </button>
           <AmountField
@@ -289,7 +298,7 @@ export function Calculator() {
           />
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center gap-3 sm:mt-6 sm:gap-4">
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-6 sm:gap-3">
           {ratesQuery.isPending && (
             <span
               role="status"
@@ -315,10 +324,10 @@ export function Calculator() {
           )}
           {activeRate !== null && (
             <>
-              {/* «Курс на бирже» + badge — из макета: fill surf1-alt, текст брендовым цветом */}
-              <span className="flex items-center gap-2 text-xs text-text-disabled sm:gap-3 sm:text-sm">
+              {/* «Курс на бирже» + badge — из макета: подпись font/default, плашка на surf1-alt */}
+              <span className="flex items-center gap-3 text-sm text-text-default">
                 {t('exchangeRate')}
-                <span className="rounded-xl bg-surface-page-surf1-alt px-3 py-1 font-medium text-text-brand">
+                <span className="rounded-xl bg-surface-page-surf1-alt px-3 py-1 text-text-disabled">
                   {tRates('perUnit', {
                     rate: formatNumber(activeRate, locale, 2),
                     code: currencySymbol(foreign),
@@ -326,7 +335,7 @@ export function Calculator() {
                 </span>
               </span>
               {marketRate !== null && (
-                <span className="text-xs text-text-disabled sm:text-sm">
+                <span className="text-sm text-text-disabled">
                   {tRates('marketSource')}:{' '}
                   {tRates('perUnit', {
                     rate: formatNumber(marketRate, locale, 2),
@@ -336,7 +345,11 @@ export function Calculator() {
               )}
             </>
           )}
-          <Button className="w-full sm:ml-auto sm:w-auto sm:min-w-44" onClick={goBooking}>
+          {/* «!» у радиуса: size кнопки приносит rounded-full, в макете 20 */}
+          <Button
+            className="h-[46px] w-full px-6 text-sm sm:ml-auto sm:w-auto sm:min-w-[134px]"
+            onClick={goBooking}
+          >
             {t('book')}
           </Button>
         </div>
@@ -367,9 +380,9 @@ function renderCurrencyFlag(opt: SelectOption, variant: 'list' | 'pill' = 'list'
 /** Значение в закрытом селекте: флаг + код. */
 function renderCurrencyOption(opt: SelectOption) {
   return (
-    <span className="inline-flex min-w-0 items-center gap-2">
+    <span className="inline-flex min-w-0 items-center gap-4">
       {renderCurrencyFlag(opt, 'pill')}
-      <span className="truncate font-medium">{opt.value}</span>
+      <span className="truncate font-semibold">{opt.value}</span>
     </span>
   );
 }
@@ -394,17 +407,20 @@ function AmountField({
 }) {
   const filled = value !== '';
   return (
-    <div className="flex flex-1 rounded-2xl bg-surface-page-surf2 transition-colors focus-within:bg-comp-surface2-hover">
+    <div className="flex flex-1 rounded-[20px] bg-surface-page-surf2 transition-colors focus-within:bg-comp-surface2-hover">
       {/* высота поля фиксирована в обоих состояниях — подпись не сдвигает вёрстку */}
       <label
         htmlFor={id}
         className={clsx(
-          'flex h-14 min-w-0 flex-1 cursor-text flex-col justify-center px-4 sm:h-[66px] sm:px-5',
-          filled && 'gap-1',
+          'flex h-[66px] min-w-0 flex-1 cursor-text flex-col justify-center px-4',
+          filled && 'gap-1.5',
         )}
       >
         <span
-          className={clsx('truncate text-text-disabled', filled ? 'text-xs font-bold' : 'sr-only')}
+          className={clsx(
+            'truncate text-text-disabled',
+            filled ? 'text-xs font-medium leading-4' : 'sr-only',
+          )}
         >
           {label}
         </span>
@@ -417,7 +433,7 @@ function AmountField({
           placeholder={label}
           inputMode="decimal"
           autoComplete="off"
-          className="w-full min-w-0 bg-transparent text-base font-medium text-text-default outline-none placeholder:font-medium placeholder:text-text-disabled"
+          className="w-full min-w-0 bg-transparent text-base font-semibold leading-5 text-text-default outline-none placeholder:font-medium placeholder:text-text-disabled"
         />
       </label>
       {control}
@@ -496,8 +512,8 @@ function Graph({
   };
 
   return (
-    <div className="mt-5 sm:mt-6">
-      {/* «Multitab»: пилюли 26px с отступом 20 слева, как в макете */}
+    <div className="mt-6 sm:mt-10">
+      {/* «Multitab»: пилюли 25px с отступом 20 слева, как в макете */}
       <div role="group" aria-label={tRates('chart.group')} className="flex flex-wrap gap-1 pl-5">
         {periods.map((p) => (
           <button
@@ -506,7 +522,7 @@ function Graph({
             aria-pressed={p === period}
             onClick={() => setPeriod(p)}
             className={clsx(
-              'h-[26px] cursor-pointer rounded-full border px-3 text-sm leading-none transition-colors',
+              'h-[25px] cursor-pointer rounded-full border px-3 text-sm leading-none transition-colors',
               p === period
                 ? 'border-stroke-brand bg-btn-brand text-text-always-white'
                 : 'border-stroke-surface1 bg-surface-page-surf1-alt text-text-default hover:bg-comp-surface2-hover',
@@ -517,10 +533,10 @@ function Graph({
         ))}
       </div>
 
-      {/* «Graph»: r24 на surf2, паддинги 12/8/8/12 → 20 с sm */}
-      <div className="relative mt-1 rounded-3xl bg-surface-page-surf2 pb-2 pl-3 pr-2 pt-3 sm:p-5">
+      {/* «Graph»: r24 на surf2, паддинги 20 со всех сторон */}
+      <div className="relative mt-1 rounded-3xl bg-surface-page-surf2 p-5">
         {historyQuery.isPending ? (
-          <div role="status" className="h-[183px] sm:h-[255px]">
+          <div role="status" className="h-[160px] sm:h-[255px]">
             <span className="sr-only">{tRoot('system.loading')}</span>
             <div
               aria-hidden
@@ -530,7 +546,7 @@ function Graph({
         ) : historyQuery.isError ? (
           <div
             role="alert"
-            className="flex h-[183px] flex-col items-center justify-center gap-3 text-center sm:h-[255px]"
+            className="flex h-[160px] flex-col items-center justify-center gap-3 text-center sm:h-[255px]"
           >
             <p className="text-sm text-text-default sm:text-base">
               {errorText(
@@ -546,7 +562,7 @@ function Graph({
             </button>
           </div>
         ) : !chart ? (
-          <p className="flex h-[183px] items-center justify-center text-center text-sm text-text-disabled sm:h-[255px] sm:text-base">
+          <p className="flex h-[160px] items-center justify-center text-center text-sm text-text-disabled sm:h-[255px] sm:text-base">
             {tRates('noHistory')}
           </p>
         ) : (
@@ -559,7 +575,7 @@ function Graph({
             {/* «Frame 4» — 5 подписей оси Y брендовым цветом */}
             <div
               aria-hidden
-              className="flex shrink-0 flex-col justify-between pb-5 pr-2 text-right text-xs leading-none text-text-brand sm:pb-8 sm:text-sm"
+              className="flex shrink-0 flex-col justify-between pb-8 pr-2 text-right text-sm leading-none text-text-brand"
             >
               {chart.yTicks.map((v, i) => (
                 <span key={i}>{formatNumber(v, locale, 2)}</span>
@@ -569,7 +585,7 @@ function Graph({
             <div className="min-w-0 flex-1">
               <div
                 aria-hidden
-                className="relative h-[151px] sm:h-[215px]"
+                className="relative h-[120px] sm:h-[215px]"
                 onPointerMove={onPointerMove}
                 onPointerLeave={() => setHover(null)}
               >
@@ -625,7 +641,7 @@ function Graph({
                 {current !== null && (
                   <span
                     className={clsx(
-                      'absolute right-0 top-0 inline-flex items-center gap-1.5 rounded-xl px-2 py-0.5 text-xs font-bold',
+                      'absolute right-0 top-0 inline-flex items-center gap-1.5 rounded-xl px-2 py-0.5 text-sm font-medium',
                       current.change < 0
                         ? 'bg-negative-hardsoft text-text-negative'
                         : current.change > 0
@@ -669,7 +685,7 @@ function Graph({
               {/* подписи оси X; на узких экранах в макете показана каждая вторая */}
               <div
                 aria-hidden
-                className="relative mt-3 h-4 text-xs font-medium leading-none text-text-brand sm:mt-6"
+                className="relative mt-6 h-4 text-xs font-medium leading-none text-text-brand"
               >
                 {xTicks.map((tick, i) => (
                   <span

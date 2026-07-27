@@ -15,9 +15,9 @@ import type { ExchangeRequest, RequestPhase } from '@/lib/domain';
 const PAGE_SIZE = 10;
 
 const phaseStyles: Record<RequestPhase, string> = {
-  pending: 'bg-alert text-text-inverted',
+  pending: 'bg-alert-hardsoft text-text-additional',
   held: 'bg-positive text-text-always-white',
-  done: 'bg-surface-page-surf2 text-text-default',
+  done: 'bg-brand-hardsoft text-text-brand',
   cancelled: 'bg-surface-page-surf2 text-text-disabled',
 };
 
@@ -42,18 +42,20 @@ export function RequestsList() {
 
   return (
     <SidebarLayout>
-      <h1 className="text-xl font-bold text-text-default sm:text-[28px]">{t('title')}</h1>
+      <h1 className="text-2xl font-medium leading-[1.2] text-text-default sm:text-[32px]">
+        {t('title')}
+      </h1>
 
       {q.isPending && (
-        <div className="mt-5 flex flex-col gap-3" aria-hidden>
+        <div className="mt-6 flex flex-col gap-1" aria-hidden>
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-2xl bg-surface-page-surf1" />
+            <div key={i} className="h-28 animate-pulse rounded-[28px] bg-surface-page-surf1" />
           ))}
         </div>
       )}
 
       {q.isError && (
-        <div className="mt-5 rounded-2xl bg-surface-page-surf1 p-6 text-center">
+        <div className="mt-6 rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 p-8 text-center">
           <p className="text-text-disabled">{t('loadError')}</p>
           <Button className="mt-4" onClick={() => q.refetch()}>
             {t('retry')}
@@ -62,49 +64,49 @@ export function RequestsList() {
       )}
 
       {q.data && q.data.requests.length === 0 && (
-        <p className="mt-5 rounded-2xl bg-surface-page-surf1 p-6 text-center text-text-disabled">
+        <p className="mt-6 rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 p-8 text-center text-text-disabled">
           {t('empty')}
         </p>
       )}
 
       {q.data && q.data.requests.length > 0 && (
-        <ul className="mt-5 flex flex-col gap-3">
+        <ul className="mt-6 flex flex-col gap-1">
           {q.data.requests.map((r) => (
             <li key={r.requestId}>
               <Link
                 href={`/requests/${r.requestId}`}
-                className="flex items-center gap-4 rounded-2xl bg-surface-page-surf1 p-4 transition-colors hover:bg-comp-surface1-hover sm:p-5"
+                className="flex items-center gap-3 rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 p-4 transition-colors hover:bg-comp-surface1-hover md:px-8 md:py-7"
               >
                 <span
                   className={clsx(
-                    'flex h-11 w-11 shrink-0 items-center justify-center rounded-full',
+                    'flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-2xl border border-surface-page-surf3',
                     r.phase === 'held' || r.phase === 'done'
-                      ? 'bg-brand-hardsoft text-text-brand'
-                      : 'bg-surface-page-surf2 text-text-disabled',
+                      ? 'text-text-brand'
+                      : 'text-text-disabled',
                   )}
                 >
                   <Icon
                     name={r.isIndividual ? 'percent' : 'currency_exchange'}
-                    size={22}
+                    size={24}
                     filled={r.phase === 'held'}
                   />
                 </span>
 
                 <span className="min-w-0 flex-1">
-                  <span className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium text-text-default">
+                  <span className="flex flex-wrap items-center gap-1">
+                    <span className="text-lg font-bold leading-6 text-text-default">
                       {r.currencyFrom} → {r.currencyTo}
                     </span>
                     <span
                       className={clsx(
-                        'rounded-md px-2 py-0.5 text-[11px] font-medium',
+                        'rounded-xl px-2 py-0.5 text-xs font-bold leading-[18px]',
                         phaseStyles[r.phase],
                       )}
                     >
                       {r.needsClientConfirmation ? t('offerTitle') : t(statusKey(r))}
                     </span>
                   </span>
-                  <span className="mt-1 block truncate text-sm text-text-disabled">
+                  <span className="mt-1.5 block truncate text-sm font-semibold text-text-disabled">
                     {formatNumber(r.value, locale)} {r.currencyFrom} ·{' '}
                     {t('rate')}: {formatNumber(r.rate, locale)} ·{' '}
                     {formatDateTime(r.createdAt, locale)}
@@ -121,7 +123,7 @@ export function RequestsList() {
       {q.data && q.data.total > q.data.requests.length && (
         <Button
           variant="surf2"
-          className="mt-4 w-full sm:w-auto"
+          className="mt-4 w-full rounded-[20px] sm:w-auto"
           onClick={() => setPages((p) => p + 1)}
           disabled={q.isFetching}
         >

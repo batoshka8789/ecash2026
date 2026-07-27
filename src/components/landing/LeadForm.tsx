@@ -27,7 +27,7 @@ export function LeadForm({ cta }: { cta: string }) {
 
   if (done) {
     return (
-      <div className="mt-8 flex items-center justify-center gap-3 text-base text-text-positive lg:mt-16 lg:justify-start">
+      <div className="mt-10 flex items-center justify-center gap-3 text-base text-text-positive md:mt-20 md:justify-start">
         <Icon name="check_circle" size={22} filled />
         {t('done')}
       </div>
@@ -46,7 +46,7 @@ export function LeadForm({ cta }: { cta: string }) {
     );
 
   return (
-    <div className="mt-8 w-full text-left lg:mt-16">
+    <div className="mt-10 w-full text-left md:mt-20">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap lg:max-w-2xl">
         <input
           value={name}
@@ -73,7 +73,7 @@ export function LeadForm({ cta }: { cta: string }) {
         type="button"
         onClick={submit}
         disabled={send.busy}
-        className="group mt-4 inline-flex h-14 w-full cursor-pointer items-center justify-center gap-4 rounded-full bg-brand px-8 text-base font-medium text-text-always-white shadow-[0_12px_40px_rgb(241_90_37/0.4)] transition-[filter,box-shadow,transform] hover:shadow-[0_18px_56px_rgb(241_90_37/0.6)] hover:brightness-110 active:scale-[0.98] disabled:opacity-60 sm:w-auto lg:h-20 lg:gap-6 lg:px-10 lg:text-2xl"
+        className="group mt-4 inline-flex h-[66px] w-full cursor-pointer items-center justify-center gap-4 rounded-[40px] bg-brand px-6 text-base font-medium text-text-always-white shadow-[0_12px_40px_rgb(241_90_37/0.4)] transition-[filter,box-shadow,transform] hover:shadow-[0_18px_56px_rgb(241_90_37/0.6)] hover:brightness-110 active:scale-[0.98] disabled:opacity-60 sm:w-auto md:h-20 md:gap-6 md:rounded-[102px] md:px-10 md:text-2xl"
       >
         {cta}
         <Icon

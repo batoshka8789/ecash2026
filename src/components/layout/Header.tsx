@@ -35,23 +35,23 @@ export function Header() {
   });
 
   return (
-    <header className="sticky top-0 z-40 border-b border-divider-elevated bg-surface-page-surf1">
-      <div className="container-page flex h-14 items-center justify-between gap-4 sm:h-[83px]">
+    <header className="sticky top-0 z-40 border-b border-stroke-surface1 bg-surface-page-surf1">
+      <div className="container-page flex h-[72px] items-center justify-between gap-[30px] md:h-[82px]">
         <Link href="/" aria-label="ecash" className="transition-opacity hover:opacity-80">
-          <Logo className="scale-90 origin-left sm:scale-100" />
+          <Logo />
         </Link>
 
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-2">
           <ThemeToggle />
 
           <Link
             href="/notifications"
-            className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl bg-btn-1 text-text-default transition-colors hover:bg-comp-surface2-hover sm:h-[50px] sm:w-[50px] sm:rounded-2xl"
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-btn-1 text-text-default transition-colors hover:bg-comp-surface2-hover md:h-[50px] md:w-[50px]"
             aria-label={t('notifications')}
           >
-            <Icon name="notifications" size={20} filled className="sm:text-2xl" />
+            <Icon name="notifications" size={20} filled />
             {authed && typeof unread === 'number' && unread > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-positive px-1 text-[10px] font-medium text-text-always-white sm:h-5 sm:min-w-5 sm:text-xs">
+              <span className="absolute -right-[3px] -top-2 flex h-[19px] min-w-6 items-center justify-center rounded-xl bg-positive px-2 text-sm font-semibold leading-none text-text-always-white">
                 {unread > 9 ? '9+' : unread}
               </span>
             )}
@@ -63,14 +63,14 @@ export function Header() {
             // пока сессия загружается — нейтральная заглушка вместо мигания «Войти»
             <span
               aria-hidden
-              className="inline-flex h-9 w-16 animate-pulse rounded-xl bg-btn-1 sm:h-[50px] sm:w-32 sm:rounded-2xl"
+              className="inline-flex h-10 w-10 animate-pulse rounded-2xl bg-btn-1 md:h-[50px] md:w-[114px]"
             />
           ) : (
             <Link
               href={authed ? '/profile' : '/login'}
-              className="inline-flex h-9 items-center gap-2 rounded-xl bg-btn-1 px-2.5 text-sm font-medium text-text-default transition-colors hover:bg-comp-surface2-hover sm:h-[50px] sm:rounded-2xl sm:pl-6 sm:pr-4"
+              className="inline-flex h-10 items-center gap-2 rounded-2xl bg-btn-1 px-2.5 text-sm font-medium leading-5 text-text-default transition-colors hover:bg-comp-surface2-hover md:h-[50px] md:pl-6 md:pr-4"
             >
-              <span className="hidden sm:inline">{authed ? t('profile') : t('login')}</span>
+              <span className="hidden md:inline">{authed ? t('profile') : t('login')}</span>
               <Icon name={authed ? 'person' : 'login'} size={20} filled={authed} />
             </Link>
           )}

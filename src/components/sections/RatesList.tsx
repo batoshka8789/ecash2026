@@ -87,10 +87,12 @@ export function RatesList() {
   }, [data, showAll]);
 
   return (
-    <section className="container-page pt-6 sm:pt-8">
-      <div className="rounded-2xl border border-stroke-surface1 bg-surface-page-surf1 p-5 sm:rounded-[28px] sm:p-8">
+    <section className="container-page bleed-mobile pt-3 sm:pt-6">
+      <div className="rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 p-4 sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xl font-medium text-text-default sm:text-[32px]">{t('title')}</h2>
+          <h2 className="text-xl font-medium leading-[1.2] text-text-default sm:text-[32px]">
+            {t('title')}
+          </h2>
           {/* Единственная точка входа на /locations с главной — в макете
               этого перехода нет ни на одном фрейме, но без него страница
               со списком/картой отделений недостижима из приложения вообще. */}
@@ -104,13 +106,13 @@ export function RatesList() {
         </div>
 
         {isPending && (
-          <div className="mt-5 flex flex-col gap-1 sm:mt-10" role="status">
+          <div className="mt-6 flex flex-col gap-1 sm:mt-10" role="status">
             <span className="sr-only">{tRoot('system.loading')}</span>
             {PRIMARY_CODES.map((code) => (
               <div
                 key={code}
                 aria-hidden
-                className="h-[104px] rounded-2xl bg-surface-page-surf2 motion-safe:animate-pulse sm:h-28"
+                className="h-[245px] rounded-[20px] bg-surface-page-surf2 motion-safe:animate-pulse sm:h-[122px]"
               />
             ))}
           </div>
@@ -132,7 +134,7 @@ export function RatesList() {
 
         {data && (
           <>
-            <div id={listId} className="mt-5 flex flex-col gap-1 sm:mt-10">
+            <div id={listId} className="mt-6 flex flex-col gap-1 sm:mt-10">
               {list.map((stat, i) => (
                 <div key={stat.currencyCode} className="anim-row-in">
                   <RateRow
@@ -155,7 +157,7 @@ export function RatesList() {
                 aria-expanded={showAll}
                 aria-controls={listId}
                 onClick={() => setShowAll((v) => !v)}
-                className="mx-auto mt-3 flex h-[46px] cursor-pointer items-center gap-2 rounded-[20px] border border-surface-page-surf1 bg-surface-page-surf1 pl-6 pr-4 text-sm font-medium text-text-brand transition-colors hover:bg-comp-surface1-hover sm:mt-4"
+                className="mx-auto mt-3 flex h-[46px] cursor-pointer items-center gap-2 rounded-[20px] border border-surface-page-surf1 bg-surface-page-surf1 pl-6 pr-4 text-sm font-medium text-text-brand transition-colors hover:bg-comp-surface1-hover"
               >
                 {showAll ? t('hideAll') : t('showAll')}
                 <motion.span
@@ -210,10 +212,11 @@ function RateRow({
         // «Component 14»/«Component 21»: r20 на surf2, БЕЗ обводки в макете;
         // паддинги 24/24/12/24 закрыт, 24 со всех сторон открыт
         'rounded-[20px] bg-surface-page-surf2 px-4 pb-3 pt-4 transition-colors sm:px-6 sm:pt-6',
-        open && 'sm:pb-6',
+        open && 'pb-4 sm:pb-6',
       )}
     >
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-3 sm:flex-nowrap sm:gap-4">
+      {/* 360/480 — три строки, 768 — курсы в шапке и кнопки отдельно, 1024+ — одна строка */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-6 lg:flex-nowrap lg:gap-3">
         {showBookmark && (
           <button
             type="button"
@@ -221,7 +224,8 @@ function RateRow({
             aria-label={`${t('bookmark')} — ${name}`}
             aria-pressed={favorite}
             className={clsx(
-              'cursor-pointer transition-colors',
+              // в макете между закладкой и флагом 24 — 12 от gap строки плюс этот отступ
+              'mr-3 cursor-pointer transition-colors',
               favorite ? 'text-brand' : 'text-text-disabled hover:text-text-default',
             )}
           >
@@ -232,39 +236,38 @@ function RateRow({
         )}
 
         {flag ? (
-          <CurrencyFlag flag={flag} className="h-7 w-10 shrink-0 sm:h-10 sm:w-[50px]" />
+          <CurrencyFlag flag={flag} className="h-10 w-[50px] shrink-0" />
         ) : (
           <span
             aria-hidden
-            className="flex h-7 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-modal-surf1 text-[10px] font-bold text-text-disabled sm:h-10 sm:w-[50px]"
+            className="flex h-10 w-[50px] shrink-0 items-center justify-center rounded-lg bg-surface-modal-surf1 text-[10px] font-bold text-text-disabled"
           >
             {code.slice(0, 3)}
           </span>
         )}
 
         <div className="min-w-0 sm:min-w-24">
-          <div className="text-lg font-medium text-text-default sm:text-xl">{code}</div>
-          <div className="truncate text-[11px] font-medium text-text-disabled sm:text-xs">
-            {name}
-          </div>
+          <div className="text-xl font-medium text-text-default">{code}</div>
+          <div className="truncate text-xs font-medium text-text-disabled">{name}</div>
         </div>
 
-        <div className="ml-auto grid shrink-0 grid-cols-2 gap-6 text-center sm:gap-10">
-          <div>
-            <div className="text-[11px] text-text-disabled sm:text-sm">{t('buy')}</div>
-            <div className="text-base text-text-default sm:text-lg">
+        {/* колонки 114px — в макете они выровнены с колонками строк конкурентов */}
+        <div className="grid w-full shrink-0 grid-cols-[auto_auto] justify-start gap-6 text-center sm:ml-auto sm:w-auto sm:gap-10">
+          <div className="flex flex-col gap-1 sm:w-[114px]">
+            <div className="text-sm text-text-disabled">{t('buy')}</div>
+            <div className="text-lg text-text-default lg:text-xl">
               {formatNumber(stat.buy, locale, 2)}
             </div>
           </div>
-          <div>
-            <div className="text-[11px] text-text-disabled sm:text-sm">{t('sell')}</div>
-            <div className="text-base text-text-default sm:text-lg">
+          <div className="flex flex-col gap-1 sm:w-[114px]">
+            <div className="text-sm text-text-disabled">{t('sell')}</div>
+            <div className="text-lg text-text-default lg:text-xl">
               {formatNumber(stat.sell, locale, 2)}
             </div>
           </div>
         </div>
 
-        <div className="flex w-full items-center gap-2 sm:w-auto">
+        <div className="flex w-full items-center gap-2 lg:w-auto">
           {/* «list-map» из макета — своей иконки под комбо документ+карта в
               Material Symbols нет, ближайший по смыслу — map (тот же, что и
               на переключателе Списком/На карте). Ведёт туда же, куда и общая
@@ -274,13 +277,14 @@ function RateRow({
             href="/locations"
             aria-label={t('showOnMap')}
             title={t('showOnMap')}
-            className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-divider-additional text-text-default transition-colors hover:bg-comp-surface1-hover sm:h-[46px] sm:w-[46px]"
+            className="inline-flex h-[46px] w-[46px] shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-divider-elevated text-text-default transition-colors hover:bg-comp-surface1-hover"
           >
             <Icon name="map" size={28} />
           </Link>
+          {/* «!» у радиуса: size кнопки приносит rounded-full, в макете 20 */}
           <Button
             size="md"
-            className="h-11 flex-1 sm:h-[46px] sm:min-w-40"
+            className="h-[46px] flex-1 px-6 sm:min-w-[134px]"
             onClick={() => router.push('/booking')}
           >
             {t('book')}
@@ -290,9 +294,9 @@ function RateRow({
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         {marketRate !== null ? (
-          <div className="flex items-center gap-2 text-xs text-text-disabled sm:gap-3 sm:pl-12 sm:text-sm">
+          <div className="flex items-center gap-3 text-sm text-text-disabled sm:pl-12">
             {t('exchangeRate')}
-            <span className="rounded-xl bg-surface-modal-surf1 px-3 py-1 font-medium text-text-default">
+            <span className="rounded-xl bg-surface-modal-surf1 px-3 py-1 text-text-disabled">
               {tRates('perUnit', {
                 rate: formatNumber(marketRate, locale, 2),
                 code: currencySymbol(code),
@@ -307,7 +311,7 @@ function RateRow({
           aria-expanded={open}
           aria-controls={open ? panelId : undefined}
           onClick={() => setOpen((v) => !v)}
-          className="ml-auto flex cursor-pointer items-center gap-1 text-xs text-text-disabled transition-colors hover:text-text-default"
+          className="ml-auto flex cursor-pointer items-center gap-2 text-sm font-medium text-text-disabled transition-colors hover:text-text-default"
         >
           {open ? t('collapse') : t('compare')}
           <motion.span
@@ -315,7 +319,7 @@ function RateRow({
             transition={{ duration: 0.2 }}
             className="flex"
           >
-            <Icon name="arrow_drop_down" size={12} />
+            <Icon name="arrow_drop_down" size={20} />
           </motion.span>
         </button>
       </div>
@@ -323,30 +327,34 @@ function RateRow({
       {open && (
         <div id={panelId} className="anim-panel-in overflow-hidden">
           {/* «Rectangle 555» — разделитель цветом divider-hole, затем строки конкурентов */}
-          <div className="mt-4 border-t border-divider-hole pt-4 sm:mt-8 sm:pt-8">
-            <div className="flex flex-col gap-4 sm:gap-6">
+          <div className="mt-8 border-t border-divider-hole pt-8">
+            <div className="flex flex-col gap-6">
               {competitors.map((comp) => (
-                <div key={comp.id} className="flex items-center gap-3 sm:gap-4">
+                <div
+                  key={comp.id}
+                  className="flex flex-wrap items-center gap-x-4 gap-y-3 sm:flex-nowrap sm:gap-4"
+                >
                   {/* «logo»: 50×42 r14 на modal-surf1, обводка цветом конкурента, глиф вместо точки */}
                   <span
                     aria-hidden
-                    className="inline-flex h-9 w-11 shrink-0 items-center justify-center rounded-xl border bg-surface-modal-surf1 sm:h-[42px] sm:w-[50px] sm:rounded-[14px]"
+                    className="inline-flex h-[42px] w-[50px] shrink-0 items-center justify-center rounded-[14px] border bg-surface-modal-surf1"
                     style={{ borderColor: comp.color }}
                   >
                     <Icon name="location_on" size={24} className="text-text-default" />
                   </span>
-                  <span className="min-w-0 truncate text-sm text-text-disabled sm:text-base">
+                  <span className="min-w-0 truncate text-base text-text-disabled">
                     {t(`competitors.${comp.nameKey}`)}
                   </span>
-                  <div className="ml-auto grid shrink-0 grid-cols-2 gap-6 text-center sm:gap-10">
-                    <span className="w-16 text-base text-text-default sm:w-20">
+                  <div className="grid w-full shrink-0 grid-cols-[auto_auto] justify-start gap-4 text-center sm:ml-auto sm:w-auto sm:gap-10">
+                    <span className="w-16 text-base text-text-default sm:w-[114px]">
                       {formatNumber(comp.buy, locale, 2)}
                     </span>
-                    <span className="w-16 text-base text-text-default sm:w-20">
+                    <span className="w-16 text-base text-text-default sm:w-[114px]">
                       {formatNumber(comp.sell, locale, 2)}
                     </span>
                   </div>
-                  <span className="hidden sm:block sm:min-w-40" />
+                  {/* «отбивка» под блок кнопок строки курса — с 1024 колонки должны совпасть */}
+                  <span className="hidden lg:block lg:w-[184px]" />
                 </div>
               ))}
             </div>

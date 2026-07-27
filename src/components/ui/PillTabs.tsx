@@ -15,16 +15,19 @@ export function PillTabs<T extends string>({
   className?: string;
 }) {
   return (
-    <div className={clsx('flex rounded-full bg-surface-page-bg p-1', className)}>
+    /* Макет 847:37405: подложка r24 с padding 4 и gap 4, пилюли 50px r20;
+       активная — surface/surf1 (#262626), у неактивной фон совпадает
+       с подложкой, поэтому видна только смена цвета текста. */
+    <div className={clsx('flex gap-1 rounded-3xl bg-surface-page-bg p-1', className)}>
       {tabs.map((tab) => (
         <button
           key={tab.value}
           type="button"
           onClick={() => onChange(tab.value)}
           className={clsx(
-            'h-11 flex-1 cursor-pointer rounded-full text-base font-medium transition-colors',
+            'h-[50px] flex-1 cursor-pointer rounded-[20px] text-sm font-medium leading-5 transition-colors',
             tab.value === value
-              ? 'border border-stroke-surface2 bg-surface-page-surf2 text-text-default'
+              ? 'bg-surface-page-surf1 text-text-default'
               : 'text-text-default hover:text-text-brand',
           )}
         >

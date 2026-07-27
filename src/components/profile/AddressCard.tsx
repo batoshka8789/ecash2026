@@ -111,13 +111,15 @@ export function AddressCard() {
           : '';
 
   return (
-    <div className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
-      <h2 className="text-lg font-bold text-text-default sm:text-2xl">{t('title')}</h2>
-      <p className="mt-1 text-sm text-text-disabled">{t('subtitle')}</p>
+    <div className="rounded-[20px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:p-10">
+      <h2 className="text-2xl font-medium leading-[1.2] text-text-default sm:text-[32px]">
+        {t('title')}
+      </h2>
+      <p className="mt-1 text-base leading-[1.24] text-text-default">{t('subtitle')}</p>
 
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+      <div className="mt-9 flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
-          <div className="flex items-center rounded-2xl border border-stroke-modal transition-colors focus-within:border-stroke-surface3">
+          <div className="flex items-center rounded-[20px] border border-stroke-surface3 transition-colors focus-within:border-stroke-brand">
             <label htmlFor={inputId} className="sr-only">
               {t('placeholder')}
             </label>
@@ -148,7 +150,7 @@ export function AddressCard() {
               aria-activedescendant={
                 nav.activeIndex >= 0 ? `${listId}-opt-${nav.activeIndex}` : undefined
               }
-              className="h-12 w-full bg-transparent px-4 text-base text-text-default outline-none placeholder:text-text-disabled"
+              className="h-[54px] w-full bg-transparent px-4 text-base font-semibold leading-5 text-text-default outline-none placeholder:font-medium placeholder:text-text-disabled"
             />
             {address && (
               <button
@@ -175,11 +177,15 @@ export function AddressCard() {
                 setAddress(v);
                 nav.reset();
               }}
-              className="absolute left-0 right-0 top-full z-20 mt-2 max-h-72 overflow-y-auto rounded-2xl bg-surface-modal-bg p-2 shadow-lg"
+              className="absolute left-0 right-0 top-full z-20 mt-1 max-h-72 overflow-y-auto rounded-[20px] border border-stroke-modal bg-surface-modal-bg p-2 shadow-[0_0_6px_rgb(0_0_0/0.12)]"
             />
           )}
         </div>
-        <Button onClick={() => save.mutate(address)} disabled={save.isPending} className="sm:w-40">
+        <Button
+          onClick={() => save.mutate(address)}
+          disabled={save.isPending}
+          className="h-[54px] rounded-[20px] text-sm sm:w-[121px]"
+        >
           {saved ? t('saved') : t('save')}
         </Button>
       </div>
@@ -189,7 +195,7 @@ export function AddressCard() {
         <span className="sr-only">{saved ? t('saved') : ''}</span>
       </div>
 
-      <div className="relative mt-5 overflow-hidden rounded-2xl">
+      <div className="relative mt-9 overflow-hidden rounded-[20px]">
         <BranchMap
           markers={markers}
           center={center}
@@ -206,7 +212,7 @@ export function AddressCard() {
           label={t('title')}
           // пока отделения грузятся, «не найдены» было бы неправдой
           emptyText={pointsLoading ? t('mapLoading') : t('mapEmpty')}
-          className="h-64 sm:h-72"
+          className="h-64 sm:h-96 xl:h-[477px]"
         />
 
         <button

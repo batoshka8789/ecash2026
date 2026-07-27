@@ -4,16 +4,49 @@
 @theme {
   --font-sans: var(--font-roboto), system-ui, sans-serif;
 
-  /* Градиент обводок лендинга (макет: linear #F6844B → #BF5AF5) */
-  --gradient-accent: linear-gradient(135deg, #f6844b, #bf5af5);
+  /* Обводка карточек лендинга. В макете градиент направлен вниз-влево;
+   у Figma угол нормирован по рамке слоя, поэтому здесь ключевое слово,
+   а не фиксированные градусы — оно так же следует пропорциям блока. */
+  --gradient-accent: linear-gradient(to bottom left, #f6844b, #bf5af5);
 }
 
-/* Контентная колонка макета — ровно 1200px при любом вьюпорте ≥1232. */
+/**
+ * Контентная колонка макета — ровно 1200px при любом вьюпорте ≥1232.
+ *
+ * Боковые отступы взяты по контентным фреймам: 16 (360/480), 20 (768),
+ * 24 (1024). max-width растёт вместе с ними, иначе колонка на широком экране
+ * ужалась бы до 1184. У шапки и футера в макете на 768/1024 стоит padding 52 —
+ * это незаменённое значение в скопированном инстансе: на 1024 лендинг рисует
+ * шапку с 40, а контент тех же фреймов везде идёт с 20–24. Выравниваем шапку
+ * по контенту, иначе левые кромки логотипа и страницы разъезжаются.
+ */
 @utility container-page {
   margin-inline: auto;
   width: 100%;
   max-width: 1232px;
   padding-inline: calc(var(--spacing) * 4);
+
+  @media (width >= 48rem) {
+    max-width: 1240px;
+    padding-inline: calc(var(--spacing) * 5);
+  }
+
+  @media (width >= 64rem) {
+    max-width: 1248px;
+    padding-inline: calc(var(--spacing) * 6);
+  }
+}
+
+/**
+ * Карточки главной и сценариев заявок на 360/480 в макете идут в край экрана
+ * (1774:158747, 1279:104739 — фрейм карточки во всю ширину окна, боковые поля
+ * несёт только её собственный padding 16). Гасим отступы колонки ниже 768,
+ * оставляя их шапке, футеру и хлебным крошкам, где макет их рисует.
+ */
+@utility bleed-mobile {
+  @media (width < 48rem) {
+    padding-inline: 0;
+  }
 }
 
 /**
@@ -219,7 +252,7 @@ body {
  */
 @utility glass {
   position: relative;
-  background: color-mix(in srgb, #262626 42%, transparent);
+  background: color-mix(in srgb, #262626 40%, transparent);
   box-shadow:
     inset 0 1px 0 0 rgb(255 255 255 / 0.06),
     0 20px 60px -28px rgb(0 0 0 / 0.75);
@@ -230,7 +263,7 @@ body {
 
 @utility glass-dense {
   position: relative;
-  background: color-mix(in srgb, #262626 62%, transparent);
+  background: color-mix(in srgb, #262626 60%, transparent);
   box-shadow:
     inset 0 1px 0 0 rgb(255 255 255 / 0.06),
     0 20px 60px -28px rgb(0 0 0 / 0.75);
@@ -282,6 +315,28 @@ body {
     rgb(255 255 255 / 0.05) 62%,
     rgb(255 255 255 / 0.1) 100%
   );
+}
+
+/**
+ * Третий вид карточки лендинга — «белая вуаль»: заливка #FFFFFF 8 % и кант
+ * #FFFFFF 12 % (2153:195541, 2153:195461, 2088:55218). На фоне #1A1A1A она
+ * заметно светлее, чем #262626 40 % у glass, — это разные карточки макета,
+ * а не оттенок одной. Кант нарисован внутренней тенью: она следует за
+ * радиусом и, в отличие от border, не влияет на размеры бокса.
+ */
+@utility glass-veil {
+  position: relative;
+  background: rgb(255 255 255 / 0.08);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
+  transition:
+    background 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.glass-veil:hover {
+  background: rgb(255 255 255 / 0.11);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.2);
 }
 
 /**

@@ -67,7 +67,7 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
   if (q.isPending) {
     return (
       <div className="container-page pt-10" aria-busy>
-        <div className="mx-auto h-64 max-w-2xl animate-pulse rounded-3xl bg-surface-page-surf1" />
+        <div className="mx-auto h-64 max-w-2xl animate-pulse rounded-[28px] bg-surface-page-surf1" />
       </div>
     );
   }
@@ -93,13 +93,15 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
   const foreign = r.currencyFrom === 'KZT' ? r.currencyTo : r.currencyFrom;
 
   return (
-    <div className="container-page flex flex-col gap-5 pt-10">
+    <div className="container-page flex flex-col gap-1 pt-10">
       <StatusHead request={r} />
 
       {r.needsClientConfirmation && (
-        <section className="rounded-2xl bg-surface-page-surf1 p-5 text-center sm:rounded-3xl sm:p-8">
-          <h2 className="text-lg font-bold text-text-default sm:text-2xl">{t('offerTitle')}</h2>
-          <p className="mt-2 text-sm text-text-disabled">
+        <section className="mb-6 rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 p-4 text-center md:p-8">
+          <h2 className="text-2xl font-medium leading-[1.2] text-text-default sm:text-[32px]">
+            {t('offerTitle')}
+          </h2>
+          <p className="mt-2 text-base font-medium leading-5 text-text-disabled">
             {t('offerText', { min: r.reserveMinutes })}
           </p>
           <p className="mt-4 text-2xl font-bold text-text-brand">
@@ -110,7 +112,7 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
             <Button
               onClick={() => confirmMut.mutate()}
               disabled={confirmMut.isPending || rejectMut.isPending}
-              className="sm:min-w-44"
+              className="rounded-[20px] sm:min-w-44"
             >
               {t('accept')}
             </Button>
@@ -118,7 +120,7 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
               variant="surf2"
               onClick={() => rejectMut.mutate()}
               disabled={confirmMut.isPending || rejectMut.isPending}
-              className="sm:min-w-44"
+              className="rounded-[20px] sm:min-w-44"
             >
               {t('decline')}
             </Button>
@@ -126,15 +128,19 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
         </section>
       )}
 
-      <div>
-        <h2 className="text-lg font-bold text-text-default sm:text-2xl">{t('details')}</h2>
-        <p className="mt-1 text-sm text-text-disabled">
+      <div className="mb-6">
+        <h2 className="text-2xl font-medium leading-[1.2] text-text-default sm:text-[32px]">
+          {t('details')}
+        </h2>
+        <p className="mt-2 text-base font-medium leading-5 text-text-disabled">
           {t('sentAt')}: {formatDateTime(r.createdAt, locale)} · {t('number', { id: r.requestId })}
         </p>
       </div>
 
-      <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
-        <h3 className="text-lg font-bold text-text-default sm:text-xl">{t('pair')}</h3>
+      <section className="rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:p-8">
+        <h3 className="text-2xl font-medium leading-[1.2] text-text-default sm:text-[32px]">
+          {t('pair')}
+        </h3>
         <div className="mt-4 flex flex-col gap-3 lg:flex-row">
           <AmountBox
             label={`${tf('pair.give')} (${currencySymbol(r.currencyFrom)})`}
@@ -161,7 +167,7 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-text-disabled">
           {t('rate')}:
-          <span className="rounded-full bg-surface-page-surf2 px-3 py-1.5 text-text-default">
+          <span className="rounded-[20px] bg-surface-page-surf2 px-3 py-1.5 text-text-default">
             {formatNumber(r.rate, locale)} ₸ = 1 {currencySymbol(foreign)}
           </span>
         </div>
@@ -188,8 +194,10 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
       <YourDataBlock />
 
       {r.history.length > 0 && (
-        <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
-          <h3 className="text-lg font-bold text-text-default sm:text-xl">{t('history')}</h3>
+        <section className="rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:p-8">
+          <h3 className="text-2xl font-medium leading-[1.2] text-text-default sm:text-[32px]">
+            {t('history')}
+          </h3>
           <ol className="mt-4 flex flex-col gap-3">
             {r.history.map((h, i) => (
               <li key={i} className="flex items-start gap-3 text-sm">
@@ -214,7 +222,7 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
         </p>
       )}
 
-      <div className="flex flex-col items-center gap-3 pb-6 sm:flex-row sm:justify-between">
+      <div className="mt-6 flex flex-col items-center gap-3 pb-6 sm:flex-row sm:justify-between">
         <Link
           href="/requests"
           className="inline-flex items-center gap-1 text-sm text-text-disabled transition-colors hover:text-text-default"
@@ -225,6 +233,7 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
         {cancellable && !r.needsClientConfirmation && (
           <Button
             variant="surf2"
+            className="rounded-[20px]"
             onClick={() => cancelMut.mutate()}
             disabled={cancelMut.isPending}
           >
@@ -250,8 +259,10 @@ function BranchBlock({ depId }: { depId: number }) {
   if (!dep) return null;
 
   return (
-    <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
-      <h3 className="text-lg font-bold text-text-default sm:text-xl">{t('branch')}</h3>
+    <section className="rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:p-8">
+      <h3 className="text-2xl font-medium leading-[1.2] text-text-default sm:text-[32px]">
+        {t('branch')}
+      </h3>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-start gap-2 text-sm text-text-default sm:text-base">
@@ -270,7 +281,7 @@ function BranchBlock({ depId }: { depId: number }) {
         </div>
         <Link
           href={`/locations?view=map&depId=${depId}`}
-          className="inline-flex items-center gap-1.5 rounded-full bg-surface-page-surf2 px-4 py-2 text-sm text-text-default transition-colors hover:bg-comp-surface2-hover"
+          className="inline-flex h-[38px] items-center gap-1.5 rounded-[20px] bg-surface-page-surf2 px-4 text-sm font-medium leading-5 text-text-default transition-colors hover:bg-comp-surface2-hover"
         >
           <Icon name="location_on" size={16} filled />
           {t('onMapBtn')}
@@ -289,9 +300,11 @@ function YourDataBlock() {
   const name = [account.firstName, account.lastName].filter(Boolean).join(' ');
 
   return (
-    <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
-      <h3 className="text-lg font-bold text-text-default sm:text-xl">{t('yourData')}</h3>
-      <div className="mt-4 flex flex-col gap-2 text-sm text-text-default sm:text-base">
+    <section className="rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:p-8">
+      <h3 className="text-2xl font-medium leading-[1.2] text-text-default sm:text-[32px]">
+        {t('yourData')}
+      </h3>
+      <div className="mt-4 flex flex-col gap-3 text-sm text-text-default sm:text-base">
         {account.phoneNumber && (
           <div className="flex items-center gap-2">
             <Icon name="call" size={18} className="text-text-disabled" />
@@ -342,48 +355,48 @@ function StatusHead({ request: r }: { request: ExchangeRequest }) {
         : 'cancel';
 
   return (
-    <div className="flex flex-col items-center text-center">
+    <div className="mb-14 flex flex-col items-center text-center">
       <span
         className={clsx(
-          'flex h-20 w-20 items-center justify-center rounded-full',
+          'flex h-30 w-30 items-center justify-center rounded-full',
           r.phase === 'cancelled' ? 'bg-surface-page-surf2' : 'bg-brand-hardsoft',
         )}
       >
         <span
           className={clsx(
-            'flex h-12 w-12 items-center justify-center rounded-full',
-            r.phase === 'cancelled'
-              ? 'bg-surface-page-surf1 text-text-disabled'
-              : 'bg-brand text-text-always-white',
+            'flex h-20 w-20 items-center justify-center rounded-full',
+            r.phase === 'cancelled' ? 'text-text-disabled' : 'text-brand/60',
           )}
         >
-          <Icon name={iconName} size={26} filled />
+          <Icon name={iconName} size={80} filled />
         </span>
       </span>
 
-      <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+      <div className="mt-13 flex flex-wrap items-center justify-center gap-2">
         {r.phase === 'held' && (
-          <span className="rounded-md bg-alert px-2 py-0.5 text-[11px] font-medium text-text-inverted">
+          <span className="rounded-xl bg-alert-hardsoft px-2 py-0.5 text-xs font-bold leading-[18px] text-text-additional">
             {tn('badges.booking30').replace('30', String(r.reserveMinutes))}
           </span>
         )}
         {r.isIndividual && (
-          <span className="rounded-md bg-brand px-2 py-0.5 text-[11px] font-medium text-text-always-white">
+          <span className="rounded-xl bg-alert-hardsoft px-2 py-0.5 text-xs font-bold leading-[18px] text-text-additional">
             {tn('badges.individual')}
           </span>
         )}
         {/* маскированный номер заявителя — бейдж из макета 1004:37169 */}
         {account?.phoneNumber && (
-          <span className="rounded-md bg-brand-hardsoft px-2 py-0.5 text-[11px] font-medium text-text-brand">
+          <span className="rounded-xl bg-brand-hardsoft px-2 py-0.5 text-sm font-medium leading-[1.1] text-text-brand">
             {tn('badges.numberValue', { value: maskPhone(account.phoneNumber) })}
           </span>
         )}
       </div>
 
-      <h1 className="mt-3 text-lg font-bold text-text-default sm:text-2xl">{title}</h1>
+      <h1 className="mt-2 text-2xl font-medium leading-[1.2] text-text-default sm:text-[32px]">
+        {title}
+      </h1>
 
       {r.phase === 'pending' && !r.needsClientConfirmation && (
-        <p className="mt-2 max-w-md text-sm text-text-disabled" aria-live="polite">
+        <p className="mt-2 max-w-md text-base font-medium leading-5 text-text-disabled" aria-live="polite">
           {t('awaiting')}
         </p>
       )}
@@ -409,13 +422,16 @@ function HoldCountdown({ until }: { until: string }) {
     );
   }
   return (
-    <div className="mt-3 flex items-center gap-1 text-lg text-text-default" role="timer">
+    <div
+      className="mt-10 flex items-center gap-1 rounded-[20px] bg-surface-page-surf2 p-1 text-2xl font-semibold leading-[1.2] tracking-[-0.02em] text-text-default"
+      role="timer"
+    >
       <span className="sr-only">{t('timeLeft')}</span>
-      <span className="rounded-lg bg-surface-page-surf2 px-3 py-1.5">
+      <span className="rounded-2xl px-6 py-3">
         {mm} {tf('min')}
       </span>
       :
-      <span className="rounded-lg bg-surface-page-surf2 px-3 py-1.5">
+      <span className="rounded-2xl px-6 py-3">
         {ss} {tf('sec')}
       </span>
     </div>

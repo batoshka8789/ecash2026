@@ -345,8 +345,9 @@ export function BranchMap({
     });
   }, [center]);
 
+  // Кнопки карты по фрейму «on map» ≤480: 44×44, radius 40, сплошной surf1.
   const controlClass =
-    'inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-surface-page-surf3 bg-surface-page-surf1/95 text-text-default shadow-lg backdrop-blur-md transition-colors hover:bg-comp-surface2-hover';
+    'inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-surface-page-surf1 text-text-default shadow-lg transition-colors hover:bg-comp-surface2-hover';
 
   return (
     <div className={clsx('relative overflow-hidden bg-surface-page-surf2', className)}>

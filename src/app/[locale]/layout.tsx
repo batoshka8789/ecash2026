@@ -15,7 +15,9 @@ import '../globals.css';
 const roboto = Roboto({
   variable: '--font-roboto',
   subsets: ['latin', 'cyrillic'],
-  weight: ['400', '500', '700'],
+  // 600 в макете несёт всю акцентную типографику (заголовки карточек 28px,
+  // суммы и подписи 16px). Без него браузер подставлял ближайший сверху — 700.
+  weight: ['400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {

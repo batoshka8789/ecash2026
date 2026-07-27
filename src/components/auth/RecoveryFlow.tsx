@@ -21,9 +21,7 @@ type Step = 'phone' | 'code' | 'password' | 'done';
 function isOtpError(e: unknown): e is ApiError {
   return (
     e instanceof ApiError &&
-    (e.field === 'otp' ||
-      e.message === 'errors.INVALID_OTP' ||
-      e.message === 'errors.OTP_EXPIRED')
+    (e.field === 'otp' || e.message === 'errors.INVALID_OTP' || e.message === 'errors.OTP_EXPIRED')
   );
 }
 
@@ -99,26 +97,31 @@ export function RecoveryFlow() {
         type="button"
         onClick={() => router.push('/login')}
         aria-label={t('back')}
-        className="absolute right-0 top-0 z-10 inline-flex h-10 w-10 -translate-y-12 cursor-pointer items-center justify-center rounded-full bg-surface-page-surf2 text-text-default transition-colors hover:bg-comp-surface2-hover lg:right-[-64px] lg:top-0 lg:h-11 lg:w-11 lg:translate-y-0"
+        className="absolute right-0 top-0 z-10 inline-flex h-11 w-11 -translate-y-12 cursor-pointer items-center justify-center rounded-full bg-surface-page-surf2 text-text-default transition-colors hover:bg-comp-surface2-hover md:fixed md:right-10 md:top-10 md:translate-y-0"
       >
         <Icon name="close" size={20} />
       </button>
 
-      <form onSubmit={onSubmit} className="rounded-3xl bg-surface-page-surf1 p-6 sm:p-8" noValidate>
+      <form
+        onSubmit={onSubmit}
+        className="rounded-[20px] bg-surface-page-surf1 px-5 py-10 md:px-10"
+        noValidate
+      >
         <div className="flex justify-center">
           <Logo />
         </div>
 
-        <h1 className="mt-7 text-center text-xl font-bold text-text-default">{t('title')}</h1>
+        <h1 className="mt-9 text-center text-xl font-medium leading-[1.4] text-text-default">
+          {t('title')}
+        </h1>
 
         {step === 'phone' && (
           <>
-            <p className="mx-auto mt-3 max-w-80 text-center text-sm leading-relaxed text-text-disabled">
+            <p className="mt-3 text-center text-lg leading-[1.2] text-text-disabled">
               {t('phoneStep')}
             </p>
             <Input
-              className="mt-6"
-              label={t('phonePlaceholder')}
+              className="mt-9"
               placeholder={t('phonePlaceholder')}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
@@ -131,12 +134,11 @@ export function RecoveryFlow() {
 
         {step === 'code' && (
           <>
-            <p className="mx-auto mt-3 max-w-80 text-center text-sm leading-relaxed text-text-disabled">
+            <p className="mt-3 text-center text-lg leading-[1.2] text-text-disabled">
               {t('steps.code')}
             </p>
             <Input
-              className="mt-6"
-              label={t('codePlaceholder')}
+              className="mt-9"
               placeholder={t('codePlaceholder')}
               value={otp}
               onChange={(e) => {
@@ -149,11 +151,11 @@ export function RecoveryFlow() {
               maxLength={6}
             />
             {devCode && (
-              <p className="mt-2 text-center text-sm text-text-brand">
+              <p className="mt-2 text-center text-xs font-medium leading-[1.3] text-text-brand">
                 {t('devCode', { code: devCode })}
               </p>
             )}
-            <div className="mt-3 text-center text-sm" aria-live="polite">
+            <div className="mt-4 text-center text-sm font-medium leading-5" aria-live="polite">
               {resendLeft > 0 ? (
                 <span className="text-text-disabled">{t('resendIn', { sec: resendLeft })}</span>
               ) : (
@@ -175,12 +177,11 @@ export function RecoveryFlow() {
 
         {step === 'password' && (
           <>
-            <p className="mx-auto mt-3 max-w-80 text-center text-sm leading-relaxed text-text-disabled">
+            <p className="mt-3 text-center text-lg leading-[1.2] text-text-disabled">
               {t('steps.password')}
             </p>
-            <div className="mt-6 flex flex-col gap-4">
+            <div className="mt-9 flex flex-col gap-2">
               <Input
-                label={t('newPassword')}
                 placeholder={t('newPassword')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -189,7 +190,6 @@ export function RecoveryFlow() {
                 autoComplete="new-password"
               />
               <Input
-                label={t('newPassword2')}
                 placeholder={t('newPassword2')}
                 value={password2}
                 onChange={(e) => setPassword2(e.target.value)}
@@ -202,23 +202,23 @@ export function RecoveryFlow() {
         )}
 
         {step === 'done' && (
-          <p
-            role="status"
-            className="mx-auto mt-4 max-w-80 text-center text-sm leading-relaxed text-text-positive"
-          >
+          <p role="status" className="mt-3 text-center text-lg leading-[1.2] text-text-positive">
             {t('done')}
           </p>
         )}
 
         {generalError && (
-          <p role="alert" className="mt-4 text-center text-sm text-text-negative">
+          <p
+            role="alert"
+            className="mt-4 text-center text-xs font-medium leading-[1.3] text-text-negative"
+          >
             {generalError}
           </p>
         )}
 
         <Button
           type="submit"
-          className="mt-6 w-full"
+          className="mt-4 w-full"
           disabled={busy || (step === 'code' && otp.length !== 6)}
         >
           {step === 'done' ? t('toLogin') : t('continue')}
@@ -231,7 +231,7 @@ export function RecoveryFlow() {
               if (step === 'code') setOtpStepError(null);
               setStep(step === 'code' ? 'phone' : 'code');
             }}
-            className="mt-4 w-full cursor-pointer text-center text-sm text-text-disabled transition-colors hover:text-text-default"
+            className="mt-4 w-full cursor-pointer text-center text-sm font-medium leading-5 text-text-disabled transition-colors hover:text-text-default"
           >
             {t('back')}
           </button>

@@ -77,8 +77,8 @@ const norm = (s: string) => s.toLowerCase().replace(/ё/g, 'е');
 /** Курс в строке отделения: подпись сверху, значение снизу (14/400 + 18/400). */
 function RateCell({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col items-center gap-1 px-3 lg:w-[154px] lg:px-5">
-      <span className="text-sm leading-none text-text-disabled">{label}</span>
+    <div className="flex flex-col items-center gap-1 px-3 md:w-[154px] md:px-5">
+      <span className="text-sm leading-[1.1] text-text-disabled">{label}</span>
       <span className="text-lg leading-5 text-text-default">{value}</span>
     </div>
   );
@@ -445,7 +445,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
       <div className="rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 px-2 py-4 md:p-8">
         <div className="flex flex-col gap-3 px-2 md:flex-row md:items-center md:justify-between md:gap-4 md:px-0">
           <div className="flex flex-col gap-2">
-            <h2 className="text-lg font-medium leading-tight text-text-default md:text-[32px]">
+            <h2 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
               {t('title')}
             </h2>
             {!loading && !failed && (
@@ -469,7 +469,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                     : 'text-text-default hover:bg-comp-surface1-hover',
                 )}
               >
-                <Icon name={v === 'list' ? 'list_alt' : 'map'} size={24} />
+                <Icon name={v === 'list' ? 'list_alt' : 'map'} size={20} />
                 {t(v === 'list' ? 'asList' : 'onMap')}
               </button>
             ))}
@@ -486,11 +486,11 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
             </button>
           </div>
         ) : loading ? (
-          <div className="flex flex-col gap-1 lg:gap-8" aria-hidden>
+          <div className="flex flex-col gap-1 lg:gap-12" aria-hidden>
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
-                className="rounded-[20px] bg-surface-page-surf2 p-4 md:px-6 md:pb-4 md:pt-6 lg:flex lg:items-center lg:gap-4 lg:bg-transparent lg:px-0 lg:pb-2 lg:pt-2"
+                className="rounded-[20px] bg-surface-page-surf2 p-4 md:px-6 md:pb-4 md:pt-6 lg:flex lg:items-center lg:gap-4 lg:bg-transparent lg:px-0 lg:py-0"
               >
                 <div className="flex flex-col gap-2 lg:grow">
                   <div className="h-4 w-48 animate-pulse rounded-md bg-surface-page-surf3" />
@@ -523,7 +523,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={t('searchPlaceholder')}
                     aria-label={t('searchPlaceholder')}
-                    className="h-11 w-full min-w-0 rounded-[20px] border border-stroke-surface1 bg-surface-page-bg pl-12 pr-12 text-sm text-text-default outline-none transition-colors placeholder:text-text-disabled focus:border-stroke-brand [&::-webkit-search-cancel-button]:hidden"
+                    className="h-11 w-full min-w-0 rounded-[20px] border border-surface-page-surf3 bg-surface-page-bg pl-12 pr-12 text-sm text-text-default outline-none transition-colors placeholder:text-text-disabled focus:border-stroke-brand [&::-webkit-search-cancel-button]:hidden"
                   />
                   {query && (
                     <button
@@ -546,7 +546,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                         onClick={() => setCity(c)}
                         aria-pressed={city === c}
                         className={clsx(
-                          'h-9 shrink-0 cursor-pointer whitespace-nowrap rounded-2xl px-4 text-sm font-medium transition-colors',
+                          'h-9 shrink-0 cursor-pointer whitespace-nowrap rounded-[20px] px-4 text-sm font-medium transition-colors',
                           city === c
                             ? 'bg-surface-page-surf1 text-text-default'
                             : 'text-text-disabled hover:text-text-default',
@@ -575,7 +575,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                 )}
               </div>
             ) : view === 'list' ? (
-              <ul className="flex flex-col gap-1 lg:gap-8">
+              <ul className="flex flex-col gap-1 lg:gap-12">
                 {visibleRows.map((row) => (
                   <li
                     key={row.depId}
@@ -584,12 +584,12 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                       else rowRefs.current.delete(row.depId);
                     }}
                     className={clsx(
-                      'rounded-[20px] bg-surface-page-surf2 p-4 transition-shadow md:px-6 md:pb-4 md:pt-6 lg:flex lg:items-center lg:bg-transparent lg:px-0 lg:pb-2 lg:pt-2',
+                      'rounded-[20px] bg-surface-page-surf2 p-4 transition-shadow md:px-6 md:pb-4 md:pt-6 lg:flex lg:items-center lg:bg-transparent lg:px-0 lg:py-0',
                       activeDepId === row.depId &&
                         'ring-2 ring-stroke-brand lg:ring-offset-4 lg:ring-offset-surface-page-surf1',
                     )}
                   >
-                    <div className="flex min-w-0 flex-col gap-6 md:flex-row md:items-center md:gap-4 lg:grow">
+                    <div className="flex min-w-0 flex-col gap-6 md:flex-row md:items-center md:gap-0 lg:grow">
                       <div className="flex min-w-0 grow flex-col justify-end gap-2">
                         {row.badges.length > 0 && (
                           <div className="flex flex-wrap gap-1">
@@ -608,7 +608,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                         )}
 
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                          <span className="flex min-w-0 items-center gap-2 text-sm text-text-default md:text-base">
+                          <span className="flex min-w-0 items-center gap-2 text-base leading-5 text-text-default">
                             <Icon
                               name="account_balance"
                               size={20}
@@ -635,7 +635,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                                 row.city ? `${row.city}, ${row.address}` : row.address,
                               )
                             }
-                            className="-my-2.5 inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-disabled transition-colors hover:text-text-default"
+                            className="-my-2.5 inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-default transition-colors hover:text-text-brand"
                           >
                             <Icon name="content_copy" size={20} />
                           </button>
@@ -666,7 +666,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                         </div>
                       </div>
 
-                      <div className="-mx-3 flex shrink-0 items-center md:mx-0 lg:w-[308px]">
+                      <div className="-mx-3 flex shrink-0 items-center md:mx-0 md:w-[308px]">
                         <RateCell label={t('buyUsd')} value={rateOf(row, 'buy')} />
                         <RateCell label={t('sellUsd')} value={rateOf(row, 'sell')} />
                       </div>
@@ -729,7 +729,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                   type="button"
                   onClick={() => setMapFull((v) => !v)}
                   className={clsx(
-                    'absolute bottom-4 left-1/2 z-10 inline-flex h-11 -translate-x-1/2 cursor-pointer items-center gap-2 rounded-[20px] bg-surface-inverted pl-4 pr-6 text-sm font-medium text-text-inverted shadow-lg transition-opacity hover:opacity-90 md:h-[38px]',
+                    'absolute bottom-4 left-1/2 z-10 inline-flex h-[38px] -translate-x-1/2 cursor-pointer items-center gap-2 rounded-[20px] bg-surface-inverted pl-4 pr-6 text-sm font-medium text-text-inverted shadow-lg transition-opacity hover:opacity-90',
                     mapSelected && 'max-md:hidden',
                   )}
                 >
@@ -755,21 +755,21 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                       className="fixed inset-x-0 bottom-0 z-50 max-h-[85%] overflow-y-auto rounded-t-[32px] border-2 border-b-0 border-stroke-brand bg-surface-page-surf1 px-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5 shadow-[0_16px_40px_rgb(0_0_0/0.45)] md:absolute md:inset-x-auto md:bottom-auto md:left-6 md:top-6 md:z-20 md:w-[360px] md:rounded-[32px] md:border-b-2 md:pb-6"
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <h3 className="text-lg font-bold leading-tight text-text-default">
+                        <h3 className="text-lg font-bold leading-6 text-text-default">
                           {mapSelected.title}
                         </h3>
                         <button
                           type="button"
                           aria-label={t('closeCard')}
                           onClick={() => setActiveDepId(null)}
-                          className="-mr-2 -mt-2 inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-disabled transition-colors hover:bg-comp-surface2-hover hover:text-text-default"
+                          className="-mr-2 -mt-2 inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-default transition-colors hover:bg-comp-surface2-hover"
                         >
                           <Icon name="close" size={22} />
                         </button>
                       </div>
 
                       {mapSelected.badges.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
+                        <div className="mt-1 flex flex-wrap gap-1">
                           {mapSelected.badges.map((badge) => (
                             <span
                               key={badge}
@@ -784,7 +784,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                         </div>
                       )}
 
-                      <div className="mt-4 flex flex-col gap-2 text-sm text-text-disabled">
+                      <div className="mt-1 flex flex-col gap-2 text-sm font-medium leading-[1.4] text-text-disabled">
                         <span className="flex items-start gap-2">
                           <Icon name="location_on" size={16} className="mt-0.5 shrink-0" />
                           <span className="min-w-0 break-words" title={mapSelected.rawAddress}>
@@ -813,21 +813,21 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                       </div>
 
                       {mapSelected.usd && (
-                        <div className="mt-4 flex items-stretch rounded-2xl border border-stroke-surface3 px-2.5 py-1.5">
+                        <div className="mt-4 flex items-stretch rounded-2xl border border-divider-additional px-2.5 py-1.5">
                           <div className="flex flex-1 flex-col items-center justify-center gap-0.5">
-                            <span className="text-xs font-medium text-text-disabled">
+                            <span className="text-xs leading-[18px] text-text-disabled">
                               {t('buyUsd')}
                             </span>
-                            <span className="text-lg font-bold leading-tight text-text-default">
+                            <span className="text-lg font-bold leading-6 text-text-default">
                               {rateOf(mapSelected, 'buy')} {currencySymbol('KZT')}
                             </span>
                           </div>
-                          <div aria-hidden className="w-px shrink-0 bg-stroke-surface3" />
+                          <div aria-hidden className="w-px shrink-0 bg-divider-additional" />
                           <div className="flex flex-1 flex-col items-center justify-center gap-0.5">
-                            <span className="text-xs font-medium text-text-disabled">
+                            <span className="text-xs leading-[18px] text-text-disabled">
                               {t('sellUsd')}
                             </span>
-                            <span className="text-lg font-bold leading-tight text-text-default">
+                            <span className="text-lg font-bold leading-6 text-text-default">
                               {rateOf(mapSelected, 'sell')} {currencySymbol('KZT')}
                             </span>
                           </div>

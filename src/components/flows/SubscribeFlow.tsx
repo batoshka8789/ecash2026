@@ -14,7 +14,19 @@ import { useAuth } from '@/lib/auth';
 import { useErrorText } from '@/lib/useErrorText';
 import { currencyName, currencySymbol, formatDateTime, formatNumber } from '@/lib/format';
 import type { RateAlert } from '@/lib/domain';
+
 import { AmountBox } from './PairFields';
+
+/**
+ * «dropdown date»: 54 в высоту на мобильном (1774:158764) и 66 с 768
+ * (1177:57578), радиус 20, заливка и обводка
+ * одного цвета — surface/surf2. Отличается от обычного селекта (54, прозрачный
+ * с видимой обводкой), поэтому задаётся точечно, а не в самом компоненте.
+ */
+const dateSelectBtn =
+  'md:h-[66px]! border-surface-page-surf2! bg-surface-page-surf2! hover:border-stroke-surface3!' +
+  // на 360 «Месяц» не влезает и при паддинге макета (16) — отдаём слову 3px
+  ' max-md:px-3';
 
 const DEFAULT_DEP = 1;
 
@@ -159,14 +171,14 @@ export function SubscribeFlow() {
           : null;
 
     return (
-      <div className="container-page flex flex-col gap-5 pt-6">
+      <div className="container-page flex flex-col gap-5 pt-8">
         <div role="status" aria-live="polite" className="flex flex-col items-center text-center">
           <span className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-hardsoft">
             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand text-text-always-white">
               <Icon name="verified_user" size={26} filled />
             </span>
           </span>
-          <h1 className="mt-5 text-lg font-bold text-text-default sm:text-2xl">
+          <h1 className="mt-5 text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
             {t('successTitle')}
           </h1>
           <p className="mt-2 text-sm text-text-disabled">
@@ -174,18 +186,20 @@ export function SubscribeFlow() {
           </p>
         </div>
 
-        <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
-          <h2 className="text-lg font-bold text-text-default sm:text-2xl">{t('pairTitle')}</h2>
+        <section className="rounded-[22px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:rounded-[28px] md:p-8">
+          <h2 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+            {t('pairTitle')}
+          </h2>
 
-          <div className="mt-5 flex flex-col items-stretch gap-3 lg:flex-row lg:items-center">
+          <div className="relative mt-6 flex flex-col items-stretch gap-2 md:mt-10 md:flex-row md:items-center md:gap-3">
             <AmountBox
               label={t('targetLabel')}
               value={formatNumber(created.targetRate, locale)}
               readOnly
               currency="KZT"
             />
-            <span className="mx-auto text-text-disabled">
-              <Icon name="notifications_active" size={22} />
+            <span className="absolute left-1/2 top-1/2 z-10 flex h-9 w-9 shrink-0 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[20px] border border-stroke-modal bg-surface-page-surf2 text-text-default shadow-[0_1px_4px_rgba(12,12,13,0.1)] md:static md:mx-auto md:h-5 md:w-5 md:translate-x-0 md:translate-y-0 md:rounded-none md:border-0 md:bg-transparent md:shadow-none">
+              <Icon name="notifications_active" size={20} />
             </span>
             <AmountBox
               label={t('perOneLabel')}
@@ -196,9 +210,9 @@ export function SubscribeFlow() {
           </div>
 
           {snapshotRate > 0 && (
-            <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-text-default">
+            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-text-default">
               {t('ecashRateAtCreation')}
-              <span className="rounded-full bg-surface-page-surf2 px-3 py-1.5 font-medium text-text-disabled">
+              <span className="rounded-xl bg-surface-page-surf2 px-3 py-1 text-text-disabled">
                 {formatNumber(snapshotRate, locale)} ₸ = 1 {currencySymbol(created.currencyTo)}
               </span>
             </div>
@@ -238,7 +252,7 @@ export function SubscribeFlow() {
 
   // ------------------------------------------------------------------- форма
   return (
-    <form onSubmit={submit} className="container-page flex flex-col gap-5 pt-6" noValidate>
+    <form onSubmit={submit} className="container-page bleed-mobile flex flex-col gap-1 pt-8" noValidate>
       <Toast
         open={showErrors}
         tone="negative"
@@ -256,10 +270,12 @@ export function SubscribeFlow() {
         {t('disabledToast')}
       </Toast>
 
-      <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
-        <h1 className="text-xl font-bold text-text-default sm:text-[28px]">{t('pairTitle')}</h1>
+      <section className="rounded-[22px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:rounded-[28px] md:p-8">
+        <h1 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+          {t('pairTitle')}
+        </h1>
 
-        <div className="mt-6 flex flex-col items-stretch gap-3 lg:flex-row lg:items-center">
+        <div className="relative mt-6 flex flex-col items-stretch gap-2 md:mt-10 md:flex-row md:items-center md:gap-3">
           <AmountBox
             label={t('targetLabel')}
             value={rate}
@@ -267,8 +283,9 @@ export function SubscribeFlow() {
             currency="KZT"
             invalid={showErrors && !rateValid}
           />
-          <span className="mx-auto text-text-disabled">
-            <Icon name="notifications_active" size={22} />
+          {/* мобильный фрейм 1774:158752 — 36×36 r20 на surf2, с 768px голая иконка */}
+          <span className="absolute left-1/2 top-1/2 z-10 flex h-9 w-9 shrink-0 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[20px] border border-stroke-modal bg-surface-page-surf2 text-text-default shadow-[0_1px_4px_rgba(12,12,13,0.1)] md:static md:mx-auto md:h-5 md:w-5 md:translate-x-0 md:translate-y-0 md:rounded-none md:border-0 md:bg-transparent md:shadow-none">
+            <Icon name="notifications_active" size={20} />
           </span>
           <AmountBox
             label={t('perOneLabel')}
@@ -280,12 +297,12 @@ export function SubscribeFlow() {
           />
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-text-default">
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-text-default">
           {t('currentRate')}
           {ratesQ.isPending ? (
-            <span className="h-7 w-32 animate-pulse rounded-full bg-surface-page-surf2" />
+            <span className="h-[23px] w-32 animate-pulse rounded-xl bg-surface-page-surf2" />
           ) : currentRate > 0 ? (
-            <span className="rounded-full bg-brand-hardsoft px-3 py-1.5 font-medium text-text-brand">
+            <span className="rounded-xl bg-surface-page-surf2 px-3 py-1 text-text-disabled">
               {formatNumber(currentRate, locale)} ₸ = 1 {currencySymbol(foreign)}
             </span>
           ) : (
@@ -294,17 +311,23 @@ export function SubscribeFlow() {
         </div>
       </section>
 
-      <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
-        <h2 className="text-lg font-bold text-text-default sm:text-2xl">{t('untilTitle')}</h2>
-        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <section className="rounded-[22px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:rounded-[28px] md:p-8">
+        <h2 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+          {t('untilTitle')}
+        </h2>
+        {/* 1177:57578 — три селекта 132×66 в ряд с зазором 4, группа 404px.
+            Подписи селектов скрыты визуально: в макете над группой одна общая
+            подпись (её роль играет заголовок выше), а внутри — плейсхолдеры. */}
+        <div className="mt-6 grid grid-cols-3 gap-1 md:mt-10 md:max-w-[404px] [&_[id$='-label']]:sr-only">
           {/* Select менять нельзя — рамку ошибки даёт контейнер вокруг него */}
           <div
             className={clsx(
-              'rounded-2xl border',
+              'rounded-[20px] border',
               showErrors && day === null ? 'border-negative' : 'border-transparent',
             )}
           >
             <Select
+              buttonClassName={dateSelectBtn}
               label={t('day')}
               value={day}
               onChange={setDay}
@@ -314,11 +337,12 @@ export function SubscribeFlow() {
           </div>
           <div
             className={clsx(
-              'rounded-2xl border',
+              'rounded-[20px] border',
               showErrors && month === null ? 'border-negative' : 'border-transparent',
             )}
           >
             <Select
+              buttonClassName={dateSelectBtn}
               label={t('month')}
               value={month}
               onChange={(v) => {
@@ -337,11 +361,12 @@ export function SubscribeFlow() {
           </div>
           <div
             className={clsx(
-              'rounded-2xl border',
+              'rounded-[20px] border',
               showErrors && year === null ? 'border-negative' : 'border-transparent',
             )}
           >
             <Select
+              buttonClassName={dateSelectBtn}
               label={t('year')}
               value={year}
               onChange={setYear}
@@ -363,7 +388,7 @@ export function SubscribeFlow() {
           </p>
         )}
 
-        <Button type="submit" className="mt-6 w-full sm:w-auto sm:min-w-52" disabled={create.isPending}>
+        <Button type="submit" className="mt-6 w-full md:mt-10 md:w-auto" disabled={create.isPending}>
           {t('cta')}
         </Button>
       </section>

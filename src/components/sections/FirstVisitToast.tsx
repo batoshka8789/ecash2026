@@ -77,7 +77,8 @@ export function FirstVisitToast() {
 
   return (
     <>
-      <div role="status" className={clsx(open && 'pt-6 sm:pt-8')}>
+      {/* в макете тост стоит в 15px под шапкой (1279:104505 — y=98 при высоте шапки 83) */}
+      <div role="status" className={clsx(open && 'pt-4')}>
         <Toast open={open} onClose={firstVisitStore.dismiss} closeLabel={t('close')} fixed={false}>
           <button
             type="button"

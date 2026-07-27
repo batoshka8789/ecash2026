@@ -23,14 +23,20 @@ const variants: Record<Variant, string> = {
   ghost: 'text-text-default hover:bg-comp-surface1-hover active:bg-comp-surface2-active',
 };
 
+/**
+ * Размеры из компонента макета «a-button-main» (846:26437):
+ * L — 54px, padding 16/24; M — 46px, padding 12/24; радиус 20 у обоих,
+ * текст Roboto Medium 14/20px независимо от размера. Кнопки-иконки —
+ * из «a-button-shapeIcon» (305:12749): 40px при радиусе 16.
+ */
 const sizes: Record<Size, string> = {
-  md: 'h-10 px-5 text-sm rounded-full',
-  lg: 'h-12 px-6 text-base rounded-full',
-  icon: 'h-10 w-10 rounded-xl',
-  'icon-lg': 'h-12 w-12 rounded-2xl',
+  md: 'h-[46px] px-6 text-sm leading-5 rounded-[20px]',
+  lg: 'h-[54px] px-6 text-sm leading-5 rounded-[20px]',
+  icon: 'h-10 w-10 rounded-2xl',
+  'icon-lg': 'h-[54px] w-[54px] rounded-[20px]',
 };
 
-/** Кнопка ecash: пилюли для текста, скруглённые квадраты для иконок. */
+/** Кнопка ecash: скруглённый прямоугольник r20, иконки 20×20 с зазором 8. */
 export function Button({
   variant = 'brand',
   size = 'lg',

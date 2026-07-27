@@ -19,17 +19,17 @@ export function NewsList() {
 
   return (
     <SidebarLayout>
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-1">
         {isPending && (
-          <div className="flex flex-col gap-6" aria-hidden>
+          <div className="flex flex-col gap-1" aria-hidden>
             {[0, 1].map((i) => (
-              <div key={i} className="h-96 animate-pulse rounded-2xl bg-surface-page-surf1" />
+              <div key={i} className="h-96 animate-pulse rounded-[28px] bg-surface-page-surf1" />
             ))}
           </div>
         )}
 
         {isError && (
-          <div className="rounded-2xl bg-surface-page-surf1 p-6 text-center">
+          <div className="rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 p-8 text-center">
             <p className="text-text-disabled">{t('loadError')}</p>
             <Button className="mt-4" onClick={() => refetch()}>
               {t('retry')}
@@ -43,8 +43,8 @@ export function NewsList() {
 
         {data?.posts.map((post, i) => (
           <Reveal key={post.id} delay={i * 0.06}>
-            <article className="rounded-2xl bg-surface-page-surf1 p-4 sm:rounded-3xl sm:p-6">
-              <div className="relative h-56 w-full overflow-hidden rounded-2xl sm:h-72">
+            <article className="rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:p-8">
+              <div className="relative h-[140px] w-full overflow-hidden rounded-2xl md:h-[260px]">
                 <Image
                   src={post.image}
                   alt={t(`${post.key}.title`)}
@@ -54,10 +54,10 @@ export function NewsList() {
                   priority={i === 0}
                 />
               </div>
-              <h2 className="mt-6 text-lg font-bold text-text-default sm:text-2xl">
+              <h2 className="mt-6 text-2xl font-medium leading-[1.2] text-text-default md:mt-10 md:px-3 md:text-[32px]">
                 {t(`${post.key}.title`)}
               </h2>
-              <p className="mt-3 text-sm leading-relaxed text-text-disabled">
+              <p className="mt-3 pb-3 text-base leading-[1.24] text-text-default md:mt-4 md:px-3 md:text-lg md:leading-[1.4]">
                 {t(`${post.key}.text`)}
               </p>
             </article>

@@ -179,7 +179,7 @@ export function SuggestionList({
       id={id}
       role="listbox"
       aria-label={t('suggestions')}
-      className={clsx('flex flex-col gap-1', className)}
+      className={clsx('flex flex-col', className)}
     >
       {suggestions.map((s, i) => (
         <li
@@ -200,15 +200,17 @@ export function SuggestionList({
           }}
           className={clsx(
             'flex cursor-pointer items-center justify-between gap-4 rounded-xl px-4 py-2 transition-colors',
-            i === activeIndex ? 'bg-comp-surface2-hover' : 'hover:bg-comp-surface2-hover',
+            i === activeIndex ? 'bg-comp-surface2-active' : 'hover:bg-comp-surface2-hover',
           )}
         >
-          <span className="min-w-0">
-            <span className="block truncate text-sm text-text-default">{s}</span>
-            <span className="block text-xs font-medium text-text-disabled">{t('country')}</span>
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="block truncate text-sm leading-[1.1] text-text-default">{s}</span>
+            <span className="block text-xs font-medium leading-[1.3] text-text-disabled">
+              {t('country')}
+            </span>
           </span>
           {selected !== undefined && s === selected && (
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-btn-1 text-text-default">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-btn-2 text-text-default">
               <Icon name="check" size={14} />
             </span>
           )}

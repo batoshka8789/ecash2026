@@ -23,9 +23,7 @@ type Tab = 'login' | 'signup';
 function isOtpError(e: unknown): e is ApiError {
   return (
     e instanceof ApiError &&
-    (e.field === 'otp' ||
-      e.message === 'errors.INVALID_OTP' ||
-      e.message === 'errors.OTP_EXPIRED')
+    (e.field === 'otp' || e.message === 'errors.INVALID_OTP' || e.message === 'errors.OTP_EXPIRED')
   );
 }
 
@@ -110,8 +108,7 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
   const err = (field: string) =>
     activeError && activeError.field === field ? [errorText(activeError.message)] : [];
   /** ошибка без привязки к полю — показываем под формой */
-  const generalError =
-    activeError && !activeError.field ? errorText(activeError.message) : null;
+  const generalError = activeError && !activeError.field ? errorText(activeError.message) : null;
 
   const resetErrors = () => {
     loginMut.reset();
@@ -152,12 +149,16 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
         type="button"
         onClick={() => router.push('/')}
         aria-label={t('close')}
-        className="absolute right-0 top-0 z-10 inline-flex h-10 w-10 -translate-y-12 cursor-pointer items-center justify-center rounded-full bg-surface-page-surf2 text-text-default transition-colors hover:bg-comp-surface2-hover lg:right-[-64px] lg:top-0 lg:h-11 lg:w-11 lg:translate-y-0"
+        className="absolute right-0 top-0 z-10 inline-flex h-11 w-11 -translate-y-12 cursor-pointer items-center justify-center rounded-full bg-surface-page-surf2 text-text-default transition-colors hover:bg-comp-surface2-hover md:fixed md:right-10 md:top-10 md:translate-y-0"
       >
         <Icon name="close" size={20} />
       </button>
 
-      <form onSubmit={onSubmit} className="rounded-3xl bg-surface-page-surf1 p-6 sm:p-8" noValidate>
+      <form
+        onSubmit={onSubmit}
+        className="rounded-[20px] bg-surface-page-surf1 px-5 py-10 md:px-10"
+        noValidate
+      >
         <div className="flex justify-center">
           <Logo />
         </div>
@@ -165,7 +166,7 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
         {tab === 'login' || regStep === 'phone' ? (
           <>
             <PillTabs
-              className="mt-7"
+              className="mt-9"
               value={tab}
               onChange={(v) => {
                 setTab(v);
@@ -180,9 +181,8 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
             />
 
             {tab === 'login' ? (
-              <div className="mt-6 flex flex-col gap-4">
+              <div className="mt-11 flex flex-col gap-2">
                 <Input
-                  label={t('loginLabel')}
                   placeholder={t('loginLabel')}
                   value={loginValue}
                   onChange={(e) => setLoginValue(e.target.value)}
@@ -193,7 +193,6 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
                 {loginMode === 'password' ? (
                   <>
                     <Input
-                      label={t('passwordPlaceholder')}
                       placeholder={t('passwordPlaceholder')}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -204,7 +203,7 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
                     <button
                       type="button"
                       onClick={() => router.push('/recovery')}
-                      className="cursor-pointer self-start text-sm text-text-brand transition-opacity hover:opacity-80"
+                      className="cursor-pointer self-start py-2 text-sm font-medium leading-5 text-text-brand transition-opacity hover:opacity-80"
                     >
                       {t('forgot')}
                     </button>
@@ -222,9 +221,8 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
                 ) : null}
               </div>
             ) : (
-              <div className="mt-6 flex flex-col gap-4">
+              <div className="mt-11 flex flex-col gap-2">
                 <Input
-                  label={t('phoneLabel')}
                   placeholder={t('phoneLabel')}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
@@ -233,7 +231,6 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
                   inputMode="tel"
                 />
                 <Input
-                  label={t('iinOptional')}
                   placeholder={t('iinOptional')}
                   value={iin}
                   onChange={(e) => {
@@ -248,12 +245,15 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
             )}
 
             {generalError && (
-              <p role="alert" className="mt-4 text-center text-sm text-text-negative">
+              <p
+                role="alert"
+                className="mt-4 text-center text-xs font-medium leading-[1.3] text-text-negative"
+              >
                 {generalError}
               </p>
             )}
 
-            <Button type="submit" className="mt-6 w-full" disabled={busy}>
+            <Button type="submit" className="mt-4 w-full" disabled={busy}>
               {t('continue')}
             </Button>
 
@@ -265,7 +265,7 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
                   setOtp('');
                   resetErrors();
                 }}
-                className="mt-4 w-full cursor-pointer text-center text-sm text-text-brand transition-opacity hover:opacity-80"
+                className="mt-4 w-full cursor-pointer text-center text-sm font-medium leading-5 text-text-brand transition-opacity hover:opacity-80"
               >
                 {loginMode === 'password' ? t('byOtp') : t('byPassword')}
               </button>
@@ -273,15 +273,15 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
           </>
         ) : regStep === 'code' ? (
           <>
-            <h1 className="mt-7 text-center text-xl font-bold text-text-default">
+            <h1 className="mt-9 text-center text-xl font-medium leading-[1.4] text-text-default">
               {t('otpTitle')}
             </h1>
-            <p className="mx-auto mt-3 max-w-80 text-center text-sm leading-relaxed text-text-disabled">
+            <p className="mt-3 text-center text-lg leading-[1.2] text-text-disabled">
               {t('otpSent', { phone })}
             </p>
 
             <OtpField
-              className="mt-6"
+              className="mt-9"
               value={otp}
               onChange={(v) => {
                 setOtpStepError(null);
@@ -298,12 +298,15 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
             />
 
             {generalError && (
-              <p role="alert" className="mt-4 text-center text-sm text-text-negative">
+              <p
+                role="alert"
+                className="mt-4 text-center text-xs font-medium leading-[1.3] text-text-negative"
+              >
                 {generalError}
               </p>
             )}
 
-            <Button type="submit" className="mt-6 w-full" disabled={busy || otp.length !== 6}>
+            <Button type="submit" className="mt-4 w-full" disabled={busy || otp.length !== 6}>
               {t('continue')}
             </Button>
             <BackLink
@@ -315,12 +318,11 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
           </>
         ) : (
           <>
-            <h1 className="mt-7 text-center text-xl font-bold text-text-default">
+            <h1 className="mt-9 text-center text-xl font-medium leading-[1.4] text-text-default">
               {t('completeTitle')}
             </h1>
-            <div className="mt-6 flex flex-col gap-4">
+            <div className="mt-9 flex flex-col gap-2">
               <Input
-                label={t('passwordPlaceholder')}
                 placeholder={t('passwordPlaceholder')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -329,7 +331,6 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
                 autoComplete="new-password"
               />
               <Input
-                label={t('password2Placeholder')}
                 placeholder={t('password2Placeholder')}
                 value={password2}
                 onChange={(e) => setPassword2(e.target.value)}
@@ -341,12 +342,15 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
             </div>
 
             {generalError && (
-              <p role="alert" className="mt-4 text-center text-sm text-text-negative">
+              <p
+                role="alert"
+                className="mt-4 text-center text-xs font-medium leading-[1.3] text-text-negative"
+              >
                 {generalError}
               </p>
             )}
 
-            <Button type="submit" className="mt-6 w-full" disabled={busy}>
+            <Button type="submit" className="mt-4 w-full" disabled={busy}>
               {t('register')}
             </Button>
             <BackLink onClick={() => setRegStep('code')} />
@@ -381,7 +385,6 @@ function OtpField({
   return (
     <div className={className}>
       <Input
-        label={t('otpPlaceholder')}
         placeholder={t('otpPlaceholder')}
         value={value}
         onChange={(e) => onChange(e.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -391,11 +394,11 @@ function OtpField({
         maxLength={6}
       />
       {devCode && (
-        <p className="mt-2 text-center text-sm text-text-brand">
+        <p className="mt-2 text-center text-xs font-medium leading-[1.3] text-text-brand">
           {t('devCodeHint', { code: devCode })}
         </p>
       )}
-      <div className="mt-3 text-center text-sm" aria-live="polite">
+      <div className="mt-4 text-center text-sm font-medium leading-5" aria-live="polite">
         {resendLeft > 0 ? (
           <span className="text-text-disabled">{t('resendIn', { sec: resendLeft })}</span>
         ) : (
@@ -421,12 +424,9 @@ function PasswordRules({ password }: { password: string }) {
     { ok: /\d/.test(password), label: t('passwordDigit') },
   ];
   return (
-    <ul className="flex flex-col gap-1 pl-1 text-xs">
+    <ul className="flex flex-col gap-0.5 text-xs font-medium leading-[1.3]">
       {rules.map((r) => (
-        <li
-          key={r.label}
-          className={r.ok ? 'text-text-positive' : 'text-text-disabled'}
-        >
+        <li key={r.label} className={r.ok ? 'text-text-positive' : 'text-text-disabled'}>
           {r.ok ? '✓' : '•'} {r.label}
         </li>
       ))}
@@ -440,7 +440,7 @@ function BackLink({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="mt-4 w-full cursor-pointer text-center text-sm text-text-disabled transition-colors hover:text-text-default"
+      className="mt-4 w-full cursor-pointer text-center text-sm font-medium leading-5 text-text-disabled transition-colors hover:text-text-default"
     >
       {t('back')}
     </button>

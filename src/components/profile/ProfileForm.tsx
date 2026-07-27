@@ -36,11 +36,11 @@ function Field({
   title?: string;
 }) {
   return (
-    <div className="rounded-xl bg-surface-page-surf2 px-4 py-2.5">
+    <div className="flex min-h-[66px] flex-col justify-center rounded-[20px] border border-stroke-surface1 bg-surface-page-surf2 px-4 py-3">
       <label
         htmlFor={id}
         className={clsx(
-          'block text-[11px] leading-tight text-text-disabled',
+          'block text-xs font-medium leading-4 text-text-disabled',
           !value && 'sr-only',
         )}
       >
@@ -58,8 +58,8 @@ function Field({
         aria-describedby={invalid ? describedBy : undefined}
         title={title}
         className={clsx(
-          'w-full bg-transparent text-sm text-text-default outline-none placeholder:text-text-disabled disabled:cursor-default',
-          !value && 'py-2',
+          'w-full bg-transparent text-base font-semibold leading-5 text-text-default outline-none placeholder:font-medium placeholder:text-text-disabled disabled:cursor-default',
+          value && 'mt-1.5',
           !disabled && !editing && 'cursor-default',
         )}
       />
@@ -160,7 +160,7 @@ export function ProfileForm() {
     <form
       onSubmit={onSubmit}
       noValidate
-      className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8"
+      className="rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:p-8"
     >
       <div className="flex justify-end gap-2">
         {editing && (
@@ -168,7 +168,7 @@ export function ProfileForm() {
             type="button"
             onClick={cancelEdit}
             disabled={save.isPending}
-            className="inline-flex h-10 cursor-pointer items-center rounded-full border border-stroke-modal px-4 text-sm font-medium text-text-default transition-colors hover:bg-comp-surface1-hover disabled:opacity-60"
+            className="inline-flex h-[50px] cursor-pointer items-center rounded-[20px] border border-stroke-surface1 bg-surface-page-surf2 px-6 text-sm font-medium leading-5 text-text-default transition-colors hover:bg-comp-surface2-hover disabled:opacity-60"
           >
             {tCommon('cancel')}
           </button>
@@ -180,18 +180,18 @@ export function ProfileForm() {
           aria-label={editing ? t('save') : t('edit')}
           title={editing ? t('save') : t('edit')}
           className={clsx(
-            'inline-flex cursor-pointer items-center gap-2 transition-colors disabled:opacity-60',
+            'inline-flex cursor-pointer items-center gap-2 rounded-[20px] transition-colors disabled:opacity-60',
             editing
-              ? 'h-10 rounded-full border border-stroke-brand px-4 text-sm font-medium text-text-brand hover:bg-brand-hardsoft'
-              : 'h-10 w-10 justify-center rounded-xl bg-surface-page-surf2 text-text-default hover:bg-comp-surface2-hover',
+              ? 'h-[50px] border border-stroke-brand bg-surface-page-surf2 pl-6 pr-3 text-sm font-medium leading-5 text-text-brand hover:bg-brand-hardsoft'
+              : 'h-[50px] w-[50px] justify-center border border-stroke-surface1 text-text-default hover:bg-comp-surface1-hover',
           )}
         >
           {editing && t('save')}
-          <Icon name="edit" size={18} />
+          <Icon name="edit" size={20} />
         </button>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-3">
         <Field
           id={`${uid}-firstName`}
           label={t('firstName')}
@@ -214,7 +214,7 @@ export function ProfileForm() {
           title={t('readonlyHint')}
         />
       </div>
-      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Field
           id={`${uid}-iin`}
           label={t('iin')}
@@ -233,7 +233,7 @@ export function ProfileForm() {
       </div>
       <p className="mt-2 pl-1 text-xs text-text-disabled">{t('readonlyHint')}</p>
 
-      <div className="mt-3 rounded-xl bg-surface-page-surf2 px-4 py-3">
+      <div className="mt-2 rounded-[20px] border border-stroke-surface1 bg-surface-page-surf2 px-4 py-[22px]">
         <label htmlFor={`${uid}-about`} className="sr-only">
           {t('about')}
         </label>
@@ -247,17 +247,17 @@ export function ProfileForm() {
           maxLength={1000}
           aria-invalid={errField === 'about' || undefined}
           aria-describedby={errField === 'about' ? errId : undefined}
-          className="w-full resize-none bg-transparent text-sm text-text-default outline-none placeholder:text-text-disabled"
+          className="w-full resize-none bg-transparent text-base font-medium leading-5 text-text-default outline-none placeholder:text-text-disabled"
         />
       </div>
 
-      <div className="mt-3 rounded-xl bg-surface-page-surf2 px-4 py-3">
+      <div className="mt-2 flex min-h-[66px] flex-col justify-center rounded-[20px] border border-stroke-surface1 bg-surface-page-surf2 px-4 py-2">
         {tags.length > 0 && (
-          <div className="mb-2 flex flex-wrap gap-2">
+          <div className="mb-2 flex flex-wrap gap-1">
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center gap-1 rounded-full bg-surface-modal-surf1 px-3 py-1 text-xs text-text-default"
+                className="inline-flex items-center gap-2 rounded-[30px] bg-surface-modal-surf1 px-2 py-0.5 text-xs font-bold leading-[18px] text-text-default"
               >
                 {tagLabel(tag)}
                 {editing && (
@@ -286,11 +286,11 @@ export function ProfileForm() {
           maxLength={120}
           aria-invalid={errField === 'occupation' || undefined}
           aria-describedby={errField === 'occupation' ? errId : undefined}
-          className="w-full bg-transparent text-sm text-text-default outline-none placeholder:text-text-disabled"
+          className="w-full bg-transparent text-xs font-bold leading-[14.4px] text-text-default outline-none placeholder:text-text-disabled"
         />
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-1 flex flex-wrap gap-1">
         {tagKeys.map((tag) => {
           const selected = tags.includes(tag);
           return (
@@ -300,10 +300,10 @@ export function ProfileForm() {
               disabled={!editing}
               onClick={() => toggleTag(tag)}
               className={clsx(
-                'rounded-full px-4 py-1.5 text-xs font-medium transition-colors',
+                'rounded-[30px] border-2 px-3 py-1 text-sm font-medium leading-5 transition-colors',
                 selected
-                  ? 'bg-surface-modal-surf1 text-text-default'
-                  : 'bg-surface-page-surf2 text-text-disabled',
+                  ? 'border-stroke-surface1 bg-surface-page-surf2 text-text-default'
+                  : 'border-stroke-surface1 bg-surface-page-surf2 text-text-disabled',
                 editing && 'cursor-pointer hover:bg-comp-surface2-hover',
               )}
             >

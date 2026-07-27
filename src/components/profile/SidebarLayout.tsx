@@ -43,11 +43,11 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen flex-col">
       <Header />
       <main id="main" className="container-page flex-1 py-8">
-        <div className="flex flex-col gap-6 lg:flex-row">
-          <aside className="relative h-fit w-full shrink-0 rounded-3xl bg-surface-page-surf1 p-3 lg:w-64">
+        <div className="flex flex-col gap-3 xl:flex-row xl:gap-[30px]">
+          <aside className="relative h-fit w-full shrink-0 rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 p-4 xl:w-83 xl:p-8">
             <nav
               aria-label={tNav('profile')}
-              className="flex snap-x flex-row gap-1 overflow-x-auto lg:flex-col lg:overflow-visible"
+              className="flex snap-x flex-row gap-4 overflow-x-auto xl:flex-col xl:gap-8 xl:overflow-visible"
             >
               {items.map((item) => {
                 const active = item.match.some(
@@ -59,30 +59,30 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
                     href={item.href}
                     aria-current={active ? 'page' : undefined}
                     className={clsx(
-                      'flex snap-start items-center gap-3 whitespace-nowrap rounded-xl px-4 py-3 text-sm font-medium transition-colors',
+                      'flex snap-start items-center gap-2 whitespace-nowrap rounded-[30px] p-2 text-base font-medium leading-5 transition-colors xl:gap-3 xl:rounded-none xl:p-0',
                       active
                         ? 'text-text-brand'
-                        : 'text-text-default hover:bg-comp-surface1-hover',
+                        : 'text-text-default hover:bg-comp-surface1-hover xl:hover:bg-transparent xl:hover:text-text-brand',
                     )}
                   >
-                    <Icon name={item.icon} size={20} filled={active} />
+                    <Icon name={item.icon} size={24} filled={active} />
                     {item.label}
                   </Link>
                 );
               })}
               <Link
                 href="/franchise"
-                className="flex snap-start items-center gap-3 whitespace-nowrap rounded-xl px-4 py-3 text-sm font-medium text-text-default transition-colors hover:bg-comp-surface1-hover"
+                className="flex snap-start items-center gap-2 whitespace-nowrap rounded-[30px] p-2 text-base font-medium leading-5 text-text-default transition-colors hover:bg-comp-surface1-hover xl:gap-3 xl:rounded-none xl:p-0 xl:hover:bg-transparent xl:hover:text-text-brand"
               >
-                <Icon name="diversity_3" size={20} />
+                <Icon name="diversity_3" size={24} />
                 {t('franchise')}
-                <Icon name="arrow_outward" size={16} className="ml-auto" />
+                <Icon name="arrow_outward" size={16} />
               </Link>
             </nav>
             {/* подсказка, что список листается по горизонтали */}
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-y-0 right-0 w-10 rounded-r-3xl bg-gradient-to-l from-surface-page-surf1 to-transparent lg:hidden"
+              className="pointer-events-none absolute inset-y-0 right-0 w-10 rounded-r-[28px] bg-gradient-to-l from-surface-page-surf1 to-transparent xl:hidden"
             />
           </aside>
           <div className="min-w-0 flex-1">{children}</div>

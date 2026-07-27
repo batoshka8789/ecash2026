@@ -1,10 +1,8 @@
 /* Дизайн-токены ecash.
- * Источник — палитры, задокументированные в макете Figma:
- * «pallete surface / font / btns / stroke / divider / components»
- * (design/screens/system). Значения перенесены 1:1 из подписей макета.
- *
- * Помеченные [swatch] значения: подпись в макете противоречила свотчу
- * (опечатка дизайнера), взято значение по свотчу и смыслу токена.
+ * Источник — переменные Figma «Pallete» / «Allias (dark)» / «Allias (light)»,
+ * прочитанные напрямую из .fig (scripts/fig-decode.mjs + fig-spec.mjs).
+ * Переменные, а не подписи на палитрах: подписи в макете местами съехали
+ * на строку, свотчи же совпадают с переменными.
  */
 
 @theme inline {
@@ -99,7 +97,7 @@
   --text-brand: #f15a25;
   --text-positive: #009944;
   --text-negative: #fa5050;
-  --text-additional: #ffcc00; /* [swatch] подпись в макете дублировала FA5050 */
+  --text-additional: #ffcc00;
   --text-additional-2: #ad33ad;
   --text-additional-3: #0066ff;
 
@@ -115,9 +113,9 @@
   --stroke-surface3: #6b6b6b;
   --stroke-modal: #404040;
 
-  --divider-hole: #1a1a1a; /* [swatch] подпись в макете дублировала F15A25 */
-  --divider-elevated: #333333;
-  --divider-additional: #4c4c4c;
+  --divider-hole: #1a1a1a;
+  --divider-elevated: #4c4c4c;
+  --divider-additional: #eeeeee;
 
   --comp-surface1-hover: #2b2b2b;
   --comp-surface2-hover: #3b3b3b;
@@ -143,9 +141,9 @@
   --surface-modal-surf1-active: #f5f5f5;
   --surface-inverted: #262626;
 
-  --text-default: #1a1a1a;
+  --text-default: #3f3f3f;
   --text-always-white: #ffffff;
-  --text-disabled: #6b6b6b;
+  --text-disabled: #999691;
   --text-inverted: #eeeeee;
   --text-brand: #f15a25;
   --text-positive: #009944;
@@ -208,7 +206,7 @@
   --text-brand: #f15a25;
   --text-positive: #009944;
   --text-negative: #fa5050;
-  --text-additional: #ffcc00; /* [swatch] подпись в макете дублировала FA5050 */
+  --text-additional: #ffcc00;
   --text-additional-2: #ad33ad;
   --text-additional-3: #0066ff;
 
@@ -224,9 +222,9 @@
   --stroke-surface3: #6b6b6b;
   --stroke-modal: #404040;
 
-  --divider-hole: #1a1a1a; /* [swatch] подпись в макете дублировала F15A25 */
-  --divider-elevated: #333333;
-  --divider-additional: #4c4c4c;
+  --divider-hole: #1a1a1a;
+  --divider-elevated: #4c4c4c;
+  --divider-additional: #eeeeee;
 
   --comp-surface1-hover: #2b2b2b;
   --comp-surface2-hover: #3b3b3b;

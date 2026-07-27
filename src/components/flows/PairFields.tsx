@@ -87,13 +87,18 @@ export function AmountBox({
     <div
       ref={rootRef}
       className={clsx(
-        'relative flex flex-1 items-center rounded-2xl bg-surface-page-surf2',
+        // «swap currency selector» 699:45952 — половина пары: 66px, две плитки
+        // surf2 с зазором 1px, скругления 20 только по внешним углам.
+        'relative flex h-[66px] flex-1 items-stretch gap-px rounded-[20px]',
         invalid && 'border border-negative',
         className,
       )}
     >
-      <label htmlFor={id} className="min-w-0 flex-1 px-4 py-2">
-        <span className="block text-[11px] leading-tight text-text-disabled">{label}</span>
+      <label
+        htmlFor={id}
+        className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 rounded-l-[20px] bg-surface-page-surf2 px-4 py-3"
+      >
+        <span className="block text-xs font-medium leading-4 text-text-disabled">{label}</span>
         <input
           id={id}
           value={value}
@@ -102,7 +107,7 @@ export function AmountBox({
           inputMode="decimal"
           placeholder=" "
           aria-invalid={invalid || undefined}
-          className="w-full bg-transparent text-base text-text-default outline-none placeholder:text-text-disabled"
+          className="w-full bg-transparent text-base font-semibold leading-5 text-text-default outline-none placeholder:font-normal placeholder:text-text-disabled"
         />
       </label>
       <button
@@ -113,22 +118,24 @@ export function AmountBox({
         aria-label={canPick ? t('pair.pickCurrency') : undefined}
         tabIndex={canPick ? 0 : -1}
         className={clsx(
-          'm-2 inline-flex shrink-0 items-center gap-2 rounded-xl bg-surface-modal-surf1 px-3 py-2 text-base font-medium text-text-default transition-colors',
+          // «dropdown currency» 116:3180 — 66px, padding 16, флаг 40×32/r8,
+          // gap 16 до кода и 4 до стрелки.
+          'inline-flex shrink-0 items-center gap-4 rounded-r-[20px] bg-surface-page-surf2 px-4 text-base font-semibold text-text-default transition-colors',
           canPick ? 'cursor-pointer hover:bg-comp-surface2-hover' : 'cursor-default',
         )}
       >
-        <CurrencyFlag flag={flag ?? 'gold'} className="h-6 w-9" />
+        <CurrencyFlag flag={flag ?? 'gold'} className="h-8 w-10 rounded-lg" />
         {currency}
-        {canPick && <Icon name="keyboard_arrow_down" size={18} />}
+        {canPick && <Icon name="keyboard_arrow_down" size={16} className="-ml-3" />}
       </button>
 
       {open && canPick && (
-        <div className="absolute right-2 top-full z-30 mt-1 w-64 rounded-2xl border border-stroke-modal bg-surface-modal-surf1 p-1.5 shadow-xl">
-          <div className="relative mb-1.5">
+        <div className="absolute right-0 top-full z-30 mt-1 w-[289px] max-w-[calc(100vw-32px)] rounded-[20px] border border-stroke-modal bg-surface-modal-bg p-2 shadow-[0_0_6px_rgba(0,0,0,0.12)]">
+          <div className="relative mb-4">
             <Icon
               name="search"
-              size={18}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled"
+              size={24}
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-default"
             />
             <input
               ref={searchRef}
@@ -139,7 +146,7 @@ export function AmountBox({
               aria-label={t('pair.searchCurrency')}
               autoComplete="off"
               spellCheck={false}
-              className="h-10 w-full rounded-xl border border-stroke-modal bg-transparent pl-10 pr-3 text-sm text-text-default outline-none transition-colors placeholder:text-text-disabled focus:border-stroke-surface3"
+              className="h-13 w-full rounded-xl border border-transparent bg-surface-modal-surf1 pl-13 pr-4 text-sm text-text-default outline-none transition-colors placeholder:text-text-disabled focus:border-stroke-brand"
             />
           </div>
           <ul role="listbox" aria-label={t('pair.pickCurrency')} className="max-h-60 overflow-auto">
@@ -153,15 +160,26 @@ export function AmountBox({
                     onCurrencyChange!(opt.code);
                     close();
                   }}
-                  className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors hover:bg-comp-surface1-hover"
+                  className="flex min-h-14 w-full cursor-pointer items-center gap-3 rounded-xl py-2 pl-2 pr-4 text-left transition-colors hover:bg-comp-surface2-hover"
                 >
-                  <CurrencyFlag flag={currencyFlagClass(opt.code) ?? 'gold'} className="h-5 w-8" />
-                  <span className="flex min-w-0 flex-col">
-                    <span className="text-sm text-text-default">{opt.code}</span>
-                    <span className="truncate text-xs text-text-disabled">{opt.name}</span>
+                  <CurrencyFlag
+                    flag={currencyFlagClass(opt.code) ?? 'gold'}
+                    className="h-10 w-[50px] shrink-0 rounded-[10px]"
+                  />
+                  <span className="flex min-w-0 flex-col justify-center">
+                    <span className="text-base font-semibold leading-5 text-text-default">
+                      {opt.code}
+                    </span>
+                    <span className="truncate text-xs font-bold leading-[1.2] text-text-disabled">
+                      {opt.name}
+                    </span>
                   </span>
                   {opt.code === currency && (
-                    <Icon name="check" size={16} className="ml-auto shrink-0" />
+                    <Icon
+                      name="check"
+                      size={12}
+                      className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand text-text-always-white"
+                    />
                   )}
                 </button>
               </li>
@@ -196,20 +214,22 @@ export function BranchAddress({
 
   return (
     <div>
-      <h2 className="text-lg font-bold text-text-default sm:text-2xl">{t('title')}</h2>
-      <div className="mt-3">
+      <h2 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+        {t('title')}
+      </h2>
+      <div className="mt-5">
         {nearest && (
-          <span className="rounded-md bg-additional-3 px-2 py-0.5 text-[11px] font-medium text-text-always-white">
+          <span className="inline-flex h-[18px] items-center rounded-lg bg-additional-3 px-2 text-xs font-bold leading-[18px] text-text-always-white">
             {t('nearest')}
           </span>
         )}
         <div className="mt-2 flex items-center gap-2 text-base text-text-default">
-          <Icon name="account_balance" size={18} className="shrink-0 text-text-disabled" />
+          <Icon name="account_balance" size={20} className="shrink-0 text-text-disabled" />
           <span className="min-w-0 truncate">{department?.address ?? '—'}</span>
         </div>
         {department?.timetable && (
-          <div className="mt-1.5 flex items-center gap-2 text-sm">
-            <Icon name="schedule" size={16} className="text-text-disabled" />
+          <div className="mt-2 flex items-center gap-2 text-base">
+            <Icon name="schedule" size={20} className="shrink-0 text-text-disabled" />
             <span className="text-text-default">
               {department.timetable.openTime} - {department.timetable.closeTime}
             </span>
@@ -221,9 +241,9 @@ export function BranchAddress({
         <button
           type="button"
           onClick={() => onPickBetter?.(betterOffer.depId)}
-          className="mt-4 flex cursor-pointer items-center gap-3 rounded-2xl bg-surface-page-surf2 px-4 py-3 text-left text-sm text-text-default transition-colors hover:bg-comp-surface2-hover"
+          className="mt-6 flex cursor-pointer items-center gap-3 rounded-2xl bg-surface-page-surf2 p-3 text-left text-base font-medium leading-5 text-text-default shadow-[0_1px_4px_rgba(12,12,13,0.1)] transition-colors hover:bg-comp-surface2-hover md:mt-7 md:p-4"
         >
-          <Icon name="directions_run" size={20} className="text-brand" />
+          <Icon name="directions_run" size={32} className="shrink-0 text-brand" />
           <span>
             {t('betterAt')} <span className="text-text-brand">{betterOffer.address}</span>,
             <br />
@@ -232,7 +252,7 @@ export function BranchAddress({
               {betterOffer.rate.toLocaleString('ru-RU')} ₸
             </span>
           </span>
-          <Icon name="chevron_right" size={20} className="ml-2 shrink-0 text-text-disabled" />
+          <Icon name="chevron_right" size={24} className="ml-3 shrink-0 text-text-disabled" />
         </button>
       )}
       <span className="sr-only">{tb('onMap')}</span>
@@ -258,17 +278,17 @@ export function BanknotesPicker({
   const open = expanded || value !== null;
 
   return (
-    <div className="rounded-2xl bg-surface-page-surf1 px-5 py-4 sm:rounded-3xl sm:px-8 sm:py-5">
+    <div className="rounded-[22px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:rounded-[28px] md:p-8">
       {!open ? (
         <button
           type="button"
           onClick={() => setExpanded(true)}
           aria-expanded={false}
           aria-controls={listId}
-          className="flex cursor-pointer items-center gap-3 text-base text-text-default transition-opacity hover:opacity-80"
+          className="flex cursor-pointer items-center gap-3 text-sm text-text-default transition-opacity hover:opacity-80"
         >
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand text-text-always-white">
-            <Icon name="add" size={18} />
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-text-always-white">
+            <Icon name="add" size={16} />
           </span>
           {t('choose')}
         </button>
@@ -282,16 +302,16 @@ export function BanknotesPicker({
             }}
             aria-expanded
             aria-controls={listId}
-            className="flex cursor-pointer items-center gap-3 text-sm text-text-disabled transition-colors hover:text-text-default"
+            className="flex cursor-pointer items-center gap-3 text-sm text-text-default transition-opacity hover:opacity-80"
           >
-            <Icon name="cancel" size={20} />
+            <Icon name="cancel" size={24} className="shrink-0" />
             {t('label')}
           </button>
-          <div id={listId} role="radiogroup" aria-label={t('label')} className="mt-3 flex flex-col gap-2">
+          <div id={listId} role="radiogroup" aria-label={t('label')} className="mt-7 flex flex-col gap-4">
             {(['small', 'large'] as const).map((opt) => (
               <label
                 key={opt}
-                className="flex cursor-pointer items-center gap-3 text-base text-text-default"
+                className="flex cursor-pointer items-center gap-3 text-lg font-medium leading-5 text-text-default"
               >
                 <input
                   type="radio"
@@ -302,13 +322,13 @@ export function BanknotesPicker({
                 />
                 <span
                   className={clsx(
-                    'flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand',
+                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand',
                     value === opt
-                      ? 'border-transparent bg-surface-modal-surf1 text-text-default'
+                      ? 'border-transparent bg-btn-2 text-text-default'
                       : 'border-stroke-surface3 text-transparent',
                   )}
                 >
-                  <Icon name="check" size={14} />
+                  <Icon name="check" size={19} />
                 </span>
                 {t(opt)}
               </label>

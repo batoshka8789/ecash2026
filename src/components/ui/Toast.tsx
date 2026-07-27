@@ -41,23 +41,24 @@ export function Toast({
     <div
       className={
         fixed
-          ? 'anim-toast-in fixed left-1/2 top-20 z-50 -translate-x-1/2 px-4'
-          : 'anim-toast-in flex justify-center'
+          ? 'anim-toast-in fixed left-1/2 top-20 z-50 w-full max-w-[379px] -translate-x-1/2 px-4'
+          : 'anim-toast-in flex justify-center px-4'
       }
     >
-      <div className="flex items-center gap-3 rounded-2xl bg-toast py-3 pl-4 pr-2 shadow-[0_8px_24px_rgb(0_0_0/0.3)]">
+      {/* «warning»/«alert» из платы Alerts: 347×r24, паддинг 12, gap 12 */}
+      <div className="flex w-[347px] max-w-full items-center gap-3 rounded-3xl bg-toast p-3 shadow-[0_16px_32px_-8px_rgb(12_12_13/0.4)]">
         {tone === 'brand' ? (
           <span
-            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${color}`}
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${color}`}
           >
-            <Icon name={icon} size={16} />
+            <Icon name={icon} size={20} />
           </span>
         ) : (
-          <Icon name={icon} size={22} className={`shrink-0 ${color}`} filled />
+          <Icon name={icon} size={24} className={`shrink-0 ${color}`} filled />
         )}
         <div
           role={tone === 'negative' ? 'alert' : 'status'}
-          className="max-w-56 text-sm leading-tight text-text-default"
+          className="min-w-0 flex-1 text-base font-medium leading-5 text-text-default"
         >
           {children}
         </div>
@@ -65,7 +66,7 @@ export function Toast({
           <button
             type="button"
             onClick={action.onClick}
-            className="shrink-0 cursor-pointer rounded-xl bg-brand px-3 py-1.5 text-sm font-medium text-text-always-white transition-opacity hover:opacity-90"
+            className="shrink-0 cursor-pointer rounded-xl bg-brand px-3 py-1.5 text-sm font-medium leading-5 text-text-always-white transition-opacity hover:opacity-90"
           >
             {action.label}
           </button>
@@ -74,9 +75,9 @@ export function Toast({
           type="button"
           onClick={onClose}
           aria-label={closeLabel}
-          className="ml-1 inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-default transition-colors hover:bg-comp-surface2-hover"
+          className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-default transition-colors hover:bg-comp-surface2-hover"
         >
-          <Icon name="close" size={18} />
+          <Icon name="close" size={16} />
         </button>
       </div>
     </div>

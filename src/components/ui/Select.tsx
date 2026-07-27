@@ -175,7 +175,8 @@ export function Select({
       className={
         searchable
           ? 'max-h-72 overflow-auto'
-          : 'absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-[20px] border border-stroke-modal bg-surface-page-surf2 p-2 shadow-[0_0_6px_rgba(0,0,0,0.12)]'
+          : // попап «Frame 1437254896»: r20, p8, обводка stroke/modal, тень 0 0 6px 12%
+            'absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-[20px] border border-stroke-modal bg-surface-modal-bg p-2 shadow-[0_0_6px_rgb(0_0_0/0.12)]'
       }
     >
       {visible.map((opt, idx) => (
@@ -191,20 +192,42 @@ export function Select({
           }}
           onPointerMove={() => setActive(idx)}
           className={clsx(
-            // 56×r12 с паддингом 8/16/8/8 — «dropdown currency item list» из макета
-            'flex min-h-14 cursor-pointer items-center justify-between gap-4 rounded-xl py-2 pl-2 pr-4 text-base text-text-default transition-colors',
-            idx === active ? 'bg-comp-surface2-hover' : 'bg-transparent',
+            'flex cursor-pointer items-center justify-between gap-4 rounded-xl py-2 text-base text-text-default transition-colors',
+            // с флагом — «dropdown currency item list» 56×r12, паддинг 8/16/8/8;
+            // без него — строка списка адресов 49×r12 с паддингом 8/16 (1347:80046)
+            renderLeading ? 'min-h-14 pl-2 pr-4' : 'min-h-[49px] px-4',
+            idx === active
+              ? 'bg-surface-modal-surf1-hover'
+              : opt.value === value
+                ? 'bg-surface-modal-surf1-active'
+                : 'bg-transparent',
           )}
         >
           {/* «Frame 1437254940»: флаг + колонка «код / название», всё 40px в высоту */}
           <span className="flex min-w-0 items-center gap-3">
             {renderLeading?.(opt)}
-            <span className="flex min-w-0 flex-col justify-center">
-              <span className="truncate">
+            <span
+              className={clsx('flex min-w-0 flex-col justify-center', !renderLeading && 'gap-0.5')}
+            >
+              {/* валюта: код SemiBold 16/20 + название Bold 12/1.2×;
+                  адрес: строка Regular 14/1.1× + подпись Medium 12/1.3× */}
+              <span
+                className={clsx(
+                  'truncate',
+                  renderLeading ? 'font-semibold leading-5' : 'text-sm leading-[1.1]',
+                )}
+              >
                 {renderLeading ? opt.label : renderValue ? renderValue(opt) : opt.label}
               </span>
               {opt.hint && (
-                <span className="truncate text-xs font-medium text-text-disabled">{opt.hint}</span>
+                <span
+                  className={clsx(
+                    'truncate text-xs text-text-disabled',
+                    renderLeading ? 'font-bold leading-[1.2]' : 'font-medium leading-[1.3]',
+                  )}
+                >
+                  {opt.hint}
+                </span>
               )}
             </span>
           </span>
@@ -235,7 +258,10 @@ export function Select({
     // комбобокса (стрелки/Enter/Esc), фокус живёт на кнопке ниже.
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions
     <div ref={rootRef} className={clsx('relative', className)} onKeyDown={onKeyDown}>
-      <span id={`${id}-label`} className="mb-1 block text-sm text-text-disabled">
+      <span
+        id={`${id}-label`}
+        className="mb-1 block text-xs font-bold leading-[1.2] text-text-disabled"
+      >
         {label}
       </span>
       <button
@@ -249,9 +275,12 @@ export function Select({
         aria-activedescendant={searchable ? undefined : activeId}
         onClick={() => (open ? close(false) : openList())}
         className={clsx(
-          'flex h-12 w-full cursor-pointer items-center justify-between gap-2 rounded-2xl border bg-transparent px-4 text-left text-base text-text-default transition-colors',
+          // геометрия «Input» M: 54×r20, паддинг 16, текст Roboto Medium 16/20
+          'flex h-[54px] w-full cursor-pointer items-center justify-between gap-2 rounded-[20px] border bg-transparent px-4 text-left text-base font-medium leading-5 text-text-default transition-colors',
           // раскрытый селект в макете подсвечен брендовой обводкой
-          open ? 'border-stroke-brand' : 'border-stroke-modal hover:border-stroke-surface3',
+          open
+            ? 'border-stroke-brand'
+            : 'border-surface-page-surf3 hover:bg-surface-page-surf2 hover:border-stroke-surface3',
           buttonClassName,
         )}
       >
@@ -262,7 +291,7 @@ export function Select({
             keyboard_arrow_down — ближайший аналог в Material Symbols */}
         <Icon
           name="arrow_drop_down"
-          size={20}
+          size={16}
           className={clsx('shrink-0 transition-transform', open && 'rotate-180')}
         />
       </button>
@@ -270,9 +299,9 @@ export function Select({
       {open &&
         (searchable ? (
           // Попап с поиском: обёртка несёт стили списка, ul остаётся listbox.
-          <div className="absolute left-0 right-0 top-full z-30 mt-1 rounded-[20px] border border-stroke-modal bg-surface-page-surf2 p-2 shadow-[0_0_6px_rgba(0,0,0,0.12)]">
+          <div className="absolute left-0 right-0 top-full z-30 mt-1 rounded-[20px] border border-stroke-modal bg-surface-modal-bg p-2 shadow-[0_0_6px_rgb(0_0_0/0.12)]">
             {/* «search field S»: 52×r12 на surf1 модалки, брендовая обводка в фокусе */}
-            <div className="mb-4 flex h-13 items-center gap-3 rounded-xl border border-transparent bg-surface-modal-surf1 px-4 transition-colors focus-within:border-stroke-brand">
+            <div className="mb-4 flex h-13 items-center gap-3 rounded-xl border border-surface-modal-surf1 bg-surface-modal-surf1 px-4 transition-colors focus-within:border-stroke-brand">
               <Icon name="search" size={24} className="shrink-0 text-text-default" />
               <input
                 ref={searchRef}
@@ -289,7 +318,8 @@ export function Select({
                 aria-autocomplete="list"
                 autoComplete="off"
                 spellCheck={false}
-                className="w-full min-w-0 bg-transparent text-base text-text-default outline-none placeholder:text-sm placeholder:font-semibold placeholder:text-text-disabled"
+                // «Input txt S» — Roboto Medium 14/20, плейсхолдер SemiBold 14/20
+                className="w-full min-w-0 bg-transparent text-sm font-medium leading-5 text-text-default outline-none placeholder:font-semibold placeholder:text-text-disabled"
               />
             </div>
             {listbox}

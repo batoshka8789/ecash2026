@@ -177,7 +177,7 @@ export function BookingFlow({ mode }: { mode: Mode }) {
     create.error instanceof ApiError ? errorText(create.error.message) : null;
 
   return (
-    <form onSubmit={submit} className="container-page flex flex-col gap-5 pt-6" noValidate>
+    <form onSubmit={submit} className="container-page bleed-mobile flex flex-col gap-1 pt-8" noValidate>
       <Toast
         open={showErrors}
         tone="negative"
@@ -200,17 +200,21 @@ export function BookingFlow({ mode }: { mode: Mode }) {
         {errorText('errors.REQUEST_ALREADY_EXISTS')}
       </Toast>
 
-      <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
+      <section className="rounded-[22px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:rounded-[28px] md:p-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div className="min-w-0">
-            <h1 className="text-xl font-bold text-text-default sm:text-[28px]">{t('pair.title')}</h1>
+            <h1 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+              {t('pair.title')}
+            </h1>
             {mode === 'individual' && (
-              <p className="mt-1 max-w-md text-sm text-text-disabled">{t('pair.individualHint')}</p>
+              <p className="mt-3 max-w-[576px] text-sm font-medium leading-5 text-text-disabled md:mt-4 md:text-base">
+                {t('pair.individualHint')}
+              </p>
             )}
           </div>
         </div>
 
-        <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="relative mt-6 flex flex-col gap-2 md:mt-10 md:flex-row md:items-center md:gap-3">
           <AmountBox
             label={`${t('pair.give')} (${kztGive ? '₸' : currencySymbol(foreign)})`}
             value={give}
@@ -224,9 +228,11 @@ export function BookingFlow({ mode }: { mode: Mode }) {
             type="button"
             onClick={() => setKztGive((v) => !v)}
             aria-label={t('pair.swap')}
-            className="mx-auto cursor-pointer rounded-full p-2 text-text-disabled transition-colors hover:bg-comp-surface1-hover hover:text-text-default"
+            /* мобильный фрейм 1783:128461 — кнопка 36×36 r20 на surf2 с обводкой;
+               с 768px (1783:127076) остаётся голая иконка 20×20 */
+            className="absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 shrink-0 cursor-pointer items-center justify-center rounded-[20px] border border-stroke-modal bg-surface-page-surf2 p-2 text-text-default shadow-[0_1px_4px_rgba(12,12,13,0.1)] transition-colors hover:bg-comp-surface2-hover md:static md:mx-auto md:translate-x-0 md:translate-y-0 md:rounded-full md:border-0 md:bg-transparent md:p-0 md:shadow-none md:hover:bg-transparent md:hover:text-text-brand"
           >
-            <Icon name={mode === 'individual' ? 'arrow_forward' : 'sync_alt'} size={22} />
+            <Icon name={mode === 'individual' ? 'arrow_forward' : 'sync_alt'} size={20} />
           </button>
           <AmountBox
             label={`${t('pair.get')} (${kztGive ? currencySymbol(foreign) : '₸'})`}
@@ -238,12 +244,12 @@ export function BookingFlow({ mode }: { mode: Mode }) {
           />
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-text-default">
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-text-default">
           {t('pair.currentRate')}
           {ratesQ.isPending ? (
-            <span className="h-7 w-32 animate-pulse rounded-full bg-surface-page-surf2" />
+            <span className="h-[23px] w-32 animate-pulse rounded-xl bg-surface-page-surf2" />
           ) : rate > 0 ? (
-            <span className="rounded-full bg-brand-hardsoft px-3 py-1.5 font-medium text-text-brand">
+            <span className="rounded-xl bg-surface-page-surf2 px-3 py-1 text-text-disabled">
               {tr('perUnit', { rate: formatNumber(rate, locale), code: currencySymbol(foreign) })}
             </span>
           ) : (
@@ -253,7 +259,7 @@ export function BookingFlow({ mode }: { mode: Mode }) {
 
         {(mode === 'individual' || individual) && (
           <div className="mt-5 max-w-xs">
-            <label htmlFor="desired-rate" className="mb-1 block text-sm text-text-disabled">
+            <label htmlFor="desired-rate" className="mb-2 block text-sm font-semibold text-text-disabled">
               {t('pair.desiredRate')}
             </label>
             <input
@@ -262,13 +268,14 @@ export function BookingFlow({ mode }: { mode: Mode }) {
               onChange={(e) => setDesiredRate(e.target.value.replace(/[^\d\s.,]/g, '').slice(0, 10))}
               inputMode="decimal"
               placeholder={rate > 0 ? formatNumber(rate, locale) : ''}
-              className="h-12 w-full rounded-2xl border border-stroke-modal bg-transparent px-4 text-base text-text-default outline-none placeholder:text-text-disabled focus:border-stroke-surface3"
+              className="h-[54px] w-full rounded-[20px] border border-surface-page-surf3 bg-transparent px-4 text-base font-semibold text-text-default outline-none placeholder:font-normal placeholder:text-text-disabled focus:border-stroke-brand"
             />
           </div>
         )}
 
-        <div className="mt-8">
-          <div className="mb-3 max-w-md">
+        {/* «Rectangle 555» 415:23783 — разделитель 1px divider/hole, отступы 24/28 */}
+        <div className="mt-6 border-t border-divider-hole pt-6 md:mt-7 md:pt-7">
+          <div className="mb-5 max-w-md">
             <Select
               label={t('address.title')}
               value={String(depId)}
@@ -290,10 +297,13 @@ export function BookingFlow({ mode }: { mode: Mode }) {
 
       <BanknotesPicker value={banknotes} onChange={setBanknotes} />
 
-      <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
-        <h2 className="text-lg font-bold text-text-default sm:text-2xl">{t('data.title')}</h2>
-        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-          <div className="flex-1">
+      <section className="rounded-[22px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:rounded-[28px] md:p-8">
+        <h2 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+          {t('data.title')}
+        </h2>
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row md:mt-10">
+          {/* «Input» 898:34257 — 280×54 на десктопе, растяжка на мобиле */}
+          <div className="flex-1 md:max-w-[280px]">
             <label htmlFor="bf-phone" className="sr-only">
               {t('data.phone')}
             </label>
@@ -304,11 +314,12 @@ export function BookingFlow({ mode }: { mode: Mode }) {
               placeholder={t('data.phone')}
               inputMode="tel"
               title={t('data.phoneFromAccount')}
-              className="h-12 w-full rounded-2xl border border-stroke-modal bg-transparent px-4 text-base text-text-disabled outline-none"
+              className="h-[54px] w-full rounded-[20px] border border-surface-page-surf3 bg-transparent px-4 text-base font-semibold text-text-disabled outline-none"
             />
             <p className="mt-1 pl-1 text-xs text-text-disabled">{t('data.phoneFromAccount')}</p>
           </div>
-          <div className="flex-1">
+          {/* «Input» 898:34257 — 280×54 на десктопе, растяжка на мобиле */}
+          <div className="flex-1 md:max-w-[280px]">
             <label htmlFor="bf-name" className="sr-only">
               {t('data.name')}
             </label>
@@ -318,13 +329,13 @@ export function BookingFlow({ mode }: { mode: Mode }) {
               onChange={(e) => setName(e.target.value.slice(0, 120))}
               placeholder={t('data.name')}
               autoComplete="name"
-              className="h-12 w-full rounded-2xl border border-stroke-modal bg-transparent px-4 text-base text-text-default outline-none placeholder:text-text-disabled focus:border-stroke-surface3"
+              className="h-[54px] w-full rounded-[20px] border border-surface-page-surf3 bg-transparent px-4 text-base font-semibold text-text-default outline-none placeholder:font-normal placeholder:text-text-disabled focus:border-stroke-brand"
             />
           </div>
         </div>
 
         {mode === 'booking' && (
-          <label className="mt-4 flex cursor-pointer items-center gap-3 text-sm text-text-disabled">
+          <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm text-text-disabled">
             <input
               type="checkbox"
               checked={individual}
@@ -333,13 +344,13 @@ export function BookingFlow({ mode }: { mode: Mode }) {
             />
             <span
               className={
-                'flex h-5 w-5 items-center justify-center rounded-md border transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand ' +
+                'flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand ' +
                 (individual
                   ? 'border-transparent bg-brand text-text-always-white'
-                  : 'border-stroke-surface3 text-transparent')
+                  : 'border-surface-page-surf3 text-transparent')
               }
             >
-              <Icon name="check" size={14} />
+              <Icon name="check" size={16} />
             </span>
             {t('data.requestIndividual')}
           </label>
@@ -353,7 +364,7 @@ export function BookingFlow({ mode }: { mode: Mode }) {
 
         <Button
           type="submit"
-          className="mt-6 w-full sm:w-auto sm:min-w-52"
+          className="mt-6 w-full md:mt-8 md:w-auto"
           disabled={create.isPending}
         >
           {mode === 'individual' || individual ? t('data.requestIndividualCta') : t('data.book')}

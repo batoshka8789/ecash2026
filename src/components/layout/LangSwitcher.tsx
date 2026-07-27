@@ -82,7 +82,7 @@ export function LangSwitcher() {
         onKeyDown={onTriggerKeyDown}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="inline-flex h-9 cursor-pointer items-center rounded-xl bg-btn-1 px-3 text-base font-medium text-text-default transition-colors hover:bg-comp-surface2-hover sm:h-[50px] sm:rounded-2xl sm:px-4"
+        className="inline-flex h-10 cursor-pointer items-center rounded-2xl bg-btn-1 px-4 text-sm font-medium leading-5 text-text-default transition-colors hover:bg-comp-surface2-hover md:h-[50px]"
       >
         {labels[locale]}
       </button>
@@ -106,7 +106,7 @@ export function LangSwitcher() {
                 router.replace(pathname, { locale: l });
               }}
               className={clsx(
-                'block w-full cursor-pointer px-4 py-2.5 text-left text-base transition-colors hover:bg-surface-modal-surf1-hover',
+                'block w-full cursor-pointer px-4 py-2.5 text-left text-sm font-medium transition-colors hover:bg-surface-modal-surf1-hover',
                 l === locale ? 'text-text-brand' : 'text-text-default',
               )}
             >

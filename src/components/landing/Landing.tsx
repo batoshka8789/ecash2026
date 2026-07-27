@@ -24,7 +24,8 @@ type Card = { title: string; text: string; accent?: boolean };
  * → 4 карточки] · [сплит «Что входит в пакет» → 2 ряда по 3] · этапы ·
  * баннер «Свяжитесь…» · [сплит «Поддержка» → 2 ряда по 6] · FAQ · footer.
  *
- * Паддинги страницы из фреймов: 16 (360/480) · 52 (768) · 40 (1024) · 1324 (1920).
+ * Паддинги страницы из фреймов: 20 (360/480/768) · 40 (1024) · колонка 1200
+ * внутри бокса 1448 (1920). Отступ между секциями: 160 · 300 · 400 · 400.
  * Карточки: #262626 40 %, backdrop-blur 45.8, r40 → r64, p24 → p44, gap20 → gap40.
  * Светлого режима у лендинга в макете нет — тема форсирована классом theme-dark.
  */
@@ -63,7 +64,7 @@ export function Landing() {
             (фрейм 2153:196356: col gap40 cross:center, текст 32/500 center).
             С 768 — строка: текст слева, картинка справа.
           */}
-          <section className="flex flex-col items-center gap-10 pt-8 md:flex-row md:items-end md:gap-10 md:pt-0">
+          <section className="flex flex-col items-center gap-10 md:flex-row md:items-end md:gap-10">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -72,7 +73,7 @@ export function Landing() {
                 delay: 0.15,
                 ease: [0.22, 1, 0.36, 1],
               }}
-              className="w-[180px] shrink-0 md:order-2 md:mx-0 md:w-[300px] lg:w-[354px] xl:w-[580px]"
+              className="w-[166px] shrink-0 md:order-2 md:mx-0 md:w-[344px] lg:w-[452px] xl:-mr-[124px] xl:w-[580px]"
             >
               <FloatImage src="/img/landing/hero.png" tone="#F15A25" />
             </motion.div>
@@ -96,8 +97,8 @@ export function Landing() {
               cta={t("intro.cta")}
             />
 
-            <div className="mt-20 flex flex-col gap-5 md:mt-24 lg:mt-[120px] lg:gap-10 xl:mt-[140px]">
-              <div className="grid gap-5 lg:grid-cols-[456fr_704fr] lg:gap-10">
+            <div className="mt-20 flex flex-col gap-5 md:mt-[120px] lg:mt-40 lg:gap-10">
+              <div className="grid gap-5 md:grid-cols-2 lg:gap-10 xl:grid-cols-[456fr_704fr]">
                 <GlassCard
                   card={advantages[0]}
                   icons={advantageIcons[0]}
@@ -109,7 +110,7 @@ export function Landing() {
                   index={1}
                 />
               </div>
-              <div className="grid gap-5 lg:grid-cols-[704fr_456fr] lg:gap-10">
+              <div className="grid gap-5 md:grid-cols-2 lg:gap-10 xl:grid-cols-[704fr_456fr]">
                 <GlassCard
                   card={advantages[2]}
                   icons={advantageIcons[2]}
@@ -141,7 +142,7 @@ export function Landing() {
             <CardRails
               items={pkg}
               perRail={3}
-              className="mt-20 md:mt-24 lg:mt-[120px] xl:mt-[140px]"
+              className="mt-20 md:mt-[120px] lg:mt-40"
             />
           </Section>
 
@@ -153,10 +154,15 @@ export function Landing() {
                 <br />
                 {t("steps.titleLine2")}
               </SectionTitle>
-              <Lead className="max-w-[704px]">{t("steps.text")}</Lead>
+              <Lead className="lg:max-w-[580px]">{t("steps.text")}</Lead>
             </Appear>
 
-            <div className="mt-12 grid gap-5 md:mt-16 lg:mt-[120px] lg:grid-cols-2 lg:gap-10">
+            {/*
+              1920 (2153:195517…195524): ряды 704 + 456 и 456 + 704 попеременно.
+              Сетка 456/208/456 с гэпом 40 даёт ровно 1200, а карточка на две
+              колонки — ровно 704. До 1024 макет ставит две равные колонки.
+            */}
+            <div className="mt-20 grid gap-5 md:mt-[120px] md:grid-cols-2 lg:mt-40 lg:gap-10 xl:grid-cols-[456fr_208fr_456fr]">
               {steps.map((s, i) => (
                 <StepCard key={s.title} step={s} index={i} />
               ))}
@@ -176,28 +182,28 @@ export function Landing() {
         {/* ——— content 5 · баннер «Свяжитесь…» ——— */}
         <section
           id="lead"
-          className="noise relative mt-28 overflow-hidden border-y border-white/10 bg-white/8 py-20 md:mt-36 md:py-24 lg:mt-[180px] lg:py-[120px] xl:mt-[220px]"
+          className="noise relative mt-40 overflow-hidden bg-white/8 py-[100px] md:mt-[300px] lg:mt-[400px] lg:py-32 xl:py-[100px]"
         >
           {/*
             Фрейм 360 (2153:196380): col gap40, p100/20, cross:center —
             картинка сверху, под ней текст и форма во всю ширину.
           */}
-          <Container className="flex flex-col items-center gap-10 lg:flex-row lg:items-center lg:gap-10 xl:gap-[164px]">
-            <Appear className="shrink-0">
+          <Container className="flex flex-col items-center gap-10 md:flex-row md:items-center md:gap-[60px] lg:gap-10 xl:gap-[164px]">
+            <Appear className="shrink-0 xl:-ml-[124px]">
               <FloatImage
                 src="/img/landing/contact.png"
                 tone="#9D00FF"
                 delay={0.5}
-                className="w-[160px] sm:w-[200px] lg:w-[354px] xl:w-[456px]"
+                className="w-[184px] md:w-[238px] lg:w-[354px] xl:w-[456px]"
               />
             </Appear>
-            <Appear className="flex w-full min-w-0 flex-1 flex-col items-center text-center lg:items-start lg:text-left">
+            <Appear className="flex w-full min-w-0 flex-1 flex-col items-center text-center md:items-start md:text-left">
               <SectionTitle>
                 {t("contact.titleLine1")}{" "}
                 <span className="text-gradient">{t("contact.titleLine2")}</span>
                 {t("contact.titleLine3")}
               </SectionTitle>
-              <Lead className="max-w-[704px]">{t("contact.text")}</Lead>
+              <Lead className="lg:max-w-[704px]">{t("contact.text")}</Lead>
               <LeadForm cta={t("contact.cta")} />
             </Appear>
           </Container>
@@ -215,18 +221,20 @@ export function Landing() {
             <CardRails
               items={support}
               perRail={6}
-              className="mt-20 xl:mt-[160px]"
+              variant="support"
+              className="mt-20 md:mt-[120px] lg:mt-40"
             />
           </Section>
 
           {/* ——— content 7 · FAQ ——— */}
           <Section>
             <Appear>
-              <div className="rounded-[44px] border border-[#303030] bg-surface-page-surf1 p-5 lg:rounded-[64px] lg:p-16">
-                <h2 className="text-2xl font-medium leading-tight text-text-default lg:text-[40px] lg:leading-[44px]">
+              {/* 1920 (2153:195430): блок 1448 — колонка 1200 плюс вынос 124 по краям */}
+              <div className="rounded-[44px] border border-[#303030] bg-surface-page-surf1 p-5 md:rounded-[64px] md:p-9 lg:p-16 xl:-mx-[124px]">
+                <h2 className="text-[32px] font-medium leading-[1.2] text-text-default md:text-[40px] md:leading-[44px]">
                   {t("faq.title")}
                 </h2>
-                <div className="mt-8 flex flex-col gap-2 lg:mt-10">
+                <div className="mt-10 flex flex-col gap-2">
                   {faq.map((item) => (
                     <FaqRow key={item.q} q={item.q} a={item.a} />
                   ))}
@@ -282,7 +290,13 @@ function ScrollToTopButton({ label }: { label: string }) {
 
 /* --------------------------------------------------------------- раскладка */
 
-/** Паддинги страницы: 16 (≤480) · 52 (768) · 40 (1024) · колонка 1324 (1920). */
+/**
+ * Колонка страницы: 20 (360/480/768) · 40 (1024) · 1200 внутри бокса 1448 (1920).
+ *
+ * На 1920 макет держит контент в колонке 1200 (360…1560), а картинки сплит-блоков
+ * и карточка FAQ выходят за неё на 124 px наружу — отсюда бокс 1448 с паддингом
+ * 124: до 1448 px вьюпорта вынос упирается ровно в край и ничего не срезается.
+ */
 function Container({
   children,
   className,
@@ -293,7 +307,7 @@ function Container({
   return (
     <div
       className={clsx(
-        "relative mx-auto w-full max-w-[1324px] px-4 md:px-[52px] lg:px-10 xl:px-0",
+        "relative mx-auto w-full max-w-[1448px] px-5 lg:px-10 xl:px-[124px]",
         className,
       )}
     >
@@ -302,18 +316,19 @@ function Container({
   );
 }
 
-/** Межсекционный отступ 80 → 160. */
+/** Межсекционный отступ: 160 (360/480) · 300 (768) · 400 (1024/1920). */
 function Section({ children }: { children: React.ReactNode }) {
   return (
-    <section className="relative pt-28 md:pt-36 lg:pt-[180px] xl:pt-[220px]">
+    <section className="relative pt-40 md:pt-[300px] lg:pt-[400px]">
       {children}
     </section>
   );
 }
 
+/** Заголовок секции: 32/38.4 на мобильном, 40/44 с 768. */
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-2xl font-medium leading-tight text-text-default lg:text-[40px] lg:leading-[44px]">
+    <h2 className="text-[32px] font-medium leading-[1.2] text-text-default md:text-[40px] md:leading-[44px]">
       {children}
     </h2>
   );
@@ -329,7 +344,7 @@ function Lead({
   return (
     <p
       className={clsx(
-        "mt-5 text-base leading-8 text-text-default lg:mt-8 lg:text-2xl",
+        "mt-8 text-lg leading-5 text-text-default md:text-2xl md:leading-8",
         className,
       )}
     >
@@ -382,7 +397,7 @@ function HeroTitle({
 
   return (
     <>
-      <h1 className="text-[32px] font-medium leading-[1.2] text-text-default md:text-5xl md:font-bold md:leading-none md:tracking-tight xl:text-[96px]">
+      <h1 className="text-[32px] font-medium leading-[1.2] text-text-default md:text-5xl md:font-bold md:leading-none lg:text-[64px] xl:text-[96px]">
         {lines.map((line, i) => (
           <span key={line} className="block overflow-hidden pb-1">
             <motion.span
@@ -425,7 +440,7 @@ function HeroTitle({
  */
 function GradientPill({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex rounded-[50px] bg-[linear-gradient(135deg,#F6844B,#BF5AF5)] p-[2px] align-middle shadow-[0_0_28px_rgb(191_90_245/0.3)] xl:p-[3px]">
+    <span className="inline-flex rounded-[50px] bg-[image:var(--gradient-accent)] p-[2px] align-middle shadow-[0_0_28px_rgb(191_90_245/0.3)] xl:p-[3px]">
       <span className="inline-flex items-center rounded-[48px] bg-surface-page-bg px-4 py-1.5 text-sm font-bold leading-[1.25] tracking-normal text-text-default sm:px-5 sm:py-2 sm:text-base xl:text-xl">
         {children}
       </span>
@@ -480,21 +495,27 @@ function SplitBlock({
   return (
     <div
       className={clsx(
-        "relative flex flex-col items-center gap-5 lg:gap-10 xl:gap-[164px]",
-        reverse ? "lg:flex-row-reverse" : "lg:flex-row",
+        "relative flex flex-col items-center gap-5 md:flex-row md:gap-10 xl:gap-[164px]",
+        reverse ? "md:flex-row-reverse" : "md:flex-row",
       )}
     >
-      <Appear className="shrink-0">
+      {/* на 1920 картинка выходит из колонки 1200 наружу на 124 px */}
+      <Appear
+        className={clsx(
+          "shrink-0",
+          reverse ? "xl:-mr-[124px]" : "xl:-ml-[124px]",
+        )}
+      >
         <FloatImage
           src={image}
           tone={tone}
-          className="w-[184px] lg:w-[354px] xl:w-[456px]"
+          className="w-[184px] md:w-[279px] lg:w-[354px] xl:w-[456px]"
         />
       </Appear>
-      <Appear delay={0.08} className="min-w-0 flex-1 text-center lg:text-left">
+      <Appear delay={0.08} className="min-w-0 flex-1 text-center md:text-left">
         <SectionTitle>{titleNode ?? title}</SectionTitle>
         <Lead>{text}</Lead>
-        {cta && <CtaButton className="mt-8 md:mt-10 lg:mt-14">{cta}</CtaButton>}
+        {cta && <CtaButton className="mt-10 md:mt-20">{cta}</CtaButton>}
       </Appear>
     </div>
   );
@@ -502,21 +523,25 @@ function SplitBlock({
 
 /* --------------------------------------------------------------- элементы */
 
-/** Шапка: ≤768 сплошная #262626; ≥1024 стекло #FFFFFF 8 %. */
+/**
+ * Шапка: ≤768 сплошная #262626 с границей #333333; ≥1024 стекло #FFFFFF 8 %.
+ * На 768 макет даёт шапке паддинг 52 при колонке 20 — отсюда md:px-8 сверху
+ * контейнерных 20 px.
+ */
 function LandingHeader({ loginLabel }: { loginLabel: string }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-divider-elevated bg-surface-page-surf1 lg:border-white/12 lg:bg-white/8 lg:backdrop-blur-2xl">
-      <Container className="flex h-[75px] items-center justify-between lg:h-[83px]">
+    <header className="sticky top-0 z-40 border-b border-stroke-surface1 bg-surface-page-surf1 md:px-8 lg:border-white/12 lg:bg-white/8 lg:px-0 lg:backdrop-blur-2xl">
+      <Container className="flex h-[75px] items-center justify-between md:h-[83px]">
         <Link
           href="/"
           aria-label="ecash"
           className="transition-opacity hover:opacity-80"
         >
-          <Logo tone="onDark" className="scale-90 origin-left sm:scale-100" />
+          <Logo tone="onDark" />
         </Link>
         <Link
           href="/login"
-          className="inline-flex h-[50px] items-center gap-2 rounded-2xl bg-btn-1 px-4 text-base font-medium text-text-default transition-colors hover:bg-comp-surface2-hover lg:bg-white/8 lg:px-6 lg:hover:bg-white/15"
+          className="inline-flex h-[42px] items-center gap-2 rounded-2xl bg-btn-1 pl-3 pr-2 text-sm font-medium leading-5 text-text-default transition-colors hover:bg-comp-surface2-hover md:h-[50px] md:pl-6 md:pr-4 lg:bg-white/8 lg:hover:bg-white/15"
         >
           {loginLabel}
           <Icon name="login" size={20} />
@@ -531,11 +556,12 @@ function LandingFooter() {
   const t = useTranslations("footer");
 
   return (
-    <footer className="relative mt-28 border-t border-[#303030] bg-surface-modal-bg md:mt-36 lg:mt-[180px] xl:mt-[220px]">
-      <Container className="py-8 lg:py-[60px] xl:pt-[100px]">
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-3 xl:gap-[263px]">
-          <div className="flex flex-col gap-6">
-            <div className="flex gap-2">
+    <footer className="relative mt-40 border-t border-[#303030] bg-surface-modal-bg md:mt-[300px] lg:mt-[400px]">
+      <Container className="py-6 md:py-[60px] xl:pt-[100px]">
+        {/* 768 (2153:195970): одна центрированная колонка, gap 60; с 1024 — ряд */}
+        <div className="flex flex-col gap-6 md:items-center md:gap-[60px] lg:flex-row lg:items-center lg:justify-between lg:gap-10">
+          <div className="flex flex-col gap-2 md:items-center md:gap-6 lg:items-start">
+            <div className="flex gap-2 md:gap-4">
               <SocialLink href="https://wa.me/77059089073" label="WhatsApp">
                 <svg
                   width="18"
@@ -553,33 +579,33 @@ function LandingFooter() {
             </div>
             <a
               href="tel:+77059089073"
-              className="text-xl leading-8 text-text-default transition-colors hover:text-text-brand"
+              className="text-base leading-5 text-text-default transition-colors hover:text-text-brand md:text-[28px] md:font-semibold md:leading-8 md:tracking-[-0.45px]"
             >
               +7 (705) 908 90 73
             </a>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <div className="text-xl leading-8 text-text-disabled">
+          <div className="flex flex-col gap-2 md:items-center md:gap-6 lg:items-start lg:gap-10">
+            <div className="text-sm leading-[1.1] text-text-disabled md:text-xl md:leading-8 md:text-text-default">
               {t("schedule")}
             </div>
-            <div className="text-xl leading-8 text-text-default">
+            <div className="text-base leading-5 text-text-default md:text-[28px] md:font-semibold md:leading-8 md:tracking-[-0.45px]">
               {t("scheduleValue")}
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <div className="text-xl leading-8 text-text-disabled">
+          <div className="flex flex-col gap-2 md:items-center md:gap-6 lg:items-start lg:gap-10">
+            <div className="text-sm leading-[1.1] text-text-disabled md:text-xl md:leading-8 md:text-text-default">
               {t("additional")}
             </div>
-            <span className="inline-flex items-center gap-2 text-xl leading-8 text-text-default">
+            <span className="inline-flex items-center gap-2.5 text-base leading-5 text-text-default md:text-[28px] md:font-semibold md:leading-8 md:tracking-[-0.45px]">
               {t("documents")}
               <Icon name="arrow_outward" size={20} />
             </span>
           </div>
         </div>
 
-        <div className="mt-12 text-base leading-8 text-text-default lg:mt-20 lg:text-xl">
+        <div className="mt-12 text-center text-sm leading-[1.1] text-text-disabled md:mt-20 md:text-xl md:leading-8 md:text-text-default lg:text-left">
           © {new Date().getFullYear()}. {t("rights")}
         </div>
       </Container>
@@ -604,7 +630,7 @@ function SocialLink({
       aria-label={label}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.94 }}
-      className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-btn-2 text-text-default transition-colors hover:bg-comp-surface2-hover"
+      className="inline-flex h-[42px] w-[42px] items-center justify-center rounded-2xl bg-surface-page-surf1 text-text-default transition-colors hover:bg-comp-surface2-hover md:h-[72px] md:w-[72px] md:rounded-[28px]"
     >
       {children}
     </motion.a>
@@ -642,43 +668,43 @@ function GlassCard({
       <Spotlight
         tone={accent ? "#BF5AF5" : "#F6844B"}
         className={clsx(
-          "group flex h-full flex-col gap-5 rounded-[40px] p-6 backdrop-blur-[46px] lg:gap-10 lg:rounded-[64px] lg:p-11",
+          "group flex h-full flex-col gap-5 rounded-[40px] p-6 backdrop-blur-[46px] md:p-9 lg:gap-10 lg:rounded-[64px] lg:p-11",
           accent ? "glass-dense glass-accent" : "glass",
         )}
       >
         {logo ? (
-          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand shadow-[0_0_40px_rgb(241_90_37/0.5)] transition-transform duration-300 group-hover:scale-110 lg:h-[72px] lg:w-[72px]">
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand shadow-[0_0_40px_rgb(241_90_37/0.5)] transition-transform duration-300 group-hover:scale-110 md:h-[72px] md:w-[72px]">
             <img
               src="/img/mark-white.png"
               alt=""
               width={111}
               height={159}
-              className="h-8 w-auto lg:h-[43px]"
+              className="h-8 w-auto md:h-[43px]"
             />
           </span>
         ) : (
           icons && (
-            <span className="flex h-[76px] w-[76px] items-center justify-center rounded-[24px] border-2 border-[#616161] transition-colors duration-300 group-hover:border-brand lg:h-[100px] lg:w-[100px] lg:rounded-[32px]">
-              <span className="relative h-[52px] w-[52px] lg:h-[72px] lg:w-[72px]">
+            <span className="flex h-[60px] w-[60px] items-center justify-center rounded-[24px] border-2 border-[#616161] transition-colors duration-300 group-hover:border-brand md:h-[100px] md:w-[100px] md:rounded-[32px]">
+              <span className="relative h-9 w-9 md:h-[72px] md:w-[72px]">
                 <Icon
                   name={icons[0]}
                   filled
-                  className="absolute left-0 top-0 text-[34px] text-brand drop-shadow-[0_0_12px_rgb(241_90_37/0.6)] transition-transform duration-300 group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 lg:text-[48px]"
+                  className="absolute left-0 top-0 text-2xl text-brand drop-shadow-[0_0_12px_rgb(241_90_37/0.6)] transition-transform duration-300 group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 md:text-[48px]"
                 />
                 <Icon
                   name={icons[1]}
                   filled
-                  className="absolute bottom-0 right-0 text-[34px] text-text-default transition-transform duration-300 group-hover:translate-x-0.5 group-hover:translate-y-0.5 lg:text-[48px]"
+                  className="absolute bottom-0 right-0 text-2xl text-text-default transition-transform duration-300 group-hover:translate-x-0.5 group-hover:translate-y-0.5 md:text-[48px]"
                 />
               </span>
             </span>
           )
         )}
 
-        <div className="flex flex-col gap-5 lg:gap-6">
+        <div className="flex flex-col gap-6">
           <h3
             className={clsx(
-              "text-lg font-semibold leading-8 tracking-[-0.45px] lg:text-[28px]",
+              "text-xl font-semibold leading-7 tracking-[-0.45px] md:text-[28px] md:leading-8",
               accent ? "text-text-brand" : "text-text-default",
             )}
           >
@@ -686,7 +712,7 @@ function GlassCard({
           </h3>
           <p
             className={clsx(
-              "text-base leading-8 lg:text-xl",
+              "text-base leading-5 md:text-xl md:leading-8",
               accent ? "text-text-brand" : "text-text-default",
             )}
           >
@@ -698,9 +724,13 @@ function GlassCard({
   );
 }
 
-/** Карточка этапа с номером в кружке. */
+/**
+ * Карточка этапа: номер 50×50 r16 на #303030 с градиентным кантом (2112:192944).
+ * На 1920 ряды идут 704 + 456 и 456 + 704 — это span 2 у элементов 0, 3, 4, …
+ */
 function StepCard({ step, index }: { step: Card; index: number }) {
   const reduced = useReducedMotion();
+  const wide = index % 4 === 0 || index % 4 === 3;
 
   return (
     <motion.article
@@ -709,22 +739,25 @@ function StepCard({ step, index }: { step: Card; index: number }) {
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.5, delay: (index % 2) * 0.08 }}
       whileHover={reduced ? undefined : { y: -6 }}
-      className="glass group h-full rounded-[40px] p-6 backdrop-blur-[46px] lg:rounded-[64px] lg:p-11"
+      className={clsx(
+        "glass-veil group h-full rounded-[64px] p-9 backdrop-blur-[46px] lg:p-11",
+        wide && "xl:col-span-2",
+      )}
     >
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand-hardsoft text-lg font-medium text-text-brand transition-all duration-300 group-hover:bg-brand group-hover:text-text-always-white">
+      <span className="grad-border inline-flex h-[50px] w-[50px] items-center justify-center rounded-2xl bg-[#303030] text-lg font-medium leading-6 text-text-brand transition-all duration-300 group-hover:bg-brand group-hover:text-text-always-white">
         {index + 1}
       </span>
-      <h3 className="mt-5 text-lg font-semibold leading-8 tracking-[-0.45px] text-text-default lg:mt-10 lg:text-[28px]">
+      <h3 className="mt-6 text-xl font-semibold leading-7 tracking-[-0.45px] text-text-default md:text-[28px] md:leading-8 lg:mt-11">
         {step.title}
       </h3>
-      <p className="mt-5 text-base leading-8 text-text-default lg:mt-6 lg:text-xl">
+      <p className="mt-6 text-base leading-5 text-text-default md:text-xl md:leading-8">
         {step.text}
       </p>
     </motion.article>
   );
 }
 
-/** Кнопка макета: 254×80, r102, p24/40, gap24, текст 24/400. */
+/** Кнопка макета: 254×66 r40 p16/24 gap16 на мобильном → 254×80 r102 p24/40 gap24 с 768. */
 function CtaButton({
   children,
   className,
@@ -736,7 +769,7 @@ function CtaButton({
     <Magnetic className={clsx("inline-block", className)}>
       <a
         href="#lead"
-        className="group relative inline-flex h-14 cursor-pointer items-center gap-4 overflow-hidden rounded-[102px] bg-brand px-8 text-base leading-8 text-text-default shadow-[0_12px_40px_rgb(241_90_37/0.45)] transition-[box-shadow,filter] hover:shadow-[0_20px_64px_rgb(241_90_37/0.65)] hover:brightness-110 lg:h-20 lg:gap-6 lg:px-10 lg:text-2xl"
+        className="group relative inline-flex h-[66px] cursor-pointer items-center gap-4 overflow-hidden rounded-[40px] bg-brand px-6 text-base leading-8 text-text-default shadow-[0_12px_40px_rgb(241_90_37/0.45)] transition-[box-shadow,filter] hover:shadow-[0_20px_64px_rgb(241_90_37/0.65)] hover:brightness-110 md:h-20 md:gap-6 md:rounded-[102px] md:px-10 md:text-2xl"
       >
         {/* блик, пробегающий по кнопке при наведении */}
         <span
@@ -756,16 +789,21 @@ function CtaButton({
 
 /**
  * Ряды карточек («complex slider»): по 3 (пакет) или 6 (поддержка) в ряд.
- * Карточка 704×334, p64, gap44, r64. Ряды сдвинуты в разные стороны при
+ * Карточка p36 gap24 r64 (768) → p64 gap44 r64 (1024+); ширина 429 на 768,
+ * 704 (пакет) / 580 (поддержка) с 1024. Ряды сдвинуты в разные стороны при
  * скролле — так они «живут», как в прототипе.
  */
 function CardRails({
   items,
   perRail,
+  variant = "package",
   className,
 }: {
   items: Card[];
   perRail: number;
+  /** «package» — карточки 704 (content 3); «support» — 580 (content 6).
+   *  Оформление одинаковое: чередование стекла и плотной заливки с кантом. */
+  variant?: "package" | "support";
   className?: string;
 }) {
   const rails: Card[][] = [];
@@ -777,10 +815,10 @@ function CardRails({
       {rails.map((rail, railIndex) => (
         <div
           key={railIndex}
-          className="flex flex-col gap-5 lg:-mx-10 lg:snap-x lg:snap-mandatory lg:flex-row lg:gap-10 lg:overflow-x-auto lg:px-10 lg:pb-2 lg:[scrollbar-width:none] xl:mx-0 xl:px-0 lg:[&::-webkit-scrollbar]:hidden"
+          className="flex flex-col gap-5 md:-mx-5 md:snap-x md:snap-mandatory md:flex-row md:gap-5 md:overflow-x-auto md:px-5 md:pb-2 md:[scrollbar-width:none] lg:-mx-10 lg:gap-10 lg:px-10 xl:mx-0 xl:px-0 md:[&::-webkit-scrollbar]:hidden"
         >
           {rail.map((item, i) => (
-            <RailCard key={item.title} item={item} index={i} />
+            <RailCard key={item.title} item={item} index={i} variant={variant} />
           ))}
         </div>
       ))}
@@ -788,9 +826,27 @@ function CardRails({
   );
 }
 
-function RailCard({ item, index }: { item: Card; index: number }) {
+function RailCard({
+  item,
+  index,
+  variant = "package",
+}: {
+  item: Card;
+  index: number;
+  variant?: "package" | "support";
+}) {
   const reduced = useReducedMotion();
-  const gradient = index % 3 !== 1;
+  const support = variant === "support";
+
+  /**
+   * Заливки из макета.
+   * Пакет (2153:195538…195557): 0 — плотная #262626 60 % с градиентным кантом,
+   * 1 — стекло с белым кантом, 2 — стекло с градиентным кантом.
+   * Поддержка (2153:195461…195496): чётные — стекло, нечётные — плотная
+   * заливка с градиентным кантом.
+   */
+  const dense = support ? index % 2 === 1 : index % 3 === 0;
+  const gradient = support ? index % 2 === 1 : index % 3 !== 1;
 
   return (
     <motion.div
@@ -799,20 +855,23 @@ function RailCard({ item, index }: { item: Card; index: number }) {
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.45, delay: Math.min(index, 3) * 0.07 }}
       whileHover={reduced ? undefined : { y: -6 }}
-      className="lg:w-[704px] lg:shrink-0 lg:snap-start"
+      className={clsx(
+        "md:w-[429px] md:shrink-0 md:snap-start",
+        support ? "lg:w-[580px]" : "lg:w-[704px]",
+      )}
     >
       <Spotlight
         tone={gradient ? "#BF5AF5" : "#F6844B"}
         className={clsx(
-          "flex h-full flex-col gap-5 rounded-[40px] p-6 backdrop-blur-[46px] lg:gap-11 lg:rounded-[64px] lg:p-16",
-          index % 3 === 0 ? "glass-dense" : "glass",
+          "flex h-full flex-col gap-6 rounded-[64px] p-9 backdrop-blur-[46px] lg:gap-11 lg:p-16",
+          dense ? "glass-dense" : "glass-veil",
           gradient && "glass-accent",
         )}
       >
-        <h3 className="text-lg font-semibold leading-8 tracking-[-0.45px] text-text-default lg:text-[28px]">
+        <h3 className="text-xl font-semibold leading-7 tracking-[-0.45px] text-text-default md:text-[28px] md:leading-8">
           {item.title}
         </h3>
-        <p className="text-base leading-8 text-text-default lg:text-xl">
+        <p className="text-base leading-5 text-text-default md:text-xl md:leading-8">
           {item.text}
         </p>
       </Spotlight>
@@ -827,7 +886,7 @@ function FaqRow({ q, a }: { q: string; a: string }) {
   return (
     <div
       className={clsx(
-        "rounded-[24px] bg-[#303030] px-5 py-4 transition-colors duration-300 lg:rounded-[64px] lg:px-11 lg:py-8",
+        "rounded-[36px] bg-[#303030] p-5 transition-colors duration-300 md:rounded-[64px] md:p-11",
         open ? "bg-[#3b3b3b]" : "hover:bg-[#363636]",
       )}
     >
@@ -837,7 +896,7 @@ function FaqRow({ q, a }: { q: string; a: string }) {
         aria-expanded={open}
         className="flex w-full cursor-pointer items-center gap-4 text-left"
       >
-        <span className="min-w-0 flex-1 text-base font-semibold leading-8 tracking-[-0.45px] text-text-default lg:text-[28px]">
+        <span className="min-w-0 flex-1 text-base font-semibold leading-5 tracking-[-0.45px] text-text-default md:text-[28px] md:leading-8">
           {q}
         </span>
         <motion.span
@@ -861,7 +920,7 @@ function FaqRow({ q, a }: { q: string; a: string }) {
             transition={{ duration: 0.3, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <div className="mt-6 border-t border-[#454545] pt-6 text-base leading-8 text-text-default lg:text-xl">
+            <div className="mt-6 border-t border-[#454545] pt-6 text-base leading-5 text-text-default md:text-xl md:leading-8">
               {a}
             </div>
           </motion.div>

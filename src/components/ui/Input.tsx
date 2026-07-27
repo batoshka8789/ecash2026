@@ -26,14 +26,24 @@ export function Input({ errors, password, label, className, id, ...rest }: Input
   return (
     <div className={className}>
       {label && (
-        <label htmlFor={inputId} className="mb-1 block pl-1 text-sm text-text-disabled">
+        <label
+          htmlFor={inputId}
+          className="mb-1 block text-xs font-bold leading-[1.2] text-text-disabled"
+        >
           {label}
         </label>
       )}
       <div
         className={clsx(
-          'flex items-center rounded-2xl border bg-transparent transition-colors focus-within:border-stroke-surface3',
-          invalid ? 'border-negative' : 'border-stroke-modal',
+          // 54×r20 c бордером 1px — «Input» из дизайн-системы (883:33235)
+          'flex items-center rounded-[20px] border bg-transparent transition-colors',
+          // hover: подложка surface/surf2 + светлее обводка (885:33285)
+          'hover:bg-surface-page-surf2',
+          // focus перебивает и hover, и ошибку — в макете обводка surface/inverted
+          'focus-within:border-surface-inverted focus-within:hover:border-surface-inverted',
+          invalid
+            ? 'border-negative hover:border-negative'
+            : 'border-surface-page-surf3 hover:border-stroke-surface3',
         )}
       >
         <input
@@ -43,7 +53,8 @@ export function Input({ errors, password, label, className, id, ...rest }: Input
           aria-invalid={invalid || undefined}
           aria-describedby={invalid ? errId : undefined}
           type={password && !show ? 'password' : (rest.type ?? 'text')}
-          className="h-12 w-full bg-transparent px-4 text-base text-text-default outline-none placeholder:text-text-disabled"
+          // 52 + 2px бордера = 54; «Input txt/placeholder M» — Roboto Medium 16/20
+          className="h-[52px] w-full bg-transparent px-4 text-base font-medium leading-5 text-text-default outline-none placeholder:font-medium placeholder:text-text-disabled"
         />
         {password && (
           <button
@@ -51,7 +62,7 @@ export function Input({ errors, password, label, className, id, ...rest }: Input
             onClick={() => setShow((v) => !v)}
             aria-label={show ? t('hidePassword') : t('showPassword')}
             aria-pressed={show}
-            className="cursor-pointer px-3 text-text-disabled transition-colors hover:text-text-default"
+            className="cursor-pointer py-3 pl-2 pr-4 text-text-disabled transition-colors hover:text-text-default"
           >
             <Icon name={show ? 'visibility' : 'visibility_off'} size={20} />
           </button>
@@ -60,7 +71,7 @@ export function Input({ errors, password, label, className, id, ...rest }: Input
       {invalid && (
         <div id={errId} role="alert">
           {errors!.map((e) => (
-            <p key={e} className="mt-1 pl-1 text-xs text-text-negative">
+            <p key={e} className="mt-1 text-xs font-medium leading-[1.3] text-text-negative">
               {e}
             </p>
           ))}
