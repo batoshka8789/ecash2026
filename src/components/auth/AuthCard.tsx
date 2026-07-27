@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { PillTabs } from '@/components/ui/PillTabs';
 import { useAuth } from '@/lib/auth';
+import { formatPhoneInput } from '@/lib/format';
 import { useResendTimer } from '@/lib/hooks';
 import { useErrorText } from '@/lib/useErrorText';
 import { api, ApiError } from '@/lib/api';
@@ -242,10 +243,11 @@ export function AuthCard({
                   label={t('phoneLabel')}
                   placeholder={t('phoneLabel')}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
                   errors={err('phoneNumber')}
                   autoComplete="tel"
                   inputMode="tel"
+                  maxLength={18}
                 />
                 <Input
                   label={t('iinOptional')}

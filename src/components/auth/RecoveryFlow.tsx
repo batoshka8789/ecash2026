@@ -8,6 +8,7 @@ import { Logo } from '@/components/ui/Logo';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { formatPhoneInput } from '@/lib/format';
 import { useResendTimer } from '@/lib/hooks';
 import { useErrorText } from '@/lib/useErrorText';
 import { api, ApiError } from '@/lib/api';
@@ -121,10 +122,11 @@ export function RecoveryFlow() {
               label={t('phonePlaceholder')}
               placeholder={t('phonePlaceholder')}
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
               errors={err('phoneNumber')}
               autoComplete="tel"
               inputMode="tel"
+              maxLength={18}
             />
           </>
         )}

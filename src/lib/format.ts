@@ -129,6 +129,34 @@ export function currencyFlagClass(code: string): string | null {
   return map[code] ?? null;
 }
 
+/**
+ * Маска номера телефона — единый утверждённый формат проекта
+ * «+7 (705) 908 90 73» (footer, ContactModal, формы авторизации).
+ * Прогрессивно достраивает группы по мере ввода, не блочная маска
+ * с прочерками — так поле не «прыгает» при удалении последней цифры.
+ *
+ * Код страны срезается ТОЛЬКО при ровно 11 цифрах (кто-то ввёл/вставил
+ * с ведущей 7/8) — не по первой цифре: у казахстанских номеров код
+ * оператора сам часто начинается на 7 (705, 707, 708…), и при проверке
+ * "starts with 7" без учёта длины эта цифра терялась у любого номера
+ * из 10 цифр, набранного с нуля.
+ */
+export function formatPhoneInput(raw: string): string {
+  let digits = raw.replace(/\D/g, '');
+  if (digits.length === 11 && (digits.startsWith('7') || digits.startsWith('8'))) {
+    digits = digits.slice(1);
+  }
+  digits = digits.slice(0, 10);
+
+  if (digits.length === 0) return '';
+  let out = `+7 (${digits.slice(0, 3)}`;
+  if (digits.length >= 3) out += ')';
+  if (digits.length > 3) out += ` ${digits.slice(3, 6)}`;
+  if (digits.length > 6) out += ` ${digits.slice(6, 8)}`;
+  if (digits.length > 8) out += ` ${digits.slice(8, 10)}`;
+  return out;
+}
+
 /** Символ валюты для подписи «Я получу ($)». */
 export function currencySymbol(code: string): string {
   const map: Record<string, string> = {

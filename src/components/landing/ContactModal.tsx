@@ -7,25 +7,11 @@ import { clsx } from 'clsx';
 import { Icon } from '@/components/ui/Icon';
 import { Logo } from '@/components/ui/Logo';
 import { api, ApiError } from '@/lib/api';
+import { formatPhoneInput } from '@/lib/format';
 import { useErrorText } from '@/lib/useErrorText';
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-/** Маска номера — формат из футера лендинга («+7 (705) 908 90 73»). */
-function formatPhoneInput(raw: string): string {
-  let digits = raw.replace(/\D/g, '');
-  if (digits.startsWith('7') || digits.startsWith('8')) digits = digits.slice(1);
-  digits = digits.slice(0, 10);
-
-  if (digits.length === 0) return '';
-  let out = `+7 (${digits.slice(0, 3)}`;
-  if (digits.length >= 3) out += ')';
-  if (digits.length > 3) out += ` ${digits.slice(3, 6)}`;
-  if (digits.length > 6) out += ` ${digits.slice(6, 8)}`;
-  if (digits.length > 8) out += ` ${digits.slice(8, 10)}`;
-  return out;
-}
 
 /**
  * Модалка заявки для обеих кнопок «Связаться» лендинга франшизы (секции
