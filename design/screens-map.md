@@ -1,7 +1,17 @@
 # Карта экранов макета → роуты приложения
 
-Источник: `design/raw/file-d16.json` (полное дерево, обрезанных узлов нет).
-Смотреть спеку: `npm run spec -- <node-id> --depth 4`, тексты: `--text`.
+Источник — выгруженный из Figma `.fig`, декодированный локально:
+
+```bash
+npm run fig:decode -- ~/Downloads/ecash-design.fig   # → design/raw/doc.json
+npm run fig:spec -- spec <node-id> --depth 4          # спека узла
+npm run fig:spec -- spec <node-id> --depth 6 --text   # только тексты
+npm run fig:spec -- find '<regexp>'                   # поиск по имени слоя
+npm run fig:spec -- vars                              # переменные-токены
+```
+
+REST API для этого файла не годится: он слишком большой, `/nodes` и `/files`
+отдают 429 даже на `depth=1`. MCP требует прав редактора, которых нет.
 
 Страница **Adaptives** (`1279:97192`) — источник правды по адаптиву.
 Секции-дубликаты `2003:*` игнорируем (копии оригиналов).

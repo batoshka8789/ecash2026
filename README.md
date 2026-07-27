@@ -123,14 +123,26 @@ Ecash (dev-пара из документации в проде не работ�
 
 ## Работа с макетом
 
-Скрипты в `scripts/` тянут дерево макета через Figma REST API и извлекают
-точные спеки: геометрия, автолэйауты, заливки, типографика.
+Макет читается офлайн из выгруженного `.fig` (Figma → File → Save local copy).
+Ни токена, ни сети не нужно, и это единственный рабочий способ: файл слишком
+большой, REST отдаёт 429 даже на `depth=1`, а MCP требует прав редактора.
 
 ```bash
-npm run figma:structure          # инвентарь страниц и фреймов
-npm run spec -- 1279:104497      # спека узла
-npm run spec -- <id> --text      # тексты со стилями
+npm run fig:decode -- ~/Downloads/ecash-design.fig  # → design/raw/doc.json
+npm run fig:spec -- pages                           # страницы макета
+npm run fig:spec -- spec 1279:104497 --depth 4      # спека узла
+npm run fig:spec -- spec <id> --depth 6 --text      # тексты со стилями
+npm run fig:spec -- find 'cards new'                # поиск по имени слоя
+npm run fig:spec -- vars                            # переменные-токены
 ```
 
-Нужны `FIGMA_TOKEN` и `FIGMA_FILE_KEY` в `.env.local` (не для запуска
-приложения — только для этих скриптов).
+Спека даёт то же, что панель свойств: размеры, автолэйауты (gap, padding,
+выравнивания), радиусы, заливки и обводки с альфой, эффекты, типографику.
+Экземпляры компонентов раскрываются через мастер автоматически.
+
+Карта «фрейм макета → роут» — в `design/screens-map.md`, инвентарь фреймов —
+в `design/inventory.md`.
+
+Скрипты `figma:pull` / `figma:tokens` / `spec` — прежний путь через REST API;
+оставлены на случай, если файл когда-нибудь станет проходить по лимитам.
+Им нужны `FIGMA_TOKEN` и `FIGMA_FILE_KEY` в `.env.local`.

@@ -30,6 +30,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# локальные переопределения compose (например, другой порт БД)
+docker-compose.override.yml
+
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
