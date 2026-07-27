@@ -7,17 +7,18 @@ import { clsx } from 'clsx';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
+import { MaskGlyph } from '@/components/ui/MaskGlyph';
 import { CurrencyFlag } from '@/components/ui/CurrencyFlag';
 import { Link, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { currencyFlagClass, currencyName, currencySymbol, formatNumber } from '@/lib/format';
 import { useErrorText } from '@/lib/useErrorText';
+import { useNearestDepId } from '@/lib/user-place';
 import type { Competitor, CurrencyCode, RateStat } from '@/lib/domain';
 
-const DEP_ID = 1;
-/** Общий ключ с Calculator — TanStack Query дедуплицирует запрос. */
-const ratesQueryKey = ['rates', DEP_ID] as const;
+/** Fallback-отделение, пока «Мой адрес» не указан/не геокодирован. */
+const DEFAULT_DEP_ID = 1;
 
 /** Валюты «первого экрана» до нажатия «Показать все валюты». */
 const PRIMARY_CODES: readonly CurrencyCode[] = ['USD', 'EUR', 'RUB', 'CNY', 'GOLD1'];
@@ -33,9 +34,13 @@ export function RatesList() {
   const [showAll, setShowAll] = useState(false);
   const listId = useId();
 
+  // Курсы — от БЛИЖАЙШЕГО к «Моему адресу» отделения; ключ ['rates', depId]
+  // общий с Calculator — запрос дедуплицируется TanStack-ом
+  const { depId } = useNearestDepId(DEFAULT_DEP_ID);
+  const ratesQueryKey = useMemo(() => ['rates', depId] as const, [depId]);
   const { data, isPending, isError, error, refetch, isRefetching } = useQuery({
     queryKey: ratesQueryKey,
-    queryFn: ({ signal }) => api.rates.forDep(DEP_ID, signal),
+    queryFn: ({ signal }) => api.rates.forDep(depId, signal),
   });
 
   const qc = useQueryClient();
@@ -267,30 +272,39 @@ function RateRow({
         </div>
 
         <div className="flex w-full items-center gap-2 sm:w-auto">
-          {/* «list-map» из макета — составной значок: document 20×20 сзади-слева
-              + map1 20×20 @8,8 спереди-справа внутри рамки 28×28. Своего
-              vuesax-набора в проекте нет, ближайшие Material Symbols — list_alt
-              и location_on. Ведёт туда же, куда и общая ссылка «Все
-              отделения» — своего параметра под конкретную валюту в /locations нет. */}
+          {/* «list-map» из макета — составной значок: оранжевая плита со
+              списком сзади-слева + светлая плита с картой-пином спереди-
+              справа. Глифы — альфа-маски из PNG-экспорта макета
+              (public/img/actions/list-lines|map-pin) — кастомные, в
+              наборах их нет.
+              ?currency= обязателен: калькулятор на /locations должен
+              открыться с валютой ЭТОЙ строки, а не с USD по умолчанию. */}
           <Link
-            href="/locations"
+            href={`/locations?currency=${code}`}
             aria-label={t('showOnMap')}
             title={t('showOnMap')}
             className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-divider-additional text-text-default transition-colors hover:bg-comp-surface1-hover sm:h-[46px] sm:w-[46px]"
           >
             <span className="relative block h-7 w-7" aria-hidden>
               <span className="absolute left-0 top-0 flex h-5 w-5 items-center justify-center rounded-md bg-btn-brand text-text-always-white">
-                <Icon name="list_alt" size={14} filled />
+                <MaskGlyph src="/img/actions/list-lines.png" w={10} h={10} />
               </span>
               <span className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-md bg-surface-inverted text-text-inverted">
-                <Icon name="location_on" size={14} filled />
+                <MaskGlyph src="/img/actions/map-pin.png" w={19} h={19} />
               </span>
             </span>
           </Link>
+          {/* ?to= — валюта именно этой строки: без него флоу открывался со
+              своим дефолтом (USD) даже из строки EUR/RUB и т.д. Для строки
+              с нулевым курсом (API так отдаёт неквотируемые валюты) параметр
+              не передаём: селектор валют в бронировании такие коды
+              отфильтровывает, и флоу открылся бы в тупике «Курс не найден». */}
           <Button
             size="md"
             className="h-11 flex-1 sm:h-[46px] sm:min-w-40"
-            onClick={() => router.push('/booking')}
+            onClick={() =>
+              router.push(stat.buy > 0 || stat.sell > 0 ? `/booking?to=${code}` : '/booking')
+            }
           >
             {t('book')}
           </Button>

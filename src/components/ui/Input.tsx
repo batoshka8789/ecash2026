@@ -32,8 +32,13 @@ export function Input({ errors, password, label, className, id, ...rest }: Input
       )}
       <div
         className={clsx(
-          'flex items-center rounded-2xl border bg-transparent transition-colors focus-within:border-stroke-surface3',
-          invalid ? 'border-negative' : 'border-stroke-modal',
+          // фокус — брендовая обводка по радиусу поля (как границы компонентов): единый
+          // рисунок фокуса всех текстовых полей сайта (глобальное кольцо на
+          // инпутах отключено в globals.css). При ошибке красная рамка
+          // держится и в фокусе — иначе автофокус первого невалидного поля
+          // прятал бы её ровно в момент показа ошибки.
+          'flex items-center rounded-2xl border bg-transparent transition-colors',
+          invalid ? 'border-negative' : 'border-stroke-modal focus-within:border-stroke-brand',
         )}
       >
         <input

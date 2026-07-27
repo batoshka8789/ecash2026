@@ -142,15 +142,17 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
     send.mutate();
   };
 
-  // Заливка без обводки, как у полей калькулятора (Calculator.tsx) — по
-  // референсу поля модалки это сплошные surf2-плашки, а не рамка на
-  // прозрачном фоне. border-transparent, а не отсутствие border вовсе,
-  // чтобы invalid-рамка не сдвигала разметку (тот же приём, что и в
-  // SubscribeFlow).
+  // Заливка, как у полей калькулятора (Calculator.tsx) — по референсу поля
+  // модалки это сплошные surf2-плашки, а не рамка на прозрачном фоне.
+  // border-transparent в покое (invalid/focus-рамка не сдвигает разметку),
+  // фокус — брендовая обводка по радиусу поля: единый рисунок фокуса всех полей сайта.
+  // При ошибке красная рамка держится и в фокусе: submit() автофокусит
+  // первое невалидное поле — focus-вариант прятал бы красную рамку ровно
+  // в момент показа ошибки.
   const inputCls = (invalid: boolean) =>
     clsx(
-      'h-[54px] w-full rounded-[20px] border bg-surface-page-surf2 px-4 text-base font-medium text-text-default outline-none transition-colors placeholder:text-text-disabled focus:bg-comp-surface2-hover',
-      invalid ? 'border-negative' : 'border-transparent',
+      'h-[54px] w-full rounded-[20px] border bg-surface-page-surf2 px-4 text-base font-medium text-text-default outline-none transition-colors placeholder:text-text-disabled',
+      invalid ? 'border-negative' : 'border-transparent focus:border-stroke-brand',
     );
 
   if (!open) return null;
@@ -272,14 +274,14 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
                   onChange={(e) => setExperience(e.target.value)}
                   placeholder={t('experience')}
                   rows={3}
-                  className="w-full resize-none rounded-[20px] border border-transparent bg-surface-page-surf2 px-4 py-3.5 text-base font-medium text-text-default outline-none transition-colors placeholder:text-text-disabled focus:bg-comp-surface2-hover"
+                  className="w-full resize-none rounded-[20px] border border-transparent bg-surface-page-surf2 px-4 py-3.5 text-base font-medium text-text-default outline-none transition-colors placeholder:text-text-disabled focus:border-stroke-brand"
                 />
               </div>
 
               {/* Тег-инпут «Кто вы?»: выбранные роли — снимаемые пилюли, плюс
                   свободный ввод своего варианта (Enter/запятая добавляет тег). */}
               <div>
-                <div className="flex min-h-[54px] flex-wrap items-center gap-2 rounded-[20px] border border-transparent bg-surface-page-surf2 px-3 py-2 transition-colors focus-within:bg-comp-surface2-hover">
+                <div className="flex min-h-[54px] flex-wrap items-center gap-2 rounded-[20px] border border-transparent bg-surface-page-surf2 px-3 py-2 transition-colors focus-within:border-stroke-brand">
                   {tags.map((tag) => (
                     <span
                       key={tag}

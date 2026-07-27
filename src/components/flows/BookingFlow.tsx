@@ -13,7 +13,8 @@ import { AuthModal } from '@/components/auth/AuthModal';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useErrorText } from '@/lib/useErrorText';
-import { currencyName, currencySymbol, formatNumber } from '@/lib/format';
+import { useNearestDepId } from '@/lib/user-place';
+import { currencyName, currencySymbol, formatNumber, formatPhoneInput } from '@/lib/format';
 import type { ExchangeRequest } from '@/lib/domain';
 import { AmountBox, BranchAddress, BanknotesPicker } from './PairFields';
 
@@ -48,7 +49,13 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   const [foreign, setForeign] = useState(initialForeign);
   const [kztGive, setKztGive] = useState(initialKztGive);
   const [give, setGive] = useState(params.get('amount') ?? '');
-  const [depId, setDepId] = useState(Number(params.get('depId')) || DEFAULT_DEP);
+  // Отделение: из URL (пришли из карточки отделения), иначе — ближайшее
+  // к «Моему адресу»; пока адрес не геокодирован — историческое №1.
+  const paramDep = Number(params.get('depId')) || null;
+  const { depId: nearestDep } = useNearestDepId(DEFAULT_DEP);
+  const [pickedDep, setPickedDep] = useState<number | null>(paramDep);
+  const depId = pickedDep ?? nearestDep;
+  const setDepId = setPickedDep;
   const [banknotes, setBanknotes] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [desiredRate, setDesiredRate] = useState('');
@@ -272,7 +279,7 @@ export function BookingFlow({ mode }: { mode: Mode }) {
               onChange={(e) => setDesiredRate(e.target.value.replace(/[^\d\s.,]/g, '').slice(0, 10))}
               inputMode="decimal"
               placeholder={rate > 0 ? formatNumber(rate, locale) : ''}
-              className="h-12 w-full rounded-2xl border border-stroke-modal bg-transparent px-4 text-base text-text-default outline-none placeholder:text-text-disabled focus:border-stroke-surface3"
+              className="h-12 w-full rounded-2xl border border-stroke-modal bg-transparent px-4 text-base text-text-default outline-none placeholder:text-text-disabled focus:border-stroke-brand"
             />
           </div>
         )}
@@ -309,12 +316,12 @@ export function BookingFlow({ mode }: { mode: Mode }) {
             </label>
             <input
               id="bf-phone"
-              value={account?.phoneNumber ?? ''}
+              value={account?.phoneNumber ? formatPhoneInput(account.phoneNumber) : ''}
               readOnly
               placeholder={t('data.phone')}
               inputMode="tel"
               title={t('data.phoneFromAccount')}
-              className="h-12 w-full rounded-2xl border border-stroke-modal bg-transparent px-4 text-base text-text-disabled outline-none"
+              className="h-12 w-full rounded-2xl border border-stroke-modal bg-transparent px-4 text-base text-text-disabled outline-none transition-colors focus:border-stroke-brand"
             />
             <p className="mt-1 pl-1 text-xs text-text-disabled">{t('data.phoneFromAccount')}</p>
           </div>
@@ -328,7 +335,7 @@ export function BookingFlow({ mode }: { mode: Mode }) {
               onChange={(e) => setName(e.target.value.slice(0, 120))}
               placeholder={t('data.name')}
               autoComplete="name"
-              className="h-12 w-full rounded-2xl border border-stroke-modal bg-transparent px-4 text-base text-text-default outline-none placeholder:text-text-disabled focus:border-stroke-surface3"
+              className="h-12 w-full rounded-2xl border border-stroke-modal bg-transparent px-4 text-base text-text-default outline-none placeholder:text-text-disabled focus:border-stroke-brand"
             />
           </div>
         </div>

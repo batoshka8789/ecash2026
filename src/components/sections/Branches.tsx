@@ -6,12 +6,14 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 import { clsx } from 'clsx';
 import { Icon } from '@/components/ui/Icon';
+import { Iconsax } from '@/components/ui/Iconsax';
 import { Toast } from '@/components/ui/Toast';
 import { BranchMap, type BranchMapMarker } from '@/components/ui/BranchMap';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import { canonicalCity, formatBranchAddress, formatBranchTitle } from '@/lib/branch-address';
 import { currencySymbol, formatNumber } from '@/lib/format';
+import { useUserPlace } from '@/lib/user-place';
 
 /** Бейджи отделения: цвета из палитры макета (badge, 12/700, r8). */
 const badgeStyles = {
@@ -108,14 +110,29 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
   const rowRefs = useRef(new Map<number, HTMLLIElement>());
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /** Переключение вида: и state (мгновенно), и URL (история/шэринг). */
+  /** Валюта, с которой пришли из строки курсов («на карте» у строки) —
+   *  прокидывается дальше в бронирование, чтобы флоу открылся с ней.
+   *  Формат зажат ([A-Z0-9] до 8 символов, верхний регистр): значение из
+   *  URL уходит обратно в query бронирования, и без проверки крафтовая
+   *  ссылка ?currency=USD%26amount%3D… протаскивала бы лишние параметры. */
+  const rawCurrency = searchParams.get('currency');
+  const currency =
+    rawCurrency && /^[a-z0-9]{1,8}$/i.test(rawCurrency) ? rawCurrency.toUpperCase() : null;
+
+  /** Переключение вида: и state (мгновенно), и URL (история/шэринг).
+   *  Остальные параметры (?currency, ?depId из карточки заявки…) сохраняем —
+   *  раньше переключение вида затирало их из URL. */
   const setView = useCallback(
     (v: 'list' | 'map') => {
       setViewState(v);
       if (v !== 'map') setMapFull(false);
-      router.replace(v === 'map' ? `${pathname}?view=map` : pathname, { scroll: false });
+      const params = new URLSearchParams(searchParams);
+      if (v === 'map') params.set('view', 'map');
+      else params.delete('view');
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     },
-    [router, pathname],
+    [router, pathname, searchParams],
   );
 
   // Back/forward меняют searchParams — подтягиваем вид из URL
@@ -158,12 +175,21 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
       Promise.all(depIds.map((id) => api.departments.info(id, signal).then((r) => r.department))),
   });
 
-  // Лучший курс USD по сети — бейдж «Самый выгодный»; ошибка не критична.
+  /** Валюта секции: из ?currency= (пришли из строки курсов), иначе USD. */
+  const activeCurrency = currency ?? 'USD';
+
+  // Лучший курс по сети для ВЫБРАННОЙ валюты — бейдж «Самый выгодный».
   const best = useQuery({
-    queryKey: ['rates', 'best', 'USD'],
-    queryFn: ({ signal }) => api.rates.best('USD', undefined, signal),
+    queryKey: ['rates', 'best', activeCurrency],
+    queryFn: ({ signal }) => api.rates.best(activeCurrency, undefined, signal),
     staleTime: 5 * 60_000,
   });
+
+  // «Мой адрес» как запасная позиция: геолокацию давать не обязаны,
+  // а сохранённый адрес у пользователя уже есть — от него и считаем
+  // расстояния/«Рядом с вами», и его же показываем точкой на карте.
+  const { coords: addressCoords } = useUserPlace();
+  const effectivePos = userPos ?? addressCoords;
 
   // Геолокация: тихий отказ — подсказка в шапке, строки без расстояния.
   useEffect(() => {
@@ -212,7 +238,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
     const items = deps.map((dep) => {
       const info = infoById.get(dep.depId);
       const coords = info?.coords ?? null;
-      const usd = info?.currencies.find((c) => c.code === 'USD') ?? null;
+      const cur = info?.currencies.find((c) => c.code === activeCurrency) ?? null;
       const timetable = info?.timetable ?? null;
       const rawAddress = info?.address ?? dep.address;
       const depCity = canonicalCity(info?.city);
@@ -224,8 +250,8 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
         rawAddress,
         city: depCity,
         coords,
-        distanceKm: userPos && coords ? haversineKm(userPos, coords) : null,
-        usd,
+        distanceKm: effectivePos && coords ? haversineKm(effectivePos, coords) : null,
+        rate: cur,
         timetable,
         open: timetable ? isOpenNow(timetable, hhmm) : null,
         badges: [] as BadgeKind[],
@@ -254,7 +280,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
       if (b.distanceKm != null) return 1;
       return a.depId - b.depId;
     });
-  }, [list.data, infos.data, best.data, userPos, nowMs]);
+  }, [list.data, infos.data, best.data, effectivePos, nowMs, activeCurrency]);
 
   const cities = useMemo(() => {
     const set = new Set(rows.map((r) => r.city).filter((c): c is string => Boolean(c)));
@@ -326,7 +352,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
     const withCoords = visibleRows.filter((r) => r.coords && r.city);
     if (withCoords.length === 0) return undefined;
 
-    const nearest = userPos
+    const nearest = effectivePos
       ? withCoords.reduce((a, b) =>
           (a.distanceKm ?? Infinity) <= (b.distanceKm ?? Infinity) ? a : b,
         )
@@ -342,7 +368,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
 
     const ids = withCoords.filter((r) => r.city === target).map((r) => r.depId);
     return ids.length > 0 ? ids : undefined;
-  }, [visibleRows, userPos]);
+  }, [visibleRows, effectivePos]);
 
   const mapLabels = useMemo(
     () => ({
@@ -424,7 +450,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
   };
 
   const rateOf = (row: (typeof rows)[number], kind: 'buy' | 'sell') =>
-    row.usd ? formatNumber(row.usd[kind], locale, 2) : '—';
+    row.rate ? formatNumber(row.rate[kind], locale, 2) : '—';
 
   const iconBtn =
     'inline-flex h-[46px] w-[46px] shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-surface-page-surf3 text-text-default transition-colors hover:bg-comp-surface2-hover';
@@ -637,7 +663,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                             }
                             className="-my-2.5 inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-disabled transition-colors hover:text-text-default"
                           >
-                            <Icon name="content_copy" size={20} />
+                            <Iconsax name="copy" size={20} />
                           </button>
                         </div>
 
@@ -667,8 +693,8 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                       </div>
 
                       <div className="-mx-3 flex shrink-0 items-center md:mx-0 lg:w-[308px]">
-                        <RateCell label={t('buyUsd')} value={rateOf(row, 'buy')} />
-                        <RateCell label={t('sellUsd')} value={rateOf(row, 'sell')} />
+                        <RateCell label={`${t('buyLabel')} (${currencySymbol(activeCurrency)})`} value={rateOf(row, 'buy')} />
+                        <RateCell label={`${t('sellLabel')} (${currencySymbol(activeCurrency)})`} value={rateOf(row, 'sell')} />
                       </div>
                     </div>
 
@@ -680,11 +706,15 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                         onClick={() => showOnMap(row.depId, row.coords)}
                         className={clsx(iconBtn, 'order-2 md:order-1')}
                       >
-                        <Icon name="map" size={20} />
+                        <Iconsax name="map" size={20} />
                       </button>
                       <button
                         type="button"
-                        onClick={() => router.push(`/booking?depId=${row.depId}`)}
+                        onClick={() =>
+                          router.push(
+                            `/booking?depId=${row.depId}${currency ? `&to=${encodeURIComponent(currency)}` : ''}`,
+                          )
+                        }
                         className={clsx(
                           outlineBtn,
                           'order-1 grow md:order-2 lg:w-[152px] lg:grow-0',
@@ -710,7 +740,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                   markers={markers}
                   fitIds={fitIds}
                   center={mapCenter}
-                  userPos={userPos}
+                  userPos={effectivePos}
                   controls
                   cooperative={!mapFull}
                   onMarkerClick={(id) => {
@@ -786,7 +816,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
 
                       <div className="mt-4 flex flex-col gap-2 text-sm text-text-disabled">
                         <span className="flex items-start gap-2">
-                          <Icon name="location_on" size={16} className="mt-0.5 shrink-0" />
+                          <Iconsax name="location" size={16} className="mt-0.5 shrink-0" />
                           <span className="min-w-0 break-words" title={mapSelected.rawAddress}>
                             {mapSelected.city ? `${mapSelected.city}, ` : ''}
                             {mapSelected.address}
@@ -796,7 +826,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                         </span>
                         {mapSelected.timetable && (
                           <span className="flex items-center gap-2">
-                            <Icon name="schedule" size={16} className="shrink-0" />
+                            <Iconsax name="clock" size={16} className="shrink-0" />
                             <span className="whitespace-nowrap">
                               {mapSelected.timetable.openTime} - {mapSelected.timetable.closeTime}
                             </span>
@@ -812,11 +842,11 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                         )}
                       </div>
 
-                      {mapSelected.usd && (
+                      {mapSelected.rate && (
                         <div className="mt-4 flex items-stretch rounded-2xl border border-stroke-surface3 px-2.5 py-1.5">
                           <div className="flex flex-1 flex-col items-center justify-center gap-0.5">
                             <span className="text-xs font-medium text-text-disabled">
-                              {t('buyUsd')}
+                              {`${t('buyLabel')} (${currencySymbol(activeCurrency)})`}
                             </span>
                             <span className="text-lg font-bold leading-tight text-text-default">
                               {rateOf(mapSelected, 'buy')} {currencySymbol('KZT')}
@@ -825,7 +855,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                           <div aria-hidden className="w-px shrink-0 bg-stroke-surface3" />
                           <div className="flex flex-1 flex-col items-center justify-center gap-0.5">
                             <span className="text-xs font-medium text-text-disabled">
-                              {t('sellUsd')}
+                              {`${t('sellLabel')} (${currencySymbol(activeCurrency)})`}
                             </span>
                             <span className="text-lg font-bold leading-tight text-text-default">
                               {rateOf(mapSelected, 'sell')} {currencySymbol('KZT')}
@@ -837,7 +867,11 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                       <div className="mt-3 flex items-center gap-2.5">
                         <button
                           type="button"
-                          onClick={() => router.push(`/booking?depId=${mapSelected.depId}`)}
+                          onClick={() =>
+                            router.push(
+                              `/booking?depId=${mapSelected.depId}${currency ? `&to=${encodeURIComponent(currency)}` : ''}`,
+                            )
+                          }
                           className="inline-flex h-[46px] grow cursor-pointer items-center justify-center rounded-[20px] bg-btn-brand px-6 text-sm font-medium text-text-always-white transition-[filter] hover:brightness-110"
                         >
                           {t('book')}
@@ -851,7 +885,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                             title={t('route')}
                             className={iconBtn}
                           >
-                            <Icon name="directions" size={20} />
+                            <Iconsax name="routing-2" size={20} />
                           </a>
                         )}
                       </div>

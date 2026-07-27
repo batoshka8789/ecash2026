@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { clsx } from 'clsx';
 import { Icon } from '@/components/ui/Icon';
+import { Iconsax } from '@/components/ui/Iconsax';
 import { CurrencyFlag } from '@/components/ui/CurrencyFlag';
 import { currencyFlagClass } from '@/lib/format';
 import type { DepartmentInfo } from '@/lib/domain';
@@ -87,8 +88,15 @@ export function AmountBox({
     <div
       ref={rootRef}
       className={clsx(
-        'relative flex flex-1 items-center rounded-2xl bg-surface-page-surf2',
-        invalid && 'border border-negative',
+        // border всегда (прозрачный в покое): invalid-рамка не сдвигает
+        // разметку, фокус — брендовая обводка по радиусу поля, единая для всех полей сайта;
+        // при ошибке красная рамка держится и в фокусе (focus-* победил бы
+        // по специфичности и прятал бы её во время правки поля)
+        // обводка — только от инпута суммы (has-[label>input:focus]):
+        // focus-within ловил и автофокус поиска в открытом селекторе валюты —
+        // выходило два оранжевых кольца разом (тот же приём, что в Calculator)
+        'relative flex flex-1 items-center rounded-2xl border bg-surface-page-surf2 transition-colors',
+        invalid ? 'border-negative' : 'border-transparent has-[label>input:focus]:border-stroke-brand',
         className,
       )}
     >
@@ -140,7 +148,7 @@ export function AmountBox({
               aria-label={t('pair.searchCurrency')}
               autoComplete="off"
               spellCheck={false}
-              className="h-10 w-full rounded-xl border border-stroke-modal bg-transparent pl-10 pr-3 text-sm text-text-default outline-none transition-colors placeholder:text-text-disabled focus:border-stroke-surface3"
+              className="h-10 w-full rounded-xl border border-stroke-modal bg-transparent pl-10 pr-3 text-sm text-text-default outline-none transition-colors placeholder:text-text-disabled focus:border-stroke-brand"
             />
           </div>
           <ul role="listbox" aria-label={t('pair.pickCurrency')} className="max-h-60 overflow-auto">
@@ -205,12 +213,12 @@ export function BranchAddress({
           </span>
         )}
         <div className="mt-2 flex items-center gap-2 text-base text-text-default">
-          <Icon name="account_balance" size={18} className="shrink-0 text-text-disabled" />
+          <Iconsax name="bank" size={18} className="shrink-0 text-text-disabled" />
           <span className="min-w-0 truncate">{department?.address ?? '—'}</span>
         </div>
         {department?.timetable && (
           <div className="mt-1.5 flex items-center gap-2 text-sm">
-            <Icon name="schedule" size={16} className="text-text-disabled" />
+            <Iconsax name="clock" size={16} className="text-text-disabled" />
             <span className="text-text-default">
               {department.timetable.openTime} - {department.timetable.closeTime}
             </span>

@@ -7,6 +7,7 @@ import { clsx } from 'clsx';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/lib/auth';
+import { formatPhoneInput } from '@/lib/format';
 
 /**
  * Карточка профиля.
@@ -87,7 +88,7 @@ export function ProfileCard() {
 
             <div className="flex flex-col items-center gap-2 text-center">
               <div className="text-lg font-bold leading-[1.2] text-text-default">{name}</div>
-              <div className="text-sm leading-[1.1] text-text-default">{account?.phoneNumber}</div>
+              <div className="text-sm leading-[1.1] text-text-default">{account?.phoneNumber ? formatPhoneInput(account.phoneNumber) : ''}</div>
             </div>
           </>
         )}

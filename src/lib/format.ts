@@ -142,11 +142,44 @@ export function currencyFlagClass(code: string): string | null {
  * из 10 цифр, набранного с нуля.
  */
 export function formatPhoneInput(raw: string): string {
-  let digits = raw.replace(/\D/g, '');
+  // Собственный префикс маски «+7» срезаем ДО извлечения цифр: контролируемый
+  // input прогоняет уже отформатированное значение через маску заново на
+  // каждом нажатии, и без этого «7» из префикса считалась цифрой номера —
+  // в середине набора маска показывала «+7 (770) 5…» вместо «+7 (705…»
+  // (самоисцелялось только на последней цифре).
+  const body = raw.replace(/^\s*\+7\s*/, '');
+  let digits = body.replace(/\D/g, '');
   if (digits.length === 11 && (digits.startsWith('7') || digits.startsWith('8'))) {
     digits = digits.slice(1);
   }
   digits = digits.slice(0, 10);
+
+  if (digits.length === 0) return '';
+  let out = `+7 (${digits.slice(0, 3)}`;
+  if (digits.length >= 3) out += ')';
+  if (digits.length > 3) out += ` ${digits.slice(3, 6)}`;
+  if (digits.length > 6) out += ` ${digits.slice(6, 8)}`;
+  if (digits.length > 8) out += ` ${digits.slice(8, 10)}`;
+  return out;
+}
+
+/**
+ * Маска комбинированного поля входа «телефон или ИИН»: телефонный формат
+ * подхватывается сразу (как везде на сайте), но ввод ИИН не ломается.
+ *
+ * Правила:
+ * — начинается с «+» → однозначно телефон, обычная маска;
+ * — до 10 цифр → телефонная маска БЕЗ отрезания лидирующей 7/8: ИИН
+ *   1970–80-х годов рождения тоже начинается на 7/8, и «умное» отрезание
+ *   кода страны безвозвратно съедало первую цифру ИИН;
+ * — 11–12 цифр → без маски (это либо ИИН, либо полный номер с кодом
+ *   страны — сервер нормализует сам, а цифры здесь не теряются).
+ */
+export function formatLoginInput(raw: string): string {
+  // префикс собственной маски не считается цифрами номера (см. formatPhoneInput)
+  const body = raw.replace(/^\s*\+7\s*/, '');
+  const digits = body.replace(/\D/g, '').slice(0, 12);
+  if (digits.length >= 11) return digits;
 
   if (digits.length === 0) return '';
   let out = `+7 (${digits.slice(0, 3)}`;

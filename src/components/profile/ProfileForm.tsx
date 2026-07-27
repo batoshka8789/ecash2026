@@ -6,6 +6,7 @@ import { useMutation } from '@tanstack/react-query';
 import { clsx } from 'clsx';
 import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/lib/auth';
+import { formatPhoneInput } from '@/lib/format';
 import { api, ApiError } from '@/lib/api';
 import { useErrorText } from '@/lib/useErrorText';
 
@@ -36,7 +37,15 @@ function Field({
   title?: string;
 }) {
   return (
-    <div className="rounded-xl bg-surface-page-surf2 px-4 py-2.5">
+    // border всегда (прозрачный в покое) — та же геометрия, что у плашек
+    // «О себе»/«Род деятельности» ниже; для редактируемых полей фокус —
+    // брендовая обводка по радиусу поля, при ошибке красная держится и в фокусе
+    <div
+      className={clsx(
+        'rounded-xl border bg-surface-page-surf2 px-4 py-2.5 transition-colors',
+        invalid ? 'border-negative' : 'border-transparent focus-within:border-stroke-brand',
+      )}
+    >
       <label
         htmlFor={id}
         className={clsx(
@@ -226,14 +235,14 @@ export function ProfileForm() {
         <Field
           id={`${uid}-phone`}
           label={t('contact')}
-          value={account?.phoneNumber ?? ''}
+          value={account?.phoneNumber ? formatPhoneInput(account.phoneNumber) : ''}
           disabled
           title={t('readonlyHint')}
         />
       </div>
       <p className="mt-2 pl-1 text-xs text-text-disabled">{t('readonlyHint')}</p>
 
-      <div className="mt-3 rounded-xl bg-surface-page-surf2 px-4 py-3">
+      <div className="mt-3 rounded-xl border border-transparent bg-surface-page-surf2 px-4 py-3 transition-colors focus-within:border-stroke-brand">
         <label htmlFor={`${uid}-about`} className="sr-only">
           {t('about')}
         </label>
@@ -251,7 +260,7 @@ export function ProfileForm() {
         />
       </div>
 
-      <div className="mt-3 rounded-xl bg-surface-page-surf2 px-4 py-3">
+      <div className="mt-3 rounded-xl border border-transparent bg-surface-page-surf2 px-4 py-3 transition-colors focus-within:border-stroke-brand">
         {tags.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-2">
             {tags.map((tag) => (

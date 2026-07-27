@@ -82,7 +82,8 @@ export const GET = withUser(async (req, token) => {
       badges: ['rateAlert'],
       titleKey: a.active && a.until.getTime() > Date.now() ? 'alertsOn' : 'alertsOff',
       createdAt: a.createdAt.toISOString(),
-      side: 'buy',
+      // направление закодировано порядком пары: KZT→валюта — покупка
+      side: a.currencyFrom === 'KZT' ? 'buy' : 'sell',
       amount: `${Number(a.targetRate)} (₸)`,
       requestId: null,
       reservedUntil: null,

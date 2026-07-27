@@ -96,7 +96,9 @@ function StoreChip({
   children: React.ReactNode;
 }) {
   return (
-    <span className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-btn-inverted px-4 text-sm font-medium text-text-inverted opacity-80 sm:h-11 sm:flex-none sm:px-5">
+    // Контраст по требованию дизайна: тёмная тема — чисто белая плашка,
+    // светлая — чисто чёрная (не приглушённые btn-inverted с opacity)
+    <span className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-white px-4 text-sm font-medium text-black sm:h-11 sm:flex-none sm:px-5 [html[data-theme=light]_&]:bg-black [html[data-theme=light]_&]:text-white">
       {children}
       <span className="flex flex-col leading-tight">
         {label}

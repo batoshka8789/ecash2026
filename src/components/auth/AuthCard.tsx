@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { PillTabs } from '@/components/ui/PillTabs';
 import { useAuth } from '@/lib/auth';
-import { formatPhoneInput } from '@/lib/format';
+import { formatLoginInput, formatPhoneInput } from '@/lib/format';
 import { useResendTimer } from '@/lib/hooks';
 import { useErrorText } from '@/lib/useErrorText';
 import { api, ApiError } from '@/lib/api';
@@ -201,7 +201,7 @@ export function AuthCard({
                   label={t('loginLabel')}
                   placeholder={t('loginLabel')}
                   value={loginValue}
-                  onChange={(e) => setLoginValue(e.target.value)}
+                  onChange={(e) => setLoginValue(formatLoginInput(e.target.value))}
                   errors={err('login').concat(err('phoneNumber'))}
                   autoComplete="username"
                   inputMode="tel"

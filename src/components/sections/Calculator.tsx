@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
@@ -9,7 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { CurrencyFlag } from '@/components/ui/CurrencyFlag';
 import { Select, type SelectOption } from '@/components/ui/Select';
-import { useRouter } from '@/i18n/navigation';
+import { usePathname, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import { buildChart, tickGranularity } from '@/lib/chart';
 import {
@@ -22,11 +23,11 @@ import {
   type TickGranularity,
 } from '@/lib/format';
 import { useErrorText } from '@/lib/useErrorText';
+import { useNearestDepId } from '@/lib/user-place';
 import type { CurrencyCode } from '@/lib/domain';
 
-const DEP_ID = 1;
-/** Общий ключ с RatesList — TanStack Query дедуплицирует запрос. */
-const ratesQueryKey = ['rates', DEP_ID] as const;
+/** Fallback-отделение, пока «Мой адрес» не указан/не геокодирован. */
+const DEFAULT_DEP_ID = 1;
 
 /** Порядок табов «Multitab» из макета. */
 const periods = ['year', 'month', 'week', 'day'] as const;
@@ -72,17 +73,36 @@ function plainAmount(n: number, locale: string): string {
   return locale === 'en' ? fixed : fixed.replace('.', ',');
 }
 
-/** Калькулятор валюты на живых курсах + раскрывающаяся «Динамика курса». */
-export function Calculator() {
+/**
+ * Калькулятор валюты на живых курсах + раскрывающаяся «Динамика курса».
+ * initialCurrency — стартовая валюта пары: /locations открывается из строки
+ * конкретной валюты («на карте» в списке курсов), и калькулятор там обязан
+ * показать её, а не всегда USD.
+ * syncCurrencyToUrl — смена валюты зеркалится в ?currency= (router.replace):
+ * на /locations кнопки «Забронировать» у отделений (Branches) берут валюту
+ * из URL — без синка после смены валюты в калькуляторе они бронировали бы
+ * ту, с которой страница открылась, вразрез с тем, что показано сверху.
+ */
+export function Calculator({
+  initialCurrency,
+  syncCurrencyToUrl,
+}: { initialCurrency?: string; syncCurrencyToUrl?: boolean } = {}) {
   const t = useTranslations('home.calculator');
   const tRates = useTranslations('rates');
   const tRoot = useTranslations();
   const locale = useLocale();
   const errorText = useErrorText();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const uid = useId();
 
-  const [foreign, setForeign] = useState<CurrencyCode>('USD');
+  // uppercase на всякий случай: страница нормализует параметр, но проп
+  // публичный — коды в API строго в верхнем регистре
+  const normalizedInitial = initialCurrency?.toUpperCase();
+  const [foreign, setForeign] = useState<CurrencyCode>(
+    normalizedInitial && normalizedInitial !== 'KZT' ? normalizedInitial : 'USD',
+  );
   const [direction, setDirection] = useState<Direction>('kztToForeign');
   /** Единственный источник суммы: какое поле ввёл пользователь и что именно. */
   const [entry, setEntry] = useState<{ source: Field; raw: string }>({ source: 'give', raw: '' });
@@ -91,9 +111,12 @@ export function Calculator() {
   const [period, setPeriod] = useState<Period>('year');
   const graphId = useId();
 
+  // Курсы — от БЛИЖАЙШЕГО к «Моему адресу» отделения (ключ общий с
+  // RatesList: оба используют useNearestDepId — запрос дедуплицируется)
+  const { depId } = useNearestDepId(DEFAULT_DEP_ID);
   const ratesQuery = useQuery({
-    queryKey: ratesQueryKey,
-    queryFn: ({ signal }) => api.rates.forDep(DEP_ID, signal),
+    queryKey: ['rates', depId],
+    queryFn: ({ signal }) => api.rates.forDep(depId, signal),
   });
 
   const goldLabel = (grams: string) => tRates('gold', { grams });
@@ -192,7 +215,17 @@ export function Calculator() {
         : field === 'give'
           ? 'foreignToKzt'
           : 'kztToForeign';
-    if (code !== 'KZT') setForeign(code as CurrencyCode);
+    if (code !== 'KZT') {
+      setForeign(code as CurrencyCode);
+      // /locations: Branches читает валюту из URL для кнопок «Забронировать» —
+      // держим её в согласии с тем, что реально выбрано в калькуляторе
+      // (остальные параметры — ?view и т.п. — сохраняем)
+      if (syncCurrencyToUrl) {
+        const params = new URLSearchParams(searchParams);
+        params.set('currency', code);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      }
+    }
     if (nextDirection !== direction) {
       setDirection(nextDirection);
       flip();
@@ -256,7 +289,7 @@ export function Calculator() {
 
         {graphOpen && (
           <div id={graphId} className="anim-chart-panel overflow-hidden">
-            <Graph code={foreign} period={period} setPeriod={setPeriod} />
+            <Graph depId={depId} code={foreign} period={period} setPeriod={setPeriod} />
           </div>
         )}
 
@@ -398,12 +431,20 @@ function AmountField({
 }) {
   const filled = value !== '';
   return (
-    <div className="flex flex-1 rounded-2xl bg-surface-page-surf2 transition-colors focus-within:bg-comp-surface2-hover">
+    // border всегда (прозрачный в покое): фокус — брендовая обводка по радиусу поля,
+    // единый рисунок фокуса всех текстовых полей сайта; заливка тоже
+    // подсвечивается.
+    // Фиксированная высота (56/66 из макета) — на ЭТОЙ рамке, а не на label:
+    // у элемента без своей высоты border-box не гасит бордер, и пилюля росла
+    // на 2px. Обводка — только от инпута суммы (has-[label>input:focus]):
+    // focus-within ловил и поиск внутри селектора валюты, а у валютной
+    // стороны своя постоянная брендовая рамка — выходило два кольца.
+    <div className="flex h-14 flex-1 rounded-2xl border border-transparent bg-surface-page-surf2 transition-colors focus-within:bg-comp-surface2-hover has-[label>input:focus]:border-stroke-brand sm:h-[66px]">
       {/* высота поля фиксирована в обоих состояниях — подпись не сдвигает вёрстку */}
       <label
         htmlFor={id}
         className={clsx(
-          'flex h-14 min-w-0 flex-1 cursor-text flex-col justify-center px-4 sm:h-[66px] sm:px-5',
+          'flex h-full min-w-0 flex-1 cursor-text flex-col justify-center px-4 sm:px-5',
           filled && 'gap-1',
         )}
       >
@@ -431,10 +472,12 @@ function AmountField({
 
 /** «Динамика курса»: живая история по периодам, SVG-график по курсу продажи. */
 function Graph({
+  depId,
   code,
   period,
   setPeriod,
 }: {
+  depId: number;
   code: CurrencyCode;
   period: Period;
   setPeriod: (p: Period) => void;
@@ -448,8 +491,8 @@ function Graph({
 
   // компонент смонтирован только при раскрытой «Динамике» — запрос лениво
   const historyQuery = useQuery({
-    queryKey: ['rateHistory', DEP_ID, code, period],
-    queryFn: ({ signal }) => api.rates.history({ depId: DEP_ID, code, period }, signal),
+    queryKey: ['rateHistory', depId, code, period],
+    queryFn: ({ signal }) => api.rates.history({ depId, code, period }, signal),
     placeholderData: keepPreviousData,
   });
 

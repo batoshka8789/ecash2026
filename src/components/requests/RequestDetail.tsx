@@ -6,11 +6,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { clsx } from 'clsx';
 import { Link } from '@/i18n/navigation';
 import { Icon } from '@/components/ui/Icon';
+import { Iconsax } from '@/components/ui/Iconsax';
 import { Button } from '@/components/ui/Button';
 import { api, ApiError } from '@/lib/api';
 import { useCountdown } from '@/lib/hooks';
 import { useErrorText } from '@/lib/useErrorText';
-import { currencySymbol, formatDateTime, formatNumber } from '@/lib/format';
+import { currencySymbol, formatDateTime, formatNumber, formatPhoneInput } from '@/lib/format';
 import { AmountBox } from '@/components/flows/PairFields';
 import { useAuth } from '@/lib/auth';
 import type { ExchangeRequest } from '@/lib/domain';
@@ -294,8 +295,8 @@ function YourDataBlock() {
       <div className="mt-4 flex flex-col gap-2 text-sm text-text-default sm:text-base">
         {account.phoneNumber && (
           <div className="flex items-center gap-2">
-            <Icon name="call" size={18} className="text-text-disabled" />
-            {account.phoneNumber}
+            <Iconsax name="call" size={18} className="text-text-disabled" />
+            {formatPhoneInput(account.phoneNumber)}
           </div>
         )}
         {name && (
@@ -311,10 +312,12 @@ function YourDataBlock() {
 
 /** Шапка состояния: щит + бейджи + заголовок + таймер брони. */
 /** «7 704 *** ** 84» — как в макете: видны код оператора и две последние цифры. */
+/** Маскированный номер в утверждённом формате проекта: +7 (775) *** ** 84. */
 function maskPhone(phone: string): string {
   const d = phone.replace(/\D/g, '');
   if (d.length < 6) return phone;
-  return `${d.slice(0, 1)} ${d.slice(1, 4)} *** ** ${d.slice(-2)}`;
+  const local = d.length === 11 ? d.slice(1) : d;
+  return `+7 (${local.slice(0, 3)}) *** ** ${local.slice(-2)}`;
 }
 
 function StatusHead({ request: r }: { request: ExchangeRequest }) {

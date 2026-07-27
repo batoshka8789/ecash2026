@@ -1,5 +1,5 @@
 import 'server-only';
-import { and, eq, gt, isNull, lte } from 'drizzle-orm';
+import { and, eq, gt, gte, isNull, lte } from 'drizzle-orm';
 import { db } from '@/server/db/client';
 import { rateAlerts, rateSnapshots } from '@/server/db/schema';
 import { depList } from '@/server/ecash/endpoints/departments';
@@ -45,17 +45,28 @@ async function takeSnapshot(): Promise<void> {
 }
 
 /**
- * Срабатывание подписок «уведомить об изменении курса»: цель достигнута,
- * когда курс продажи опустился до targetRate или ниже. Отметка firedAt
- * ставится один раз — уведомление показывается в кабинете.
+ * Срабатывание подписок «уведомить об изменении курса». Направление
+ * закодировано порядком пары (как в бронировании):
+ *  — KZT→валюта (клиент ПОКУПАЕТ): цель достигнута, когда курс ПРОДАЖИ
+ *    обменника опустился до targetRate или ниже;
+ *  — валюта→KZT (клиент ПРОДАЁТ): когда курс ПОКУПКИ поднялся до
+ *    targetRate или выше.
+ * Отметка firedAt ставится один раз — уведомление показывается в кабинете.
  */
 async function fireAlerts(rows: (typeof rateSnapshots.$inferInsert)[]): Promise<void> {
   const bestSell = new Map<string, number>();
+  const bestBuy = new Map<string, number>();
   for (const r of rows) {
     const sell = Number(r.sell);
-    if (sell <= 0) continue;
-    const cur = bestSell.get(r.currencyCode);
-    if (cur === undefined || sell < cur) bestSell.set(r.currencyCode, sell);
+    const buy = Number(r.buy);
+    if (sell > 0) {
+      const cur = bestSell.get(r.currencyCode);
+      if (cur === undefined || sell < cur) bestSell.set(r.currencyCode, sell);
+    }
+    if (buy > 0) {
+      const cur = bestBuy.get(r.currencyCode);
+      if (cur === undefined || buy > cur) bestBuy.set(r.currencyCode, buy);
+    }
   }
   for (const [code, sell] of bestSell) {
     await db
@@ -63,11 +74,27 @@ async function fireAlerts(rows: (typeof rateSnapshots.$inferInsert)[]): Promise<
       .set({ firedAt: new Date() })
       .where(
         and(
+          eq(rateAlerts.currencyFrom, 'KZT'),
           eq(rateAlerts.currencyTo, code),
           eq(rateAlerts.active, true),
           isNull(rateAlerts.firedAt),
           gt(rateAlerts.until, new Date()),
           lte(rateAlerts.targetRate, String(sell)),
+        ),
+      );
+  }
+  for (const [code, buy] of bestBuy) {
+    await db
+      .update(rateAlerts)
+      .set({ firedAt: new Date() })
+      .where(
+        and(
+          eq(rateAlerts.currencyFrom, code),
+          eq(rateAlerts.currencyTo, 'KZT'),
+          eq(rateAlerts.active, true),
+          isNull(rateAlerts.firedAt),
+          gt(rateAlerts.until, new Date()),
+          gte(rateAlerts.targetRate, String(buy)),
         ),
       );
   }

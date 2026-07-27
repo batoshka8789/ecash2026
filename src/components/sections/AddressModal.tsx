@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { clsx } from 'clsx';
 import { Icon } from '@/components/ui/Icon';
 import { BranchMap, type BranchMapMarker } from '@/components/ui/BranchMap';
@@ -91,11 +91,31 @@ export function AddressModal({
     [points, matched],
   );
 
-  // объект пересоздаётся только при смене отделения — карта не дёргается
-  const center = useMemo(
-    () => (matched ? { lat: matched.lat, lon: matched.lon } : undefined),
-    [matched],
-  );
+  /* --------------------------- «мой адрес» точкой на карте (геокод) ------ */
+
+  // Дебаунс ввода: геокодер дёргаем не чаще, чем раз в 400 мс тишины
+  const [debounced, setDebounced] = useState('');
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(address.trim()), 400);
+    return () => clearTimeout(id);
+  }, [address]);
+
+  const geocodeQ = useQuery({
+    queryKey: ['geocode', debounced.toLowerCase()],
+    queryFn: ({ signal }) => api.geocode(debounced, signal),
+    // адрес совпал с отделением — геокодер не нужен, пин и так подсвечен
+    enabled: open && !matched && debounced.length >= 4,
+    staleTime: 24 * 60 * 60_000,
+    retry: 1,
+  });
+  const userPoint = !matched ? (geocodeQ.data?.point ?? null) : null;
+
+  // объект пересоздаётся только при смене точки — карта не дёргается
+  const center = useMemo(() => {
+    if (matched) return { lat: matched.lat, lon: matched.lon };
+    if (userPoint) return { lat: userPoint.lat, lon: userPoint.lon };
+    return undefined;
+  }, [matched, userPoint]);
 
   const geo = useGeolocate(points, (p) => {
     setAddress(p.address);
@@ -409,8 +429,9 @@ export function AddressModal({
                 <BranchMap
                   markers={markers}
                   center={center}
-                  // после «Рядом со мной» показываем и саму позицию пользователя
-                  userPos={geo.position}
+                  // точка пользователя: живой геокод введённого адреса,
+                  // а после «Рядом со мной» — реальная позиция из геолокации
+                  userPos={geo.position ?? userPoint}
                   onMarkerClick={(id) => {
                     // клик по пину — тоже выбор адреса, не только ввод руками
                     const point = points.find((p) => p.depId === id);

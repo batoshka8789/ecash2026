@@ -224,6 +224,13 @@ export const api = {
     remove: (id: string) => request<{ ok: true }>(`/rate-alerts/${id}`, { method: 'DELETE' }),
   },
 
+  /** Геокодирование «Моего адреса» (BFF → OSM Nominatim); null — не нашли. */
+  geocode: (q: string, signal?: AbortSignal) =>
+    request<{ point: { lat: number; lon: number } | null }>(
+      `/geocode?q=${encodeURIComponent(q)}`,
+      { signal },
+    ),
+
   franchiseLead: (payload: {
     name: string;
     phone: string;

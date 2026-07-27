@@ -2,15 +2,25 @@
 
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { Icon } from '@/components/ui/Icon';
+import { MaskGlyph } from '@/components/ui/MaskGlyph';
 
+/**
+ * Глифы нав-панели — АЛЬФА-МАСКИ, извлечённые напрямую из пиксельных
+ * PNG-экспортов макета (public/img/actions/*, 8x для ретины): ни один
+ * шрифтовой/векторный набор не совпал с экспортами на 100% (Iconsax дал
+ * IoU 0.81–0.84 на трёх иконках, «люди с ромбом» и «человек с купюрами» —
+ * составные глифы, которых нет ни в одном наборе). Маска красится
+ * background-цветом (currentColor), поэтому темы работают как обычно.
+ * w/h — размер глифа в CSS-пикселях, 1:1 с экспортом бейджа 50×54.
+ */
 const actions = [
-  { key: 'individualRate', icon: 'group', href: '/individual-rate', filled: false },
-  { key: 'booking', icon: 'gavel', href: '/booking', filled: true },
-  { key: 'notify', icon: 'notifications', href: '/subscribe', filled: true },
-  { key: 'franchise', icon: 'diversity_3', href: '/franchise', filled: true },
-  { key: 'news', icon: 'language', href: '/news', filled: true },
+  { key: 'individualRate', glyph: 'individual-rate', w: 26, h: 24, href: '/individual-rate' },
+  { key: 'booking', glyph: 'booking', w: 26, h: 26, href: '/booking' },
+  { key: 'notify', glyph: 'notify', w: 26, h: 28, href: '/subscribe' },
+  { key: 'franchise', glyph: 'franchise', w: 28, h: 24, href: '/franchise' },
+  { key: 'news', glyph: 'news', w: 26, h: 26, href: '/news' },
 ] as const;
+
 
 /**
  * Пять карточек-действий под шапкой — свайп-ряд, а не резиновая сетка:
@@ -35,21 +45,9 @@ const actions = [
  * у пунктов с трёхстрочной подписью — расплывался по высоте относительно
  * соседей.
  *
- * Размер бейджа (50×54) и иконки (24px) сверены по пиксельным экспортам
- * PNG из Figma (замерено через PIL: bbox глифа ~22–26px во всех пяти
- * значках). Цвет глифа — не сплошной text-default: по референсу он
- * заметно светлее чистого белого/чёрного, а сам оттенок отличается по
- * теме (в тёмной теме — почти полная яркость text-default, в светлой —
- * заметно приглушённый), поэтому приглушение (80%) включено только под
- * светлую тему через селектор по data-theme, а не через фиксированную
- * прозрачность на обе темы сразу.
- *
- * У «group» (individualRate) в референсе глиф контурный (FILL 0) — у
- * остальных четырёх сплошной. «Открыть франшизу» — diversity_3, а не
- * handshake: реальный Material Symbols «handshake» это ладонь/рукопожатие
- * одной кистью, а в референсе — двое людей (плюс мелкий ромб-акцент над
- * ними, которого нет ни в одном стандартном глифе — не воспроизведён,
- * похоже на отдельный декоративный слой поверх иконки в макете).
+ * Размер бейджа (50×54) сверен по пиксельным экспортам PNG из Figma.
+ * Цвет глифа в светлой теме приглушён (80%): по референсу он мягче
+ * чистого чёрного, в тёмной — полная яркость text-default.
  *
  * Это основная навигация приложения — БЕЗ анимации появления: контент
  * обязан быть видимым мгновенно (фоновые вкладки замораживают таймлайны
@@ -65,19 +63,14 @@ export function ActionCards() {
   return (
     <div className="container-page">
       <div className="scrollbar-hide flex snap-x snap-mandatory gap-2 overflow-x-auto pt-6 sm:gap-5 sm:pt-7">
-        {actions.map(({ key, icon, href, filled }) => (
+        {actions.map(({ key, glyph, w, h, href }) => (
           <Link
             key={key}
             href={href}
             className="group flex w-28 shrink-0 snap-start cursor-pointer flex-col items-center gap-3 py-2 text-center sm:h-[142px] sm:w-56 sm:justify-center sm:gap-4 sm:rounded-[20px] sm:border sm:border-stroke-surface3 sm:bg-surface-page-surf2 sm:px-8 sm:py-5 sm:transition-[background,transform] sm:duration-200 sm:hover:-translate-y-0.5 sm:hover:bg-comp-surface2-hover"
           >
-            <span className="flex h-[54px] w-[50px] shrink-0 items-center justify-center rounded-[20px] bg-surface-page-surf3 text-text-default transition-transform duration-200 group-hover:scale-110">
-              <Icon
-                name={icon}
-                size={24}
-                filled={filled}
-                className="[html[data-theme=light]_&]:opacity-80"
-              />
+            <span className="flex h-[54px] w-[50px] shrink-0 items-center justify-center rounded-[20px] bg-surface-page-surf3 text-text-default transition-transform duration-200 group-hover:scale-110 [html[data-theme=light]_&]:text-text-default/80">
+              <MaskGlyph src={`/img/actions/${glyph}.png`} w={w} h={h} />
             </span>
             <span className="text-sm leading-tight text-text-default">{t(key)}</span>
           </Link>

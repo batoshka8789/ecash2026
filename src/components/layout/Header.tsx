@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from '@/i18n/navigation';
 import { Logo } from '@/components/ui/Logo';
 import { Icon } from '@/components/ui/Icon';
+import { MaskGlyph } from '@/components/ui/MaskGlyph';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { ThemeToggle } from './ThemeToggle';
@@ -49,7 +50,13 @@ export function Header() {
             className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl bg-btn-1 text-text-default transition-colors hover:bg-comp-surface2-hover sm:h-[50px] sm:w-[50px] sm:rounded-2xl"
             aria-label={t('notifications')}
           >
-            <Icon name="notifications" size={20} filled className="sm:text-2xl" />
+            {/* контурный колокольчик с отдельным язычком — альфа-маска из
+                PNG-экспорта макета (кастомный глиф, в наборах его нет);
+                22×24 на бейдже 50, на мобильном пропорционально меньше */}
+            <MaskGlyph
+              src="/img/actions/bell-header.png"
+              className="h-[17px] w-4 sm:h-6 sm:w-[22px]"
+            />
             {authed && typeof unread === 'number' && unread > 0 && (
               <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-positive px-1 text-[10px] font-medium text-text-always-white sm:h-5 sm:min-w-5 sm:text-xs">
                 {unread > 9 ? '9+' : unread}

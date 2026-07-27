@@ -117,7 +117,7 @@ export function AddressCard() {
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
-          <div className="flex items-center rounded-2xl border border-stroke-modal transition-colors focus-within:border-stroke-surface3">
+          <div className="flex items-center rounded-2xl border border-stroke-modal transition-colors focus-within:border-stroke-brand">
             <label htmlFor={inputId} className="sr-only">
               {t('placeholder')}
             </label>

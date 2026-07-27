@@ -8,6 +8,7 @@ import { useRouter } from '@/i18n/navigation';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/Button';
 import { Toast } from '@/components/ui/Toast';
+import { PillTabs } from '@/components/ui/PillTabs';
 import { Select } from '@/components/ui/Select';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { api, ApiError } from '@/lib/api';
@@ -38,6 +39,9 @@ export function SubscribeFlow() {
   const qc = useQueryClient();
 
   const [foreign, setForeign] = useState('USD');
+  /** true — жду выгодную ПОКУПКУ валюты (курс продажи обменника);
+   *  false — жду выгодную ПРОДАЖУ (курс покупки обменника). */
+  const [buying, setBuying] = useState(true);
   const [rate, setRate] = useState('');
   const [day, setDay] = useState<string | null>(null);
   const [month, setMonth] = useState<string | null>(null);
@@ -57,7 +61,7 @@ export function SubscribeFlow() {
     staleTime: 60_000,
   });
   const stat = ratesQ.data?.rates.find((r) => r.currencyCode === foreign);
-  const currentRate = stat?.sell ?? 0;
+  const currentRate = (buying ? stat?.sell : stat?.buy) ?? 0;
 
   const tr = useTranslations('rates');
   const currencyOptions = useMemo(
@@ -87,8 +91,11 @@ export function SubscribeFlow() {
   const create = useMutation({
     mutationFn: (until: string) =>
       api.rateAlerts.create({
-        currencyFrom: 'KZT',
-        currencyTo: foreign,
+        // направление кодируется порядком пары, как в бронировании:
+        // KZT→валюта — жду курс ПРОДАЖИ обменника (я покупаю),
+        // валюта→KZT — жду курс ПОКУПКИ (я продаю)
+        currencyFrom: buying ? 'KZT' : foreign,
+        currencyTo: buying ? foreign : 'KZT',
         targetRate: parseRate(rate),
         until,
       }),
@@ -153,6 +160,8 @@ export function SubscribeFlow() {
 
   // -------------------------------------------- экран-подтверждение (1004:39525)
   if (created) {
+    const createdForeign =
+      created.currencyTo === 'KZT' ? created.currencyFrom : created.currencyTo;
     const untilDate = new Date(created.until).toLocaleDateString(intlLocale(locale), {
       day: '2-digit',
       month: '2-digit',
@@ -198,7 +207,7 @@ export function SubscribeFlow() {
               label={t('perOneLabel')}
               value="1"
               readOnly
-              currency={created.currencyTo}
+              currency={createdForeign}
             />
           </div>
 
@@ -206,7 +215,7 @@ export function SubscribeFlow() {
             <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-text-default">
               {t('ecashRateAtCreation')}
               <span className="rounded-full bg-surface-page-surf2 px-3 py-1.5 font-medium text-text-disabled">
-                {formatNumber(snapshotRate, locale)} ₸ = 1 {currencySymbol(created.currencyTo)}
+                {formatNumber(snapshotRate, locale)} ₸ = 1 {currencySymbol(createdForeign)}
               </span>
             </div>
           )}
@@ -269,7 +278,20 @@ export function SubscribeFlow() {
       <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
         <h1 className="text-xl font-bold text-text-default sm:text-[28px]">{t('pairTitle')}</h1>
 
-        <div className="mt-6 flex flex-col items-stretch gap-3 lg:flex-row lg:items-center">
+        {/* Покупка/Продажа — выбор направления, как в макете (swap-селектор
+            пары): от него зависит, какой курс отслеживаем — продажи или
+            покупки обменника */}
+        <PillTabs
+          className="mt-5 max-w-sm"
+          value={buying ? 'buy' : 'sell'}
+          onChange={(v) => setBuying(v === 'buy')}
+          tabs={[
+            { value: 'buy', label: t('directionBuy') },
+            { value: 'sell', label: t('directionSell') },
+          ]}
+        />
+
+        <div className="mt-5 flex flex-col items-stretch gap-3 lg:flex-row lg:items-center">
           <AmountBox
             label={t('targetLabel')}
             value={rate}
