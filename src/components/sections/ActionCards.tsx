@@ -7,10 +7,10 @@ import { Icon } from '@/components/ui/Icon';
 import { FranchiseModal } from './FranchiseModal';
 
 const actions = [
-  { key: 'individualRate', icon: 'badge', href: '/individual-rate' },
+  { key: 'individualRate', icon: 'group', href: '/individual-rate' },
   { key: 'booking', icon: 'gavel', href: '/booking' },
   { key: 'notify', icon: 'notifications', href: '/subscribe' },
-  { key: 'franchise', icon: 'groups', href: null },
+  { key: 'franchise', icon: 'handshake', href: null },
   { key: 'news', icon: 'language', href: '/news' },
 ] as const;
 
