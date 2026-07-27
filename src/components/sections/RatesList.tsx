@@ -327,13 +327,14 @@ function RateRow({
             <div className="flex flex-col gap-4 sm:gap-6">
               {competitors.map((comp) => (
                 <div key={comp.id} className="flex items-center gap-3 sm:gap-4">
-                  {/* «logo»: 50×42 r14 на modal-surf1, обводка цветом конкурента, глиф вместо точки */}
+                  {/* «logo»: 50×42 r14 на modal-surf1, обводка цветом конкурента,
+                      перечёркнутый глаз — курс конкурента скрыт/недоступен напрямую */}
                   <span
                     aria-hidden
                     className="inline-flex h-9 w-11 shrink-0 items-center justify-center rounded-xl border bg-surface-modal-surf1 sm:h-[42px] sm:w-[50px] sm:rounded-[14px]"
                     style={{ borderColor: comp.color }}
                   >
-                    <Icon name="location_on" size={24} className="text-text-default" />
+                    <Icon name="visibility_off" size={24} className="text-text-default" />
                   </span>
                   <span className="min-w-0 truncate text-sm text-text-disabled sm:text-base">
                     {t(`competitors.${comp.nameKey}`)}
