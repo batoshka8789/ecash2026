@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { Toast } from '@/components/ui/Toast';
 import { Select } from '@/components/ui/Select';
+import { AuthModal } from '@/components/auth/AuthModal';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useErrorText } from '@/lib/useErrorText';
@@ -54,6 +55,7 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   const [individual, setIndividual] = useState(mode === 'individual');
   const [showErrors, setShowErrors] = useState(false);
   const [duplicate, setDuplicate] = useState<ExchangeRequest | null>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const depsQ = useQuery({
     queryKey: ['departments'],
@@ -160,12 +162,8 @@ export function BookingFlow({ mode }: { mode: Mode }) {
     },
   });
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!authed) {
-      router.push('/login');
-      return;
-    }
+  /** здесь пользователь уже гарантированно авторизован */
+  const tryCreate = () => {
     if (!validAmount || rate <= 0) {
       setShowErrors(true);
       return;
@@ -173,10 +171,22 @@ export function BookingFlow({ mode }: { mode: Mode }) {
     create.mutate();
   };
 
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!authed) {
+      setAuthModalOpen(true);
+      return;
+    }
+    tryCreate();
+  };
+
   const createError =
     create.error instanceof ApiError ? errorText(create.error.message) : null;
 
   return (
+    // AuthModal рендерится вне <form> — иначе её собственная форма входа
+    // окажется вложенной в эту, а вложенные <form> — невалидный HTML
+    <>
     <form onSubmit={submit} className="container-page flex flex-col gap-5 pt-6" noValidate>
       <Toast
         open={showErrors}
@@ -360,6 +370,17 @@ export function BookingFlow({ mode }: { mode: Mode }) {
         </Button>
       </section>
     </form>
+    <AuthModal
+      open={authModalOpen}
+      onClose={() => setAuthModalOpen(false)}
+      onAuthed={() => {
+        // сессионная кука уже настоящая к этому моменту (её выставил ответ
+        // логина) — не ждём, пока это подтвердит собственный useAuth()
+        setAuthModalOpen(false);
+        tryCreate();
+      }}
+    />
+    </>
   );
 }
 

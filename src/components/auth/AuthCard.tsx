@@ -35,7 +35,18 @@ function isOtpError(e: unknown): e is ApiError {
  * Вёрстка и состояния карточки — из макета (фрейм Log in 1784:153588),
  * e-mail-полей в реальном API не существует.
  */
-export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
+export function AuthCard({
+  initialTab = 'login',
+  onClose,
+  onSuccess,
+}: {
+  initialTab?: Tab;
+  /** есть только в модалке — крестик закрывает её вместо перехода на «/» */
+  onClose?: () => void;
+  /** есть только в модалке — вызывающий сам решает, что делать после входа
+   *  (продолжить прерванное действие), вместо перехода на «/» */
+  onSuccess?: () => void;
+}) {
   const t = useTranslations('auth');
   const router = useRouter();
   const { invalidate } = useAuth();
@@ -61,6 +72,10 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
 
   const finish = async () => {
     await invalidate();
+    if (onSuccess) {
+      onSuccess();
+      return;
+    }
     // после входа «/» отдаёт приложение, а не лендинг
     router.replace('/');
     router.refresh();
@@ -150,7 +165,7 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
     <div className="relative w-full max-w-[480px]">
       <button
         type="button"
-        onClick={() => router.push('/')}
+        onClick={onClose ?? (() => router.push('/'))}
         aria-label={t('close')}
         className="absolute right-0 top-0 z-10 inline-flex h-10 w-10 -translate-y-12 cursor-pointer items-center justify-center rounded-full bg-surface-page-surf2 text-text-default transition-colors hover:bg-comp-surface2-hover lg:right-[-64px] lg:top-0 lg:h-11 lg:w-11 lg:translate-y-0"
       >

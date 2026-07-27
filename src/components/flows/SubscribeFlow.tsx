@@ -9,6 +9,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/Button';
 import { Toast } from '@/components/ui/Toast';
 import { Select } from '@/components/ui/Select';
+import { AuthModal } from '@/components/auth/AuthModal';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useErrorText } from '@/lib/useErrorText';
@@ -48,6 +49,7 @@ export function SubscribeFlow() {
   /** Ecash-курс на момент оформления — снимок для экрана-подтверждения */
   const [snapshotRate, setSnapshotRate] = useState(0);
   const [removedOk, setRemovedOk] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const ratesQ = useQuery({
     queryKey: ['rates', DEFAULT_DEP],
@@ -118,12 +120,8 @@ export function SubscribeFlow() {
   const rateValid = Number.isFinite(parsedRate) && parsedRate > 0;
   const dateMissing = day === null || month === null || year === null;
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!authed) {
-      router.push('/login');
-      return;
-    }
+  /** здесь пользователь уже гарантированно авторизован */
+  const tryCreate = () => {
     if (!rateValid || dateMissing) {
       setFormError(null);
       setShowErrors(true);
@@ -142,6 +140,15 @@ export function SubscribeFlow() {
       return;
     }
     create.mutate(until.toISOString());
+  };
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!authed) {
+      setAuthModalOpen(true);
+      return;
+    }
+    tryCreate();
   };
 
   // -------------------------------------------- экран-подтверждение (1004:39525)
@@ -238,6 +245,9 @@ export function SubscribeFlow() {
 
   // ------------------------------------------------------------------- форма
   return (
+    // AuthModal рендерится вне <form> — иначе её собственная форма входа
+    // окажется вложенной в эту, а вложенные <form> — невалидный HTML
+    <>
     <form onSubmit={submit} className="container-page flex flex-col gap-5 pt-6" noValidate>
       <Toast
         open={showErrors}
@@ -368,5 +378,16 @@ export function SubscribeFlow() {
         </Button>
       </section>
     </form>
+    <AuthModal
+      open={authModalOpen}
+      onClose={() => setAuthModalOpen(false)}
+      onAuthed={() => {
+        // сессионная кука уже настоящая к этому моменту (её выставил ответ
+        // логина) — не ждём, пока это подтвердит собственный useAuth()
+        setAuthModalOpen(false);
+        tryCreate();
+      }}
+    />
+    </>
   );
 }
