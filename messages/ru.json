@@ -398,8 +398,9 @@
     "confirmRemove": "Точно отключить?",
     "cancelRemove": "Не отключать",
     "dateError": "Выберите число, месяц и год",
-    "directionBuy": "Покупка",
-    "directionSell": "Продажа"
+    "typeTitle": "Тип операции",
+    "buying": "Покупаю",
+    "selling": "Продаю"
   },
   "landing": {
     "login": "Войти",

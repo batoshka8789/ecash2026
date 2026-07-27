@@ -398,8 +398,9 @@
     "confirmRemove": "Шынымен өшіру керек пе?",
     "cancelRemove": "Өшірмеу",
     "dateError": "Күнін, айын және жылын таңдаңыз",
-    "directionBuy": "Сатып алу",
-    "directionSell": "Сату"
+    "typeTitle": "Операция түрі",
+    "buying": "Сатып аламын",
+    "selling": "Сатамын"
   },
   "landing": {
     "login": "Кіру",

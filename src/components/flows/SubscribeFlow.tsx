@@ -8,7 +8,6 @@ import { useRouter } from '@/i18n/navigation';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/Button';
 import { Toast } from '@/components/ui/Toast';
-import { PillTabs } from '@/components/ui/PillTabs';
 import { Select } from '@/components/ui/Select';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { api, ApiError } from '@/lib/api';
@@ -21,6 +20,37 @@ import { AmountBox } from './PairFields';
 const DEFAULT_DEP = 1;
 
 const parseRate = (v: string) => parseFloat(v.replace(/[\s ]/g, '').replace(',', '.'));
+
+/** Радио «Покупаю/Продаю» — точь-в-точь макет (32×32 бейдж с чекмарком). */
+function OperationRadio({
+  label,
+  checked,
+  onSelect,
+}: {
+  label: string;
+  checked: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={checked}
+      onClick={onSelect}
+      className="flex items-center gap-3 text-left"
+    >
+      <span
+        className={clsx(
+          'flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors',
+          checked ? 'bg-brand' : 'bg-surface-page-surf2',
+        )}
+      >
+        {checked && <Icon name="check" size={16} className="text-text-always-white" />}
+      </span>
+      <span className="text-base font-medium text-text-default">{label}</span>
+    </button>
+  );
+}
 
 const intlLocale = (locale: string) =>
   locale === 'kk' ? 'kk-KZ' : locale === 'en' ? 'en-US' : 'ru-RU';
@@ -278,18 +308,15 @@ export function SubscribeFlow() {
       <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
         <h1 className="text-xl font-bold text-text-default sm:text-[28px]">{t('pairTitle')}</h1>
 
-        {/* Покупка/Продажа — выбор направления, как в макете (swap-селектор
-            пары): от него зависит, какой курс отслеживаем — продажи или
-            покупки обменника */}
-        <PillTabs
-          className="mt-5 max-w-sm"
-          value={buying ? 'buy' : 'sell'}
-          onChange={(v) => setBuying(v === 'buy')}
-          tabs={[
-            { value: 'buy', label: t('directionBuy') },
-            { value: 'sell', label: t('directionSell') },
-          ]}
-        />
+        {/* Покупаю/Продаю — от направления зависит, какой курс отслеживаем:
+            продажи обменника (я покупаю) или покупки (я продаю) */}
+        <div className="mt-5">
+          <h2 className="text-lg font-bold text-text-default sm:text-2xl">{t('typeTitle')}</h2>
+          <div role="radiogroup" aria-label={t('typeTitle')} className="mt-5 flex flex-col gap-4">
+            <OperationRadio label={t('buying')} checked={buying} onSelect={() => setBuying(true)} />
+            <OperationRadio label={t('selling')} checked={!buying} onSelect={() => setBuying(false)} />
+          </div>
+        </div>
 
         <div className="mt-5 flex flex-col items-stretch gap-3 lg:flex-row lg:items-center">
           <AmountBox

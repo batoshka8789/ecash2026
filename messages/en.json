@@ -398,8 +398,9 @@
     "confirmRemove": "Really turn off?",
     "cancelRemove": "Keep subscription",
     "dateError": "Choose the day, month and year",
-    "directionBuy": "Buy",
-    "directionSell": "Sell"
+    "typeTitle": "Operation type",
+    "buying": "Buying",
+    "selling": "Selling"
   },
   "landing": {
     "login": "Log in",
