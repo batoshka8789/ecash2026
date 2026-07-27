@@ -4,9 +4,28 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { clsx } from 'clsx';
 import { Icon } from '@/components/ui/Icon';
+import { Toast } from '@/components/ui/Toast';
 import { useMutation } from '@/lib/useApi';
 import { api } from '@/lib/api';
 import { useErrorText } from '@/lib/useErrorText';
+
+/**
+ * Маска номера — формат проекта «+7 (705) 908 90 73» (см. футер лендинга).
+ * Ведущие 7/8 считаем кодом страны и отбрасываем — он уже есть в «+7».
+ */
+function formatPhoneInput(raw: string): string {
+  let digits = raw.replace(/\D/g, '');
+  if (digits.startsWith('7') || digits.startsWith('8')) digits = digits.slice(1);
+  digits = digits.slice(0, 10);
+
+  if (digits.length === 0) return '';
+  let out = `+7 (${digits.slice(0, 3)}`;
+  if (digits.length >= 3) out += ')';
+  if (digits.length > 3) out += ` ${digits.slice(3, 6)}`;
+  if (digits.length > 6) out += ` ${digits.slice(6, 8)}`;
+  if (digits.length > 8) out += ` ${digits.slice(8, 10)}`;
+  return out;
+}
 
 /**
  * Форма заявки на франшизу — уходит в мок-бэкенд (/api/franchise-leads).
@@ -21,22 +40,32 @@ export function LeadForm({ cta }: { cta: string }) {
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
   const [done, setDone] = useState(false);
+  /** отдельный флаг: тост можно закрыть, не пряча постоянное подтверждение под ним */
+  const [toastOpen, setToastOpen] = useState(false);
   const errorText = useErrorText();
 
   const send = useMutation(api.franchiseLead);
 
   if (done) {
     return (
-      <div className="mt-8 flex items-center justify-center gap-3 text-base text-text-positive lg:mt-16 lg:justify-start">
-        <Icon name="check_circle" size={22} filled />
-        {t('done')}
-      </div>
+      <>
+        <Toast open={toastOpen} tone="positive" onClose={() => setToastOpen(false)} closeLabel={t('close')}>
+          {t('done')}
+        </Toast>
+        <div className="mt-8 flex items-center justify-center gap-3 text-base text-text-positive lg:mt-16 lg:justify-start">
+          <Icon name="check_circle" size={22} filled />
+          {t('done')}
+        </div>
+      </>
     );
   }
 
   const submit = async () => {
     const res = await send.run({ name, phone, city });
-    if (res) setDone(true);
+    if (res) {
+      setDone(true);
+      setToastOpen(true);
+    }
   };
 
   const inputCls = (key?: string) =>
@@ -56,9 +85,11 @@ export function LeadForm({ cta }: { cta: string }) {
         />
         <input
           value={phone}
-          onChange={(e) => setPhone(e.target.value)}
+          onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
           placeholder={t('phone')}
           inputMode="tel"
+          autoComplete="tel"
+          maxLength={18}
           className={clsx(inputCls('phone'), 'sm:min-w-[200px] sm:flex-1')}
         />
         <input

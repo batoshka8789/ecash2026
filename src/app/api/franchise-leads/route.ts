@@ -17,7 +17,14 @@ export async function POST(req: Request) {
   try {
     const [row] = await db
       .insert(franchiseLeads)
-      .values({ name: parsed.name, phone: parsed.phone, city: parsed.city ?? '' })
+      .values({
+        name: parsed.name,
+        phone: parsed.phone,
+        city: parsed.city ?? '',
+        funds: parsed.funds ?? '',
+        experience: parsed.experience ?? '',
+        tags: parsed.tags ?? [],
+      })
       .returning();
     return ok({ lead: { id: row.id, createdAt: row.createdAt.toISOString() } }, { status: 201 });
   } catch (e) {

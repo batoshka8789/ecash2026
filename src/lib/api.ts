@@ -224,8 +224,14 @@ export const api = {
     remove: (id: string) => request<{ ok: true }>(`/rate-alerts/${id}`, { method: 'DELETE' }),
   },
 
-  franchiseLead: (payload: { name: string; phone: string; city?: string }) =>
-    post<{ lead: { id: string; createdAt: string } }>('/franchise-leads', payload),
+  franchiseLead: (payload: {
+    name: string;
+    phone: string;
+    city?: string;
+    funds?: string;
+    experience?: string;
+    tags?: string[];
+  }) => post<{ lead: { id: string; createdAt: string } }>('/franchise-leads', payload),
 };
 
 export type NotificationDto = {

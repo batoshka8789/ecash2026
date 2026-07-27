@@ -10,6 +10,7 @@ import { Link } from "@/i18n/navigation";
 import { Logo } from "@/components/ui/Logo";
 import { Icon } from "@/components/ui/Icon";
 import { LeadForm } from "./LeadForm";
+import { ContactModal } from "./ContactModal";
 import { Glows } from "./Glows";
 import { FloatImage, GrainOverlay, Magnetic, Spotlight } from "./effects";
 
@@ -31,6 +32,7 @@ type Card = { title: string; text: string; accent?: boolean };
 export function Landing() {
   const t = useTranslations("landing");
   const page = useRef<HTMLDivElement>(null);
+  const [contactOpen, setContactOpen] = useState(false);
 
   const advantages = t.raw("advantages") as Card[];
   const pkg = t.raw("package.items") as Card[];
@@ -94,6 +96,7 @@ export function Landing() {
               title={t("intro.title")}
               text={t("intro.text")}
               cta={t("intro.cta")}
+              onCta={() => setContactOpen(true)}
             />
 
             <div className="mt-20 flex flex-col gap-5 md:mt-24 lg:mt-[120px] lg:gap-10 xl:mt-[140px]">
@@ -146,30 +149,30 @@ export function Landing() {
           </Section>
 
           {/* ——— content 4 · этапы открытия ——— */}
+          {/*
+            ТЗ «Лендос Франшиза»: иконка-плашка (steps.png) раньше висела
+            отдельным блоком под всеми карточками этапов, в самом низу секции —
+            перенесена рядом с заголовком, тем же SplitBlock, что и у других секций.
+          */}
           <Section>
-            <Appear>
-              <SectionTitle>
-                {t("steps.titleLine1")}
-                <br />
-                {t("steps.titleLine2")}
-              </SectionTitle>
-              <Lead className="max-w-[704px]">{t("steps.text")}</Lead>
-            </Appear>
+            <SplitBlock
+              image="/img/landing/steps.png"
+              tone="#F15A25"
+              titleNode={
+                <>
+                  {t("steps.titleLine1")}
+                  <br />
+                  {t("steps.titleLine2")}
+                </>
+              }
+              text={t("steps.text")}
+            />
 
             <div className="mt-12 grid gap-5 md:mt-16 lg:mt-[120px] lg:grid-cols-2 lg:gap-10">
               {steps.map((s, i) => (
                 <StepCard key={s.title} step={s} index={i} />
               ))}
             </div>
-
-            <Appear className="mt-16 flex justify-center md:mt-20 lg:mt-28">
-              <FloatImage
-                src="/img/landing/steps.png"
-                tone="#F15A25"
-                delay={0.3}
-                className="w-full max-w-[580px]"
-              />
-            </Appear>
           </Section>
         </Container>
 
@@ -240,6 +243,7 @@ export function Landing() {
       </div>
 
       <ScrollToTopButton label={t("scrollTop")} />
+      <ContactModal open={contactOpen} onClose={() => setContactOpen(false)} />
     </div>
   );
 }
@@ -434,21 +438,22 @@ function GradientPill({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Монетка ecash в пилюле — logo 124×64, r51.2, fill #F15A25 из макета.
- * Внутри белый фирменный знак (Vector 26.82×38.4).
+ * Монетка ecash в пилюле — logo 124×64, r51.2 из макета: фон белый,
+ * фирменный знак — брендовым оранжевым (ТЗ «Лендос Франшиза»: раньше
+ * было наоборот — оранжевый фон и белый знак).
  */
 function CoinPill() {
   return (
     <motion.span
       whileHover={{ scale: 1.06, rotate: -4 }}
       transition={{ type: "spring", stiffness: 320, damping: 18 }}
-      className="inline-flex h-10 w-[68px] shrink-0 items-center justify-center rounded-[51px] bg-brand shadow-[0_0_44px_rgb(241_90_37/0.5)] md:h-[52px] md:w-[96px] xl:h-16 xl:w-[124px]"
+      className="inline-flex h-10 w-[68px] shrink-0 items-center justify-center rounded-[51px] bg-white shadow-[0_0_44px_rgb(241_90_37/0.35)] md:h-[52px] md:w-[96px] xl:h-16 xl:w-[124px]"
     >
       <img
-        src="/img/mark-white.png"
+        src="/img/mark-orange.png"
         alt=""
-        width={111}
-        height={159}
+        width={113}
+        height={160}
         className="h-6 w-auto md:h-8 xl:h-[38px]"
       />
     </motion.span>
@@ -466,6 +471,7 @@ function SplitBlock({
   titleNode,
   text,
   cta,
+  onCta,
   reverse,
 }: {
   image: string;
@@ -475,6 +481,8 @@ function SplitBlock({
   titleNode?: React.ReactNode;
   text: string;
   cta?: string;
+  /** есть только у секции с кнопкой «Связаться» — открывает ContactModal */
+  onCta?: () => void;
   reverse?: boolean;
 }) {
   return (
@@ -494,7 +502,11 @@ function SplitBlock({
       <Appear delay={0.08} className="min-w-0 flex-1 text-center lg:text-left">
         <SectionTitle>{titleNode ?? title}</SectionTitle>
         <Lead>{text}</Lead>
-        {cta && <CtaButton className="mt-8 md:mt-10 lg:mt-14">{cta}</CtaButton>}
+        {cta && (
+          <CtaButton className="mt-8 md:mt-10 lg:mt-14" onClick={onCta}>
+            {cta}
+          </CtaButton>
+        )}
       </Appear>
     </div>
   );
@@ -643,32 +655,33 @@ function GlassCard({
         tone={accent ? "#BF5AF5" : "#F6844B"}
         className={clsx(
           "group flex h-full flex-col gap-5 rounded-[40px] p-6 backdrop-blur-[46px] lg:gap-10 lg:rounded-[64px] lg:p-11",
-          accent ? "glass-dense glass-accent" : "glass",
+          "glass-card-solid",
+          accent && "glass-accent",
         )}
       >
         {logo ? (
-          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand shadow-[0_0_40px_rgb(241_90_37/0.5)] transition-transform duration-300 group-hover:scale-110 lg:h-[72px] lg:w-[72px]">
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-[0_0_40px_rgb(241_90_37/0.35)] transition-transform duration-300 group-hover:scale-110 lg:h-[72px] lg:w-[72px]">
             <img
-              src="/img/mark-white.png"
+              src="/img/mark-orange.png"
               alt=""
-              width={111}
-              height={159}
+              width={113}
+              height={160}
               className="h-8 w-auto lg:h-[43px]"
             />
           </span>
         ) : (
           icons && (
-            <span className="flex h-[76px] w-[76px] items-center justify-center rounded-[24px] border-2 border-[#616161] transition-colors duration-300 group-hover:border-brand lg:h-[100px] lg:w-[100px] lg:rounded-[32px]">
-              <span className="relative h-[52px] w-[52px] lg:h-[72px] lg:w-[72px]">
+            <span className="flex h-[84px] w-[84px] items-center justify-center rounded-[24px] border-2 border-[#616161] transition-colors duration-300 group-hover:border-brand lg:h-[110px] lg:w-[110px] lg:rounded-[32px]">
+              <span className="relative h-[60px] w-[60px] lg:h-[80px] lg:w-[80px]">
                 <Icon
                   name={icons[0]}
                   filled
-                  className="absolute left-0 top-0 text-[34px] text-brand drop-shadow-[0_0_12px_rgb(241_90_37/0.6)] transition-transform duration-300 group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 lg:text-[48px]"
+                  className="absolute left-0 top-0 text-[40px] text-brand drop-shadow-[0_0_12px_rgb(241_90_37/0.6)] transition-transform duration-300 group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 lg:text-[56px]"
                 />
                 <Icon
                   name={icons[1]}
                   filled
-                  className="absolute bottom-0 right-0 text-[34px] text-text-default transition-transform duration-300 group-hover:translate-x-0.5 group-hover:translate-y-0.5 lg:text-[48px]"
+                  className="absolute bottom-0 right-0 text-[40px] text-text-default transition-transform duration-300 group-hover:translate-x-0.5 group-hover:translate-y-0.5 lg:text-[56px]"
                 />
               </span>
             </span>
@@ -724,32 +737,48 @@ function StepCard({ step, index }: { step: Card; index: number }) {
   );
 }
 
-/** Кнопка макета: 254×80, r102, p24/40, gap24, текст 24/400. */
+/**
+ * Кнопка макета: 254×80, r102, p24/40, gap24, текст 24/400.
+ * С onClick — открывает модалку (button), без — якорь-скролл к форме (a).
+ */
 function CtaButton({
   children,
   className,
+  onClick,
 }: {
   children: React.ReactNode;
   className?: string;
+  onClick?: () => void;
 }) {
+  const cls =
+    "group relative inline-flex h-14 cursor-pointer items-center gap-4 overflow-hidden rounded-[102px] bg-brand px-8 text-base leading-8 text-text-default shadow-[0_12px_40px_rgb(241_90_37/0.45)] transition-[box-shadow,filter] hover:shadow-[0_20px_64px_rgb(241_90_37/0.65)] hover:brightness-110 lg:h-20 lg:gap-6 lg:px-10 lg:text-2xl";
+  const inner = (
+    <>
+      {/* блик, пробегающий по кнопке при наведении */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 -left-full w-1/2 skew-x-[-20deg] bg-white/25 blur-md transition-[left] duration-700 ease-out group-hover:left-[150%]"
+      />
+      {children}
+      <Icon
+        name="arrow_forward"
+        size={32}
+        className="transition-transform duration-300 group-hover:translate-x-1"
+      />
+    </>
+  );
+
   return (
     <Magnetic className={clsx("inline-block", className)}>
-      <a
-        href="#lead"
-        className="group relative inline-flex h-14 cursor-pointer items-center gap-4 overflow-hidden rounded-[102px] bg-brand px-8 text-base leading-8 text-text-default shadow-[0_12px_40px_rgb(241_90_37/0.45)] transition-[box-shadow,filter] hover:shadow-[0_20px_64px_rgb(241_90_37/0.65)] hover:brightness-110 lg:h-20 lg:gap-6 lg:px-10 lg:text-2xl"
-      >
-        {/* блик, пробегающий по кнопке при наведении */}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-y-0 -left-full w-1/2 skew-x-[-20deg] bg-white/25 blur-md transition-[left] duration-700 ease-out group-hover:left-[150%]"
-        />
-        {children}
-        <Icon
-          name="arrow_forward"
-          size={32}
-          className="transition-transform duration-300 group-hover:translate-x-1"
-        />
-      </a>
+      {onClick ? (
+        <button type="button" onClick={onClick} className={cls}>
+          {inner}
+        </button>
+      ) : (
+        <a href="#lead" className={cls}>
+          {inner}
+        </a>
+      )}
     </Magnetic>
   );
 }

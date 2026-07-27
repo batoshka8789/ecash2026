@@ -96,5 +96,9 @@ export const franchiseLeads = pgTable('franchise_leads', {
   name: text('name').notNull(),
   phone: text('phone').notNull(),
   city: text('city').notNull().default(''),
+  /** доп. квалификация из формы «Связаться»: капитал, опыт, роль(и) */
+  funds: text('funds').notNull().default(''),
+  experience: text('experience').notNull().default(''),
+  tags: jsonb('tags').$type<string[]>().notNull().default([]),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });

@@ -151,6 +151,9 @@ export const franchiseLeadBody = z.object({
   name: z.string().trim().min(1, 'errors.nameRequired').max(120),
   phone: phoneSchema,
   city: z.string().trim().max(80).optional(),
+  funds: z.string().trim().max(200).optional(),
+  experience: z.string().trim().max(2000).optional(),
+  tags: z.array(z.string().trim().min(1).max(60)).max(20).optional(),
 });
 
 export type LoginBody = z.infer<typeof loginBody>;
