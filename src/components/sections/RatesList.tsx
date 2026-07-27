@@ -265,18 +265,25 @@ function RateRow({
         </div>
 
         <div className="flex w-full items-center gap-2 sm:w-auto">
-          {/* «list-map» из макета — своей иконки под комбо документ+карта в
-              Material Symbols нет, ближайший по смыслу — map (тот же, что и
-              на переключателе Списком/На карте). Ведёт туда же, куда и общая
-              ссылка «Все отделения» — своего параметра под конкретную
-              валюту в /locations нет. */}
+          {/* «list-map» из макета — составной значок: document 20×20 сзади-слева
+              + map1 20×20 @8,8 спереди-справа внутри рамки 28×28. Своего
+              vuesax-набора в проекте нет, ближайшие Material Symbols — list_alt
+              и location_on. Ведёт туда же, куда и общая ссылка «Все
+              отделения» — своего параметра под конкретную валюту в /locations нет. */}
           <Link
             href="/locations"
             aria-label={t('showOnMap')}
             title={t('showOnMap')}
             className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-divider-additional text-text-default transition-colors hover:bg-comp-surface1-hover sm:h-[46px] sm:w-[46px]"
           >
-            <Icon name="map" size={28} />
+            <span className="relative block h-7 w-7" aria-hidden>
+              <span className="absolute left-0 top-0 flex h-5 w-5 items-center justify-center rounded-md bg-btn-brand text-text-always-white">
+                <Icon name="list_alt" size={14} filled />
+              </span>
+              <span className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-md bg-surface-inverted text-text-inverted">
+                <Icon name="location_on" size={14} filled />
+              </span>
+            </span>
           </Link>
           <Button
             size="md"
