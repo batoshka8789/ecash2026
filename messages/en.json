@@ -399,16 +399,6 @@
     "cancelRemove": "Keep subscription",
     "dateError": "Choose the day, month and year"
   },
-  "franchise": {
-    "title": "Open an ecash franchise",
-    "subtitle": "Leave a request — we will tell you about the terms, support and payback",
-    "name": "Name*",
-    "phone": "Phone number*",
-    "city": "City",
-    "cta": "Send request",
-    "done": "Request sent! We will contact you",
-    "close": "Close"
-  },
   "landing": {
     "login": "Log in",
     "hero": {

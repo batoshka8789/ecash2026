@@ -27,7 +27,15 @@ const actions = [
  * заливки/бордером.
  *
  * Бейдж иконки — rounded-[20px] (как остальные крупные элементы в
- * макете), а не rounded-xl: по референсу бейдж заметно круглее.
+ * макете), а не rounded-xl: по референсу бейдж заметно круглее. Обводка
+ * карточки — stroke-surface3, не stroke-surface2: у surface2 в светлой
+ * теме тот же цвет, что и у фона карточки (surf2), рамка становится
+ * буквально невидимой. Цвет иконки — text-default/80, не сплошной
+ * text-default: по референсу глиф заметно светлее (мягкий тёмно-серый,
+ * не чёрный), 80% непрозрачности даёт то же на глаз в обеих темах.
+ * shrink-0 на бейдже обязателен: карточка на десктопе фиксированной
+ * высоты (h-[142px]), и без него бейдж сжимался у пунктов с трёхстрочной
+ * подписью (56px → 49px) — расплывался по высоте относительно соседей.
  *
  * Это основная навигация приложения — БЕЗ анимации появления: контент
  * обязан быть видимым мгновенно (фоновые вкладки замораживают таймлайны
@@ -47,10 +55,10 @@ export function ActionCards() {
           <Link
             key={key}
             href={href}
-            className="group flex w-28 shrink-0 snap-start cursor-pointer flex-col items-center gap-3 py-2 text-center sm:h-[142px] sm:w-56 sm:justify-center sm:gap-4 sm:rounded-[20px] sm:border sm:border-stroke-surface2 sm:bg-surface-page-surf2 sm:px-8 sm:py-5 sm:transition-[background,transform] sm:duration-200 sm:hover:-translate-y-0.5 sm:hover:bg-comp-surface2-hover"
+            className="group flex w-28 shrink-0 snap-start cursor-pointer flex-col items-center gap-3 py-2 text-center sm:h-[142px] sm:w-56 sm:justify-center sm:gap-4 sm:rounded-[20px] sm:border sm:border-stroke-surface3 sm:bg-surface-page-surf2 sm:px-8 sm:py-5 sm:transition-[background,transform] sm:duration-200 sm:hover:-translate-y-0.5 sm:hover:bg-comp-surface2-hover"
           >
-            <span className="flex h-12 w-12 items-center justify-center rounded-[20px] bg-surface-page-surf3 text-text-default transition-transform duration-200 group-hover:scale-110">
-              <Icon name={icon} size={26} filled />
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] bg-surface-page-surf3 text-text-default/80 transition-transform duration-200 group-hover:scale-110">
+              <Icon name={icon} size={30} filled />
             </span>
             <span className="text-sm leading-tight text-text-default">{t(key)}</span>
           </Link>

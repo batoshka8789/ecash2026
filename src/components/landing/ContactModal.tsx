@@ -5,13 +5,14 @@ import { useTranslations } from 'next-intl';
 import { useMutation } from '@tanstack/react-query';
 import { clsx } from 'clsx';
 import { Icon } from '@/components/ui/Icon';
+import { Logo } from '@/components/ui/Logo';
 import { api, ApiError } from '@/lib/api';
 import { useErrorText } from '@/lib/useErrorText';
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-/** Маска номера — тот же формат, что и в LeadForm («+7 (705) 908 90 73»). */
+/** Маска номера — формат из футера лендинга («+7 (705) 908 90 73»). */
 function formatPhoneInput(raw: string): string {
   let digits = raw.replace(/\D/g, '');
   if (digits.startsWith('7') || digits.startsWith('8')) digits = digits.slice(1);
@@ -27,11 +28,14 @@ function formatPhoneInput(raw: string): string {
 }
 
 /**
- * Модалка расширенной заявки для кнопки «Связаться» в секции «Ecash — это
- * сеть…» лендинга франшизы: та же заявка, что и LeadForm, плюс квалификация
- * (капитал, опыт, роль/роли) — по референсу пользователя. Оболочка диалога —
+ * Модалка заявки для обеих кнопок «Связаться» лендинга франшизы (секции
+ * «Ecash — это сеть…» и баннер «Свяжитесь…») — контакты плюс квалификация
+ * (капитал, опыт, роль/роли), по референсу пользователя. Оболочка диалога —
  * тот же паттерн, что и у FranchiseModal (фокус-ловушка, Esc, блокировка
- * скролла, клик по фону, CSS-анимация без framer-motion).
+ * скролла, клик по фону, CSS-анимация без framer-motion). Логотип сверху —
+ * tone="onDark": лендинг форсирует тёмную тему классом .theme-dark, но
+ * Logo с tone="auto" переключается по data-theme, а не по этому классу —
+ * на светлой теме сайта показал бы тёмный вариант на тёмном фоне лендинга.
  */
 export function ContactModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const t = useTranslations('landing.contactModal');
@@ -152,10 +156,15 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
     send.mutate();
   };
 
+  // Заливка без обводки, как у полей калькулятора (Calculator.tsx) — по
+  // референсу поля модалки это сплошные surf2-плашки, а не рамка на
+  // прозрачном фоне. border-transparent, а не отсутствие border вовсе,
+  // чтобы invalid-рамка не сдвигала разметку (тот же приём, что и в
+  // SubscribeFlow).
   const inputCls = (invalid: boolean) =>
     clsx(
-      'h-[54px] w-full rounded-[20px] border bg-transparent px-4 text-base font-medium text-text-default outline-none transition-colors placeholder:text-text-disabled focus:border-stroke-brand',
-      invalid ? 'border-negative' : 'border-stroke-surface3',
+      'h-[54px] w-full rounded-[20px] border bg-surface-page-surf2 px-4 text-base font-medium text-text-default outline-none transition-colors placeholder:text-text-disabled focus:bg-comp-surface2-hover',
+      invalid ? 'border-negative' : 'border-transparent',
     );
 
   if (!open) return null;
@@ -182,9 +191,12 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
         </button>
 
         <div className="flex max-h-[85vh] flex-col gap-6 overflow-y-auto rounded-[20px] border border-stroke-surface1 bg-surface-page-surf1 p-5 sm:p-10">
-          <h2 id={titleId} className="text-center text-xl font-medium leading-tight text-text-default sm:text-[28px]">
-            {t('title')}
-          </h2>
+          <div className="flex flex-col items-center gap-5">
+            <Logo tone="onDark" />
+            <h2 id={titleId} className="text-center text-xl font-medium leading-tight text-text-default sm:text-[28px]">
+              {t('title')}
+            </h2>
+          </div>
 
           {send.isSuccess ? (
             <div role="status" className="flex flex-col items-center gap-3 py-4 text-center">
@@ -274,18 +286,18 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
                   onChange={(e) => setExperience(e.target.value)}
                   placeholder={t('experience')}
                   rows={3}
-                  className="w-full resize-none rounded-[20px] border border-stroke-surface3 bg-transparent px-4 py-3.5 text-base font-medium text-text-default outline-none transition-colors placeholder:text-text-disabled focus:border-stroke-brand"
+                  className="w-full resize-none rounded-[20px] border border-transparent bg-surface-page-surf2 px-4 py-3.5 text-base font-medium text-text-default outline-none transition-colors placeholder:text-text-disabled focus:bg-comp-surface2-hover"
                 />
               </div>
 
               {/* Тег-инпут «Кто вы?»: выбранные роли — снимаемые пилюли, плюс
                   свободный ввод своего варианта (Enter/запятая добавляет тег). */}
               <div>
-                <div className="flex min-h-[54px] flex-wrap items-center gap-2 rounded-[20px] border border-stroke-surface3 bg-transparent px-3 py-2 transition-colors focus-within:border-stroke-brand">
+                <div className="flex min-h-[54px] flex-wrap items-center gap-2 rounded-[20px] border border-transparent bg-surface-page-surf2 px-3 py-2 transition-colors focus-within:bg-comp-surface2-hover">
                   {tags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-comp-surface2-hover px-3 py-1.5 text-sm text-text-default"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-surface-page-surf3 px-3 py-1.5 text-sm text-text-default"
                     >
                       {tag}
                       <button

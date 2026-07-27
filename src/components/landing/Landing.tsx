@@ -9,7 +9,6 @@ import { clsx } from "clsx";
 import { Link } from "@/i18n/navigation";
 import { Logo } from "@/components/ui/Logo";
 import { Icon } from "@/components/ui/Icon";
-import { LeadForm } from "./LeadForm";
 import { ContactModal } from "./ContactModal";
 import { Glows } from "./Glows";
 import { FloatImage, GrainOverlay, Magnetic, Spotlight } from "./effects";
@@ -197,11 +196,19 @@ export function Landing() {
             <Appear className="flex w-full min-w-0 flex-1 flex-col items-center text-center lg:items-start lg:text-left">
               <SectionTitle>
                 {t("contact.titleLine1")}{" "}
-                <span className="text-gradient">{t("contact.titleLine2")}</span>
+                <span className="inline-flex items-center gap-2 align-middle">
+                  <HighlightPill>{t("contact.titleLine2")}</HighlightPill>
+                  <ToggleAccent />
+                </span>
                 {t("contact.titleLine3")}
               </SectionTitle>
               <Lead className="max-w-[704px]">{t("contact.text")}</Lead>
-              <LeadForm cta={t("contact.cta")} />
+              <CtaButton
+                className="mt-8 md:mt-10 lg:mt-14"
+                onClick={() => setContactOpen(true)}
+              >
+                {t("contact.cta")}
+              </CtaButton>
             </Appear>
           </Container>
         </section>
@@ -433,6 +440,33 @@ function GradientPill({ children }: { children: React.ReactNode }) {
       <span className="inline-flex items-center rounded-[48px] bg-surface-page-bg px-4 py-1.5 text-sm font-bold leading-[1.25] tracking-normal text-text-default sm:px-5 sm:py-2 sm:text-base xl:text-xl">
         {children}
       </span>
+    </span>
+  );
+}
+
+/**
+ * Пилюля-выделение внутри заголовка (баннер «Свяжитесь…») — то же кольцо
+ * из двух слоёв, что и у GradientPill, но без своих text-* классов: размер
+ * шрифта наследуется от окружающего h2, а не фиксирован под бейдж в героe.
+ */
+function HighlightPill({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex rounded-[50px] bg-[linear-gradient(135deg,#F6844B,#BF5AF5)] p-[2px] align-middle shadow-[0_0_28px_rgb(191_90_245/0.3)]">
+      <span className="inline-flex items-center rounded-[48px] bg-surface-page-bg px-4 py-0.5 lg:px-6 lg:py-1">
+        {children}
+      </span>
+    </span>
+  );
+}
+
+/** Декоративный тумблер рядом с HighlightPill — брендовый градиент на кружке. */
+function ToggleAccent() {
+  return (
+    <span
+      aria-hidden
+      className="inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-white/25 bg-white/5 p-1 align-middle lg:h-7 lg:w-[52px]"
+    >
+      <span className="ml-auto h-4 w-4 rounded-full bg-[linear-gradient(135deg,#F6844B,#BF5AF5)] lg:h-5 lg:w-5" />
     </span>
   );
 }
