@@ -80,6 +80,8 @@ export type Account = {
 /** Наш слой (БД): анкета, которой нет в API Ecash. */
 export type Profile = {
   avatar: string | null;
+  /** имя, указанное самим человеком — используется, пока ФИО из ядра пустое */
+  displayName: string;
   about: string;
   occupation: string;
   tags: string[];
@@ -87,6 +89,17 @@ export type Profile = {
 };
 
 export type AccountWithProfile = Account & { profile: Profile };
+
+/**
+ * Показываемое имя аккаунта. ФИО из ядра Ecash появляется только после
+ * привязки к клиенту в отделении — до этого (и в демо-режиме) firstName/
+ * lastName пустые, и единственный источник имени — то, что человек указал
+ * сам при регистрации/в анкете.
+ */
+export function accountDisplayName(account: AccountWithProfile): string {
+  const upstream = [account.firstName, account.lastName].filter(Boolean).join(' ').trim();
+  return upstream || account.profile.displayName;
+}
 
 // ------------------------------------------------------------------ заявки
 

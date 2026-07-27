@@ -138,7 +138,8 @@
     "devCodeHint": "Демо режимі: код {code}",
     "iinOptional": "ЖСН (міндетті емес)",
     "register": "Тіркелу",
-    "completeTitle": "Құпиясөз орнатыңыз"
+    "completeTitle": "Құпиясөз орнатыңыз",
+    "displayNameLabel": "Атыңыз"
   },
   "recovery": {
     "title": "Құпиясөзді қалпына келтіру",
@@ -176,6 +177,7 @@
     "form": {
       "edit": "Өңдеу",
       "save": "Сақтау",
+      "displayName": "Атыңыз",
       "firstName": "Аты",
       "lastName": "Тегі",
       "middleName": "Әкесінің аты",

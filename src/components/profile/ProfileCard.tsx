@@ -7,6 +7,7 @@ import { clsx } from 'clsx';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/lib/auth';
+import { accountDisplayName } from '@/lib/domain';
 import { formatPhoneInput } from '@/lib/format';
 
 /**
@@ -26,11 +27,15 @@ export function ProfileCard() {
   // src, который не смог загрузиться — при смене аватара фоллбэк сбрасывается сам
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
-  const name = [account?.firstName, account?.lastName, account?.middleName]
-    .filter(Boolean)
-    .join(' ');
-  const initials = account
-    ? `${account.firstName.charAt(0)}${account.lastName.charAt(0)}`.toUpperCase()
+  const name = account ? accountDisplayName(account) : '';
+  const initials = name
+    ? name
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part.charAt(0))
+        .join('')
+        .toUpperCase()
     : '';
 
   const avatar = account?.profile.avatar ?? null;

@@ -121,6 +121,7 @@ export const listRequestsQuery = z.object({
 
 export const profilePatchBody = z.object({
   avatar: z.string().max(300).nullable().optional(),
+  displayName: z.string().max(80).optional(),
   about: z.string().max(1000).optional(),
   occupation: z.string().max(120).optional(),
   tags: z.array(z.string().max(40)).max(20).optional(),

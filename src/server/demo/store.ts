@@ -23,8 +23,10 @@ export function demoAccount(phone: string): Account {
     isLinkedToClient: true,
     clientId: 5512,
     iin: null,
-    firstName: 'Фёдор',
-    lastName: 'Михайлович',
+    // как и у настоящего непривязанного клиента, ФИО из ядра тут нет —
+    // имя человек указывает сам при регистрации (Profile.displayName)
+    firstName: '',
+    lastName: '',
     middleName: '',
   };
 }

@@ -14,7 +14,7 @@ import { useErrorText } from '@/lib/useErrorText';
 import { currencySymbol, formatDateTime, formatNumber, formatPhoneInput } from '@/lib/format';
 import { AmountBox } from '@/components/flows/PairFields';
 import { useAuth } from '@/lib/auth';
-import type { ExchangeRequest } from '@/lib/domain';
+import { accountDisplayName, type ExchangeRequest } from '@/lib/domain';
 
 /**
  * Карточка заявки — экраны состояний из макета:
@@ -287,7 +287,7 @@ function YourDataBlock() {
   const { account } = useAuth();
   if (!account) return null;
 
-  const name = [account.firstName, account.lastName].filter(Boolean).join(' ');
+  const name = accountDisplayName(account);
 
   return (
     <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">

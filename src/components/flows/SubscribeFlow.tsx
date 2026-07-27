@@ -308,16 +308,6 @@ export function SubscribeFlow() {
       <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
         <h1 className="text-xl font-bold text-text-default sm:text-[28px]">{t('pairTitle')}</h1>
 
-        {/* Покупаю/Продаю — от направления зависит, какой курс отслеживаем:
-            продажи обменника (я покупаю) или покупки (я продаю) */}
-        <div className="mt-5">
-          <h2 className="text-lg font-bold text-text-default sm:text-2xl">{t('typeTitle')}</h2>
-          <div role="radiogroup" aria-label={t('typeTitle')} className="mt-5 flex flex-col gap-4">
-            <OperationRadio label={t('buying')} checked={buying} onSelect={() => setBuying(true)} />
-            <OperationRadio label={t('selling')} checked={!buying} onSelect={() => setBuying(false)} />
-          </div>
-        </div>
-
         <div className="mt-5 flex flex-col items-stretch gap-3 lg:flex-row lg:items-center">
           <AmountBox
             label={t('targetLabel')}
@@ -415,6 +405,17 @@ export function SubscribeFlow() {
             {t('dateError')}
           </p>
         )}
+      </section>
+
+      {/* Покупаю/Продаю — отдельной секцией под датой (по макету): от
+          направления зависит, какой курс отслеживаем — продажи обменника
+          (я покупаю) или покупки (я продаю) */}
+      <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
+        <h2 className="text-lg font-bold text-text-default sm:text-2xl">{t('typeTitle')}</h2>
+        <div role="radiogroup" aria-label={t('typeTitle')} className="mt-5 flex flex-col gap-4">
+          <OperationRadio label={t('buying')} checked={buying} onSelect={() => setBuying(true)} />
+          <OperationRadio label={t('selling')} checked={!buying} onSelect={() => setBuying(false)} />
+        </div>
 
         {!authed && (
           <p className="mt-4 text-sm text-text-disabled" role="note">

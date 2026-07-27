@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { clsx } from 'clsx';
 import { useMediaQuery } from '@/lib/hooks';
 import { Icon } from './Icon';
+import { MobileSheet } from './MobileSheet';
 
 /**
  * Доступный селект в стилистике макета: роли combobox/listbox,
@@ -60,16 +61,6 @@ export function Select({
   const id = useId();
   const isMobile = useMediaQuery('(max-width: 639px)');
 
-  /** На мобильных попап — нижний шит: тянется пальцем вниз, порог закрытия 96px. */
-  const [dragY, setDragY] = useState(0);
-  const [dragging, setDragging] = useState(false);
-  const dragStartRef = useRef(0);
-  // синхронное зеркало dragging — pointermove может прийти раньше, чем
-  // React перерендерит компонент с новым замыканием после pointerdown
-  const draggingRef = useRef(false);
-  /** открывается на среднюю высоту, вырастает до почти полной при скролле/поиске */
-  const [expanded, setExpanded] = useState(false);
-
   const selected = options.find((o) => o.value === value) ?? null;
 
   /** Опции после фильтра поиска; без searchable/запроса — исходный список. */
@@ -85,40 +76,8 @@ export function Select({
   const close = useCallback((refocus: boolean) => {
     setOpen(false);
     setQuery('');
-    draggingRef.current = false;
-    setDragging(false);
-    setDragY(0);
-    setExpanded(false);
     if (refocus) btnRef.current?.focus();
   }, []);
-
-  // фон не скроллится под открытым шитом — иначе снаружи «просвечивает» движение
-  useEffect(() => {
-    if (!open || !isMobile) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [open, isMobile]);
-
-  const onSheetDragStart = (e: React.PointerEvent<HTMLDivElement>) => {
-    dragStartRef.current = e.clientY;
-    draggingRef.current = true;
-    setDragging(true);
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
-  const onSheetDragMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!draggingRef.current) return;
-    setDragY(Math.max(0, e.clientY - dragStartRef.current));
-  };
-  const onSheetDragEnd = () => {
-    if (!draggingRef.current) return;
-    draggingRef.current = false;
-    setDragging(false);
-    if (dragY > 96) close(false);
-    else setDragY(0);
-  };
 
   useEffect(() => {
     if (!open) return;
@@ -132,7 +91,6 @@ export function Select({
   /** открытие: активная позиция ставится в обработчике, не в эффекте */
   const openList = useCallback(() => {
     setQuery('');
-    setExpanded(false);
     const idx = Math.max(
       0,
       options.findIndex((o) => o.value === value),
@@ -257,11 +215,22 @@ export function Select({
           data-idx={idx}
           role="option"
           aria-selected={opt.value === value}
-          onPointerDown={(e) => {
-            e.preventDefault();
-            commit(idx);
+          // onClick, не onPointerDown: на тач-экране pointerdown стреляет
+          // в момент касания — до того, как понятно, тап это или скролл
+          // пальцем, и список становится нескроллящимся (пункт «пере
+          // хватывал» любое касание). click браузер сам не шлёт, если
+          // палец сдвинулся дальше скролл-порога, — ровно то поведение,
+          // которое здесь нужно.
+          onClick={() => commit(idx)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              commit(idx);
+            }
           }}
-          onPointerMove={() => setActive(idx)}
+          onPointerMove={(e) => {
+            if (e.pointerType === 'mouse') setActive(idx);
+          }}
           className={clsx(
             // 56×r12 с паддингом 8/16/8/8 — «dropdown currency item list» из макета
             'flex min-h-14 cursor-pointer items-center justify-between gap-4 rounded-xl py-2 pl-2 pr-4 text-base text-text-default transition-colors',
@@ -339,46 +308,10 @@ export function Select({
         />
       </button>
 
-      {open && isMobile && (
-        // Нижний шит на мобильных: подложка закрывает по тапу, сам шит
-        // тянется пальцем за ручку вниз (порог закрытия — 96px, иначе
-        // возврат той же CSS-анимацией, что и въезд снизу).
-        <>
-          <div
-            className="anim-modal-scrim fixed inset-0 z-40 bg-scrim"
-            onMouseDown={() => close(false)}
-            role="presentation"
-          />
-          <div
-            className={clsx(
-              'anim-sheet-slide fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-[24px] border border-stroke-modal bg-surface-page-surf2 pb-[max(env(safe-area-inset-bottom),16px)]',
-              expanded ? 'max-h-[85vh]' : 'max-h-[60vh]',
-              !dragging && 'transition-[transform,max-height] duration-200 ease-out',
-            )}
-            style={dragY ? { transform: `translateY(${dragY}px)` } : undefined}
-          >
-            <div
-              className="flex shrink-0 touch-none justify-center py-3 [cursor:grab] active:[cursor:grabbing]"
-              onPointerDown={onSheetDragStart}
-              onPointerMove={onSheetDragMove}
-              onPointerUp={onSheetDragEnd}
-              onPointerCancel={onSheetDragEnd}
-            >
-              <span aria-hidden className="h-1 w-10 rounded-full bg-stroke-surface3" />
-            </div>
-            {searchable && <div className="mx-4 mb-3 shrink-0">{searchField}</div>}
-            {/* открывается на среднюю высоту, доскролленный список сразу же
-                вырастает до почти полной — не глотает первые пиксели скролла */}
-            <div
-              className="min-h-0 flex-1 overflow-auto px-2 pb-2"
-              onScroll={(e) => {
-                if (!expanded && e.currentTarget.scrollTop > 0) setExpanded(true);
-              }}
-            >
-              {listbox}
-            </div>
-          </div>
-        </>
+      {isMobile && (
+        <MobileSheet open={open} onClose={() => close(false)} header={searchable ? searchField : undefined}>
+          {listbox}
+        </MobileSheet>
       )}
 
       {open &&

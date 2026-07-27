@@ -21,6 +21,7 @@ import {
 export const profiles = pgTable('profiles', {
   accountId: text('account_id').primaryKey(),
   avatar: text('avatar'),
+  displayName: text('display_name').notNull().default(''),
   about: text('about').notNull().default(''),
   occupation: text('occupation').notNull().default(''),
   tags: jsonb('tags').$type<string[]>().notNull().default([]),

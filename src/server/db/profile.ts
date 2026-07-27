@@ -5,6 +5,7 @@ import type { profiles } from './schema';
 /** Пустая анкета — у аккаунта может не быть строки в profiles. */
 export const emptyProfile: Profile = {
   avatar: null,
+  displayName: '',
   about: '',
   occupation: '',
   tags: [],
@@ -26,6 +27,7 @@ export function profileFromRow(row: ProfileRow | undefined): Profile {
   if (!row) return emptyProfile;
   return {
     avatar: row.avatar,
+    displayName: row.displayName,
     about: row.about,
     occupation: row.occupation,
     tags: normalizeTags(row.tags),

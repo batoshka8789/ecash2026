@@ -93,7 +93,7 @@ export function ProfileForm() {
   const errId = `${uid}-error`;
 
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ about: '', occupation: '' });
+  const [form, setForm] = useState({ displayName: '', about: '', occupation: '' });
   const [tags, setTags] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -104,7 +104,11 @@ export function ProfileForm() {
    * ронять страницу из-за кривых данных (нормализация есть и на сервере).
    */
   const fillFrom = (a: NonNullable<typeof account>) => {
-    setForm({ about: a.profile.about, occupation: a.profile.occupation });
+    setForm({
+      displayName: a.profile.displayName,
+      about: a.profile.about,
+      occupation: a.profile.occupation,
+    });
     setTags(Array.isArray(a.profile.tags) ? a.profile.tags : []);
   };
 
@@ -117,7 +121,7 @@ export function ProfileForm() {
   }
 
   const save = useMutation({
-    mutationFn: (patch: { about: string; occupation: string; tags: string[] }) =>
+    mutationFn: (patch: { displayName: string; about: string; occupation: string; tags: string[] }) =>
       api.profile.save(patch),
     onSuccess: async () => {
       await invalidate();
@@ -199,6 +203,24 @@ export function ProfileForm() {
           <Icon name="edit" size={18} />
         </button>
       </div>
+
+      {/* ФИО из ядра Ecash появляется только после привязки к клиенту в
+          отделении — до этого момента (весь демо-режим стенда — тоже) имя
+          указывает сам человек, сохраняется в наш профиль и весь сайт
+          показывает именно его (accountDisplayName). */}
+      {!(account?.firstName || account?.lastName) && (
+        <div className="mt-4">
+          <Field
+            id={`${uid}-displayName`}
+            label={t('displayName')}
+            value={form.displayName}
+            editing={editing}
+            onChange={set('displayName')}
+            invalid={errField === 'displayName'}
+            describedBy={errId}
+          />
+        </div>
+      )}
 
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Field

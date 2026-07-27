@@ -63,6 +63,8 @@ export function AuthCard({
   const [phone, setPhone] = useState('');
   const [iin, setIin] = useState('');
   const [otp, setOtp] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [nameError, setNameError] = useState(false);
   const [password2, setPassword2] = useState('');
   const [devCode, setDevCode] = useState<string | null>(null);
   const [resendLeft, setResendLeft] = useResendTimer();
@@ -101,14 +103,22 @@ export function AuthCard({
   });
 
   const registerMut = useMutation({
-    mutationFn: () =>
-      api.auth.register({
+    mutationFn: async () => {
+      const res = await api.auth.register({
         phoneNumber: phone.trim(),
         otp,
         password,
         password2,
         iin: iin.trim() || undefined,
-      }),
+      });
+      // ФИО из ядра Ecash у свежего аккаунта пустое (появится после привязки
+      // в отделении) — имя, введённое на этом шаге, сохраняем в наш профиль
+      // сразу, пока сессия уже есть, но до finish()/invalidate()
+      if (displayName.trim()) {
+        await api.profile.save({ displayName: displayName.trim() }).catch(() => {});
+      }
+      return res;
+    },
     onSuccess: finish,
     onError: (e) => {
       // Код проверяется только этим запросом: при неверном/истёкшем OTP
@@ -157,7 +167,13 @@ export function AuthCard({
       sendMut.mutate(0);
     } else if (regStep === 'code') {
       if (otp.length === 6) setRegStep('password');
-    } else registerMut.mutate();
+    } else {
+      if (!displayName.trim()) {
+        setNameError(true);
+        return;
+      }
+      registerMut.mutate();
+    }
   };
 
   const busy = loginMut.isPending || sendMut.isPending || registerMut.isPending;
@@ -336,6 +352,17 @@ export function AuthCard({
               {t('completeTitle')}
             </h1>
             <div className="mt-6 flex flex-col gap-4">
+              <Input
+                label={t('displayNameLabel')}
+                placeholder={t('displayNameLabel')}
+                value={displayName}
+                onChange={(e) => {
+                  setNameError(false);
+                  setDisplayName(e.target.value.slice(0, 80));
+                }}
+                errors={nameError ? [errorText('errors.nameRequired')] : []}
+                autoComplete="name"
+              />
               <Input
                 label={t('passwordPlaceholder')}
                 placeholder={t('passwordPlaceholder')}

@@ -6,7 +6,9 @@ import { clsx } from 'clsx';
 import { Icon } from '@/components/ui/Icon';
 import { Iconsax } from '@/components/ui/Iconsax';
 import { CurrencyFlag } from '@/components/ui/CurrencyFlag';
+import { MobileSheet } from '@/components/ui/MobileSheet';
 import { currencyFlagClass } from '@/lib/format';
+import { useMediaQuery } from '@/lib/hooks';
 import type { DepartmentInfo } from '@/lib/domain';
 
 /** Поле суммы с плавающим лейблом и выбором валюты — блок «Валютная пара». */
@@ -44,6 +46,10 @@ export function AmountBox({
   const id = inputId ?? autoId;
   const flag = currencyFlagClass(currency);
   const canPick = Boolean(currencyOptions?.length && onCurrencyChange);
+  // На мобильном — тот же нижний шит, что у Select.tsx (Калькулятор,
+  // выбор отделения): один и тот же пикер должен вести себя одинаково
+  // везде на сайте, а не только на главной.
+  const isMobile = useMediaQuery('(max-width: 639px)');
 
   /** Опции после фильтра поиска по коду/названию — как в Select.tsx. */
   const visibleOptions = useMemo(() => {
@@ -131,58 +137,78 @@ export function AmountBox({
         {canPick && <Icon name="keyboard_arrow_down" size={18} />}
       </button>
 
-      {open && canPick && (
-        <div className="absolute right-2 top-full z-30 mt-1 w-64 rounded-2xl border border-stroke-modal bg-surface-modal-surf1 p-1.5 shadow-xl">
-          <div className="relative mb-1.5">
-            <Icon
-              name="search"
-              size={18}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled"
-            />
-            <input
-              ref={searchRef}
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t('pair.searchCurrency')}
-              aria-label={t('pair.searchCurrency')}
-              autoComplete="off"
-              spellCheck={false}
-              className="h-10 w-full rounded-xl border border-stroke-modal bg-transparent pl-10 pr-3 text-sm text-text-default outline-none transition-colors placeholder:text-text-disabled focus:border-stroke-brand"
-            />
-          </div>
-          <ul role="listbox" aria-label={t('pair.pickCurrency')} className="max-h-60 overflow-auto">
-            {visibleOptions.map((opt) => (
-              <li key={opt.code}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={opt.code === currency}
-                  onClick={() => {
-                    onCurrencyChange!(opt.code);
-                    close();
-                  }}
-                  className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors hover:bg-comp-surface1-hover"
-                >
-                  <CurrencyFlag flag={currencyFlagClass(opt.code) ?? 'gold'} className="h-5 !w-8" />
-                  <span className="flex min-w-0 flex-col">
-                    <span className="text-sm text-text-default">{opt.code}</span>
-                    <span className="truncate text-xs text-text-disabled">{opt.name}</span>
-                  </span>
-                  {opt.code === currency && (
-                    <Icon name="check" size={16} className="ml-auto shrink-0" />
-                  )}
-                </button>
-              </li>
-            ))}
-            {visibleOptions.length === 0 && (
-              <li role="presentation" className="px-3 py-2.5 text-sm text-text-disabled">
-                {tCommon('nothingFound')}
-              </li>
-            )}
-          </ul>
-        </div>
-      )}
+      {open &&
+        canPick &&
+        (() => {
+          const searchField = (
+            <div className="relative">
+              <Icon
+                name="search"
+                size={18}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled"
+              />
+              <input
+                ref={searchRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t('pair.searchCurrency')}
+                aria-label={t('pair.searchCurrency')}
+                autoComplete="off"
+                spellCheck={false}
+                className="h-10 w-full rounded-xl border border-stroke-modal bg-transparent pl-10 pr-3 text-sm text-text-default outline-none transition-colors placeholder:text-text-disabled focus:border-stroke-brand"
+              />
+            </div>
+          );
+
+          const listbox = (
+            <ul
+              role="listbox"
+              aria-label={t('pair.pickCurrency')}
+              className={isMobile ? undefined : 'max-h-60 overflow-auto'}
+            >
+              {visibleOptions.map((opt) => (
+                <li key={opt.code}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={opt.code === currency}
+                    onClick={() => {
+                      onCurrencyChange!(opt.code);
+                      close();
+                    }}
+                    className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors hover:bg-comp-surface1-hover"
+                  >
+                    <CurrencyFlag flag={currencyFlagClass(opt.code) ?? 'gold'} className="h-5 !w-8" />
+                    <span className="flex min-w-0 flex-col">
+                      <span className="text-sm text-text-default">{opt.code}</span>
+                      <span className="truncate text-xs text-text-disabled">{opt.name}</span>
+                    </span>
+                    {opt.code === currency && (
+                      <Icon name="check" size={16} className="ml-auto shrink-0" />
+                    )}
+                  </button>
+                </li>
+              ))}
+              {visibleOptions.length === 0 && (
+                <li role="presentation" className="px-3 py-2.5 text-sm text-text-disabled">
+                  {tCommon('nothingFound')}
+                </li>
+              )}
+            </ul>
+          );
+
+          return isMobile ? (
+            <MobileSheet open={open} onClose={close} header={searchField}>
+              {listbox}
+            </MobileSheet>
+          ) : (
+            <div className="absolute right-2 top-full z-30 mt-1 w-64 rounded-2xl border border-stroke-modal bg-surface-modal-surf1 p-1.5 shadow-xl">
+              <div className="mb-1.5">{searchField}</div>
+              {listbox}
+            </div>
+          );
+        })()}
     </div>
   );
 }

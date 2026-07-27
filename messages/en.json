@@ -138,7 +138,8 @@
     "devCodeHint": "Demo mode: code {code}",
     "iinOptional": "IIN (optional)",
     "register": "Sign up",
-    "completeTitle": "Set a password"
+    "completeTitle": "Set a password",
+    "displayNameLabel": "Your name"
   },
   "recovery": {
     "title": "Password recovery",
@@ -176,6 +177,7 @@
     "form": {
       "edit": "Edit",
       "save": "Save",
+      "displayName": "Your name",
       "firstName": "First name",
       "lastName": "Last name",
       "middleName": "Middle name",

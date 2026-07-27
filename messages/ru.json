@@ -138,7 +138,8 @@
     "devCodeHint": "Демо-режим: код {code}",
     "iinOptional": "ИИН (необязательно)",
     "register": "Зарегистрироваться",
-    "completeTitle": "Установите пароль"
+    "completeTitle": "Установите пароль",
+    "displayNameLabel": "Ваше имя"
   },
   "recovery": {
     "title": "Восстановление пароля",
@@ -176,6 +177,7 @@
     "form": {
       "edit": "Редактировать",
       "save": "Сохранить",
+      "displayName": "Ваше имя",
       "firstName": "Имя",
       "lastName": "Фамилия",
       "middleName": "Отчество",

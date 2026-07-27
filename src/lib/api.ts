@@ -158,6 +158,7 @@ export const api = {
   profile: {
     save: (patch: {
       avatar?: string | null;
+      displayName?: string;
       about?: string;
       occupation?: string;
       tags?: string[];
