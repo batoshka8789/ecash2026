@@ -260,8 +260,16 @@ export function Calculator({
       searchable
       searchPlaceholder={tRoot('flows.pair.searchCurrency')}
       noResultsText={tRoot('common.nothingFound')}
-      buttonClassName={code === 'KZT' ? '!border-surface-page-surf1-alt' : '!border-stroke-brand'}
-      className="m-1 w-32 shrink-0 self-center sm:m-2 sm:w-40 sm:[&>div]:left-auto sm:[&>div]:right-0 sm:[&>div]:w-[290px] [&>span]:sr-only"
+      // !px-3: на мобильном w-32 не хватало места под флаг+код+шеврон —
+      // текст кода валюты («KZT», «USD») обрезался на предпоследней букве
+      // без эллипсиса (text-overflow не умеет эллипсировать вложенный
+      // флекс-контейнер, а не сплошной текст) — уже вложенный флаг+код,
+      // а не строка, поэтому текст просто резался посередине буквы
+      buttonClassName={clsx(
+        '!px-3 sm:!px-4',
+        code === 'KZT' ? '!border-surface-page-surf1-alt' : '!border-stroke-brand',
+      )}
+      className="m-1 w-36 shrink-0 self-center sm:m-2 sm:w-40 sm:[&>div]:left-auto sm:[&>div]:right-0 sm:[&>div]:w-[290px] [&>span]:sr-only"
     />
   );
 
