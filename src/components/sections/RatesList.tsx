@@ -232,11 +232,13 @@ function RateRow({
         )}
 
         {flag ? (
-          <CurrencyFlag flag={flag} className="h-7 w-10 shrink-0 sm:h-10 sm:w-[50px]" />
+          // !-префикс: у flag-icons есть свой .fi{width:1.333333em}, который по
+          // порядку подключения CSS перебивает обычный w-10 той же специфичности
+          <CurrencyFlag flag={flag} className="h-8 !w-10 shrink-0" />
         ) : (
           <span
             aria-hidden
-            className="flex h-7 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-modal-surf1 text-[10px] font-bold text-text-disabled sm:h-10 sm:w-[50px]"
+            className="flex h-8 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-modal-surf1 text-[10px] font-bold text-text-disabled"
           >
             {code.slice(0, 3)}
           </span>

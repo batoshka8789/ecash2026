@@ -351,19 +351,17 @@ export function Calculator() {
   );
 }
 
-/** Флаг валюты — «Currency» из макета: 50×40 в строке списка, 40×32 в закрытой пилюле. */
-function renderCurrencyFlag(opt: SelectOption, variant: 'list' | 'pill' = 'list') {
+/** Флаг валюты — «Currency» из макета: 40×32, r8, везде одинаково. */
+function renderCurrencyFlag(opt: SelectOption) {
   const flag = opt.value.startsWith('GOLD') ? 'gold' : currencyFlagClass(opt.value);
-  const dims = variant === 'list' ? 'h-10 w-[50px]' : 'h-8 w-10';
   return flag ? (
-    <CurrencyFlag flag={flag} className={clsx(dims, 'shrink-0')} />
+    // !-префикс: у flag-icons есть свой .fi{width:1.333333em}, который по
+    // порядку подключения CSS перебивает обычный w-10 той же специфичности
+    <CurrencyFlag flag={flag} className="h-8 !w-10 shrink-0" />
   ) : (
     <span
       aria-hidden
-      className={clsx(
-        dims,
-        'flex shrink-0 items-center justify-center rounded-lg bg-surface-modal-surf1 text-[10px] font-bold text-text-disabled',
-      )}
+      className="flex h-8 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-modal-surf1 text-[10px] font-bold text-text-disabled"
     >
       {opt.value.slice(0, 3)}
     </span>
@@ -374,7 +372,7 @@ function renderCurrencyFlag(opt: SelectOption, variant: 'list' | 'pill' = 'list'
 function renderCurrencyOption(opt: SelectOption) {
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
-      {renderCurrencyFlag(opt, 'pill')}
+      {renderCurrencyFlag(opt)}
       <span className="truncate font-medium">{opt.value}</span>
     </span>
   );

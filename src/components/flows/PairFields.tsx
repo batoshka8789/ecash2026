@@ -117,7 +117,8 @@ export function AmountBox({
           canPick ? 'cursor-pointer hover:bg-comp-surface2-hover' : 'cursor-default',
         )}
       >
-        <CurrencyFlag flag={flag ?? 'gold'} className="h-6 w-9" />
+        {/* !-префикс: у flag-icons свой .fi{width:1.333333em} перебивает w-9 той же специфичности */}
+        <CurrencyFlag flag={flag ?? 'gold'} className="h-6 !w-9" />
         {currency}
         {canPick && <Icon name="keyboard_arrow_down" size={18} />}
       </button>
@@ -155,7 +156,7 @@ export function AmountBox({
                   }}
                   className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors hover:bg-comp-surface1-hover"
                 >
-                  <CurrencyFlag flag={currencyFlagClass(opt.code) ?? 'gold'} className="h-5 w-8" />
+                  <CurrencyFlag flag={currencyFlagClass(opt.code) ?? 'gold'} className="h-5 !w-8" />
                   <span className="flex min-w-0 flex-col">
                     <span className="text-sm text-text-default">{opt.code}</span>
                     <span className="truncate text-xs text-text-disabled">{opt.name}</span>
