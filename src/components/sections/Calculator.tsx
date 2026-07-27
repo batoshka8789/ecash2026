@@ -208,7 +208,13 @@ export function Calculator() {
     router.push(`/booking?${params.toString()}`);
   };
 
-  /** Селектор валюты у поля — в макете обе стороны со стрелкой-дропдауном. */
+  /**
+   * Селектор валюты у поля — в макете обе стороны со стрелкой-дропдауном.
+   * Обводка не зависит от open/closed: сторона KZT — цветом заливки (её не
+   * видно), сторона валюты — всегда брендовая. !-префикс перебивает
+   * open-зависимую обводку Select, которая иначе выигрывает по порядку
+   * генерации Tailwind-классов.
+   */
   const currencySelect = (field: Field, code: CurrencyCode) => (
     <Select
       value={code}
@@ -221,6 +227,7 @@ export function Calculator() {
       searchable
       searchPlaceholder={tRoot('flows.pair.searchCurrency')}
       noResultsText={tRoot('common.nothingFound')}
+      buttonClassName={code === 'KZT' ? '!border-surface-page-surf1-alt' : '!border-stroke-brand'}
       className="m-1 w-32 shrink-0 self-center sm:m-2 sm:w-40 [&>div]:left-auto [&>div]:right-0 [&>div]:w-[290px] [&>span]:sr-only"
     />
   );
@@ -275,7 +282,7 @@ export function Calculator() {
               className="flex"
             >
               <Icon name="swap_vert" size={22} className="lg:hidden" />
-              <Icon name="sync_alt" size={22} className="hidden lg:inline" />
+              <Icon name="sync_alt" size={20} className="hidden lg:inline" />
             </motion.span>
           </button>
           <AmountField
