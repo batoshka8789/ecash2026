@@ -38,9 +38,10 @@ const actions = [
  *
  * Бейдж иконки — rounded-[20px] (как остальные крупные элементы в
  * макете), а не rounded-xl: по референсу бейдж заметно круглее. Обводка
- * карточки — stroke-surface3, не stroke-surface2: у surface2 в светлой
- * теме тот же цвет, что и у фона карточки (surf2), рамка становится
- * буквально невидимой. shrink-0 на бейдже обязателен: карточка на
+ * карточки в тёмной теме — stroke-surface2 (#404040), по точной подписи
+ * макета; в светлой теме тот же токен совпадает с фоном самой карточки
+ * (surf2) и рамка становится невидимой, поэтому светлая тема форсированно
+ * держится на stroke-surface3, как и было. shrink-0 на бейдже обязателен: карточка на
  * десктопе фиксированной высоты (h-[142px]), и без него бейдж сжимался
  * у пунктов с трёхстрочной подписью — расплывался по высоте относительно
  * соседей.
@@ -67,7 +68,7 @@ export function ActionCards() {
           <Link
             key={key}
             href={href}
-            className="group flex w-28 shrink-0 snap-start cursor-pointer flex-col items-center gap-3 py-2 text-center sm:h-[142px] sm:w-56 sm:justify-center sm:gap-4 sm:rounded-[20px] sm:border sm:border-stroke-surface3 sm:bg-surface-page-surf2 sm:px-8 sm:py-5 sm:transition-[background,transform] sm:duration-200 sm:hover:-translate-y-0.5 sm:hover:bg-comp-surface2-hover"
+            className="group flex w-28 shrink-0 snap-start cursor-pointer flex-col items-center gap-3 py-2 text-center sm:h-[142px] sm:w-56 sm:justify-center sm:gap-4 sm:rounded-[20px] sm:border sm:border-stroke-surface2 sm:bg-surface-page-surf2 sm:px-8 sm:py-5 sm:transition-[background,transform] sm:duration-200 sm:hover:-translate-y-0.5 sm:hover:bg-comp-surface2-hover [html[data-theme=light]_&]:sm:border-stroke-surface3"
           >
             <span className="flex h-[54px] w-[50px] shrink-0 items-center justify-center rounded-[20px] bg-surface-page-surf3 text-text-default transition-transform duration-200 group-hover:scale-110 [html[data-theme=light]_&]:text-text-default/80">
               <MaskGlyph src={`/img/actions/${glyph}.png`} w={w} h={h} />
