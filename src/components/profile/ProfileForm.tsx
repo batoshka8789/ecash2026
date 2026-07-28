@@ -21,6 +21,7 @@ function Field({
   invalid = false,
   describedBy,
   title,
+  className,
 }: {
   id: string;
   label: string;
@@ -34,13 +35,22 @@ function Field({
   describedBy?: string;
   /** нативная подсказка при наведении — используется для disabled-полей */
   title?: string;
+  className?: string;
 }) {
   return (
-    <div className="flex min-h-[66px] flex-col justify-center rounded-[20px] border border-stroke-surface1 bg-surface-page-surf2 px-4 py-3">
+    /* «input» [1810:161124]: 66 при padding 12/16 — лейбл 12/14, зазор 6,
+       значение 16/20 (12+14+6+20+12+2 бордера = 66) */
+    <div
+      className={clsx(
+        'flex min-h-[66px] flex-col justify-center rounded-[20px] border border-stroke-surface1 bg-surface-page-surf2 px-4 py-3',
+        className,
+      )}
+    >
       <label
         htmlFor={id}
         className={clsx(
-          'block text-xs font-medium leading-4 text-text-disabled',
+          // одна строка: в макете поле фиксировано по 66, длинный лейбл его не тянет
+          'block truncate text-xs font-medium leading-[14px] text-text-disabled',
           !value && 'sr-only',
         )}
       >
@@ -77,7 +87,6 @@ const tagKeys = ['entrepreneur', 'investor', 'director'] as const;
 export function ProfileForm() {
   const t = useTranslations('profile.form');
   const tAddress = useTranslations('profile.address');
-  const tCommon = useTranslations('common');
   const { account, invalidate } = useAuth();
   const errorText = useErrorText();
   const uid = useId();
@@ -90,9 +99,9 @@ export function ProfileForm() {
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
-   * Заполняет форму значениями из аккаунта — и при первой загрузке сессии,
-   * и при отмене правок. `tags` защищаем от не-массива: анкета не должна
-   * ронять страницу из-за кривых данных (нормализация есть и на сервере).
+   * Заполняет форму значениями из аккаунта при первой загрузке сессии.
+   * `tags` защищаем от не-массива: анкета не должна ронять страницу
+   * из-за кривых данных (нормализация есть и на сервере).
    */
   const fillFrom = (a: NonNullable<typeof account>) => {
     setForm({ about: a.profile.about, occupation: a.profile.occupation });
@@ -143,16 +152,21 @@ export function ProfileForm() {
     setEditing(true);
   };
 
-  const cancelEdit = () => {
-    if (account) fillFrom(account);
-    save.reset();
-    setEditing(false);
-  };
-
-  /** Submit формы: Enter в любом поле в режиме редактирования сохраняет анкету. */
+  /**
+   * Submit формы: в просмотре открывает правку, в правке сохраняет анкету
+   * (Enter в любом поле работает так же).
+   *
+   * Единственная кнопка карточки всегда submit: если переключать ей type по
+   * ходу клика, React успевает отрисовать «submit» до того, как браузер
+   * выполнит действие кнопки, и один клик по «Изменить» заодно отправлял форму.
+   */
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editing || save.isPending) return;
+    if (save.isPending) return;
+    if (!editing) {
+      startEdit();
+      return;
+    }
     save.mutate({ ...form, tags });
   };
 
@@ -162,28 +176,19 @@ export function ProfileForm() {
       noValidate
       className="rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:p-8"
     >
-      <div className="flex justify-end gap-2">
-        {editing && (
-          <button
-            type="button"
-            onClick={cancelEdit}
-            disabled={save.isPending}
-            className="inline-flex h-[50px] cursor-pointer items-center rounded-[20px] border border-stroke-surface1 bg-surface-page-surf2 px-6 text-sm font-medium leading-5 text-text-default transition-colors hover:bg-comp-surface2-hover disabled:opacity-60"
-          >
-            {tCommon('cancel')}
-          </button>
-        )}
+      <div className="flex justify-end">
+        {/* «a-button-main» [1810:153590] 50×50 (46×46 на ≤480), в правке —
+            141×50 с подписью белым и обводкой #F15A25 [1810:161132] */}
         <button
-          type={editing ? 'submit' : 'button'}
-          onClick={editing ? undefined : startEdit}
+          type="submit"
           disabled={save.isPending}
           aria-label={editing ? t('save') : t('edit')}
           title={editing ? t('save') : t('edit')}
           className={clsx(
-            'inline-flex cursor-pointer items-center gap-2 rounded-[20px] transition-colors disabled:opacity-60',
+            'inline-flex h-[46px] cursor-pointer items-center gap-2 rounded-[20px] transition-colors disabled:opacity-60 md:h-[50px]',
             editing
-              ? 'h-[50px] border border-stroke-brand bg-surface-page-surf2 pl-6 pr-3 text-sm font-medium leading-5 text-text-brand hover:bg-brand-hardsoft'
-              : 'h-[50px] w-[50px] justify-center border border-stroke-surface1 text-text-default hover:bg-comp-surface1-hover',
+              ? 'border border-stroke-brand bg-surface-page-surf2 pl-6 pr-3 text-sm font-medium leading-5 text-text-always-white hover:bg-brand-hardsoft'
+              : 'w-[46px] justify-center border border-stroke-surface1 text-text-default hover:bg-comp-surface1-hover md:w-[50px]',
           )}
         >
           {editing && t('save')}
@@ -191,7 +196,8 @@ export function ProfileForm() {
         </button>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-3">
+      {/* ФИО: 360 — [Имя | Фамилия] и «Отчество» во всю ширину, ≥480 — три в ряд */}
+      <div className="mt-6 grid grid-cols-2 gap-2 min-[480px]:grid-cols-3">
         <Field
           id={`${uid}-firstName`}
           label={t('firstName')}
@@ -212,9 +218,10 @@ export function ProfileForm() {
           value={account?.middleName ?? ''}
           disabled
           title={t('readonlyHint')}
+          className="col-span-2 min-[480px]:col-span-1"
         />
       </div>
-      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <div className="mt-2 grid grid-cols-2 gap-2">
         <Field
           id={`${uid}-iin`}
           label={t('iin')}
@@ -231,8 +238,8 @@ export function ProfileForm() {
           title={t('readonlyHint')}
         />
       </div>
-      <p className="mt-2 pl-1 text-xs text-text-disabled">{t('readonlyHint')}</p>
 
+      {/* «Component 3» [1810:153599] 772×100: padding 22/16, текст 16/500 */}
       <div className="mt-2 rounded-[20px] border border-stroke-surface1 bg-surface-page-surf2 px-4 py-[22px]">
         <label htmlFor={`${uid}-about`} className="sr-only">
           {t('about')}
@@ -243,33 +250,39 @@ export function ProfileForm() {
           onChange={(e) => set('about')(e.target.value)}
           readOnly={!editing}
           placeholder={t('about')}
-          rows={3}
+          rows={2}
           maxLength={1000}
           aria-invalid={errField === 'about' || undefined}
           aria-describedby={errField === 'about' ? errId : undefined}
-          className="w-full resize-none bg-transparent text-base font-medium leading-5 text-text-default outline-none placeholder:text-text-disabled"
+          className="block h-[54px] w-full resize-none bg-transparent text-base font-medium leading-5 text-text-default outline-none placeholder:text-text-disabled"
         />
       </div>
 
-      <div className="mt-2 flex min-h-[66px] flex-col justify-center rounded-[20px] border border-stroke-surface1 bg-surface-page-surf2 px-4 py-2">
-        {tags.length > 0 && (
+      {/* Просмотр — «Component 2» [1810:153600] 66 при padding 22/16 и тексте
+          16/500; правка — «Chips input» [1810:161131]: поле padding 8/16 с
+          выбранными чипами и подписью 12/700 lh14.4, под ним ряд чипов 27. */}
+      <div
+        className={clsx(
+          'mt-2 flex min-h-[66px] flex-col justify-center rounded-[20px] border border-stroke-surface1 bg-surface-page-surf2 px-4',
+          editing ? 'py-2' : 'py-[22px]',
+        )}
+      >
+        {editing && tags.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-1">
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center gap-2 rounded-[30px] bg-surface-modal-surf1 px-2 py-0.5 text-xs font-bold leading-[18px] text-text-default"
+                className="inline-flex h-5 items-center gap-2 rounded-[30px] bg-surface-modal-surf1 px-2 text-xs font-bold leading-[18px] text-text-default"
               >
                 {tagLabel(tag)}
-                {editing && (
-                  <button
-                    type="button"
-                    onClick={() => toggleTag(tag)}
-                    aria-label={t('removeTag')}
-                    className="cursor-pointer text-text-disabled hover:text-text-default"
-                  >
-                    <Icon name="close" size={12} />
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => toggleTag(tag)}
+                  aria-label={t('removeTag')}
+                  className="cursor-pointer text-text-disabled hover:text-text-default"
+                >
+                  <Icon name="close" size={12} />
+                </button>
               </span>
             ))}
           </div>
@@ -286,32 +299,31 @@ export function ProfileForm() {
           maxLength={120}
           aria-invalid={errField === 'occupation' || undefined}
           aria-describedby={errField === 'occupation' ? errId : undefined}
-          className="w-full bg-transparent text-xs font-bold leading-[14.4px] text-text-default outline-none placeholder:text-text-disabled"
+          className={clsx(
+            'w-full bg-transparent text-text-default outline-none placeholder:text-text-disabled',
+            editing
+              ? 'text-xs font-bold leading-[14.4px]'
+              : 'text-base font-medium leading-5 placeholder:font-medium',
+          )}
         />
       </div>
 
-      <div className="mt-1 flex flex-wrap gap-1">
-        {tagKeys.map((tag) => {
-          const selected = tags.includes(tag);
-          return (
+      {/* Ряд чипов есть только в режиме правки: «Frame 1437254913» [1810:161722]
+          — 27 в высоту, padding 4/12, обводка 2px, подпись 14/500 #EEEEEE */}
+      {editing && (
+        <div className="mt-1 flex flex-wrap gap-1">
+          {tagKeys.map((tag) => (
             <button
               key={tag}
               type="button"
-              disabled={!editing}
               onClick={() => toggleTag(tag)}
-              className={clsx(
-                'rounded-[30px] border-2 px-3 py-1 text-sm font-medium leading-5 transition-colors',
-                selected
-                  ? 'border-stroke-surface1 bg-surface-page-surf2 text-text-default'
-                  : 'border-stroke-surface1 bg-surface-page-surf2 text-text-disabled',
-                editing && 'cursor-pointer hover:bg-comp-surface2-hover',
-              )}
+              className="h-[27px] cursor-pointer rounded-[30px] border-2 border-stroke-surface1 bg-surface-page-surf2 px-3 text-sm font-medium leading-[15px] text-text-default transition-colors hover:bg-comp-surface2-hover"
             >
               {t(`tags.${tag}`)}
             </button>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div aria-live="polite">
         {save.error && (

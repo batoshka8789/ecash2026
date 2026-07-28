@@ -8,7 +8,7 @@ import { createSession, sessionFromTokens } from '@/server/session';
 import { loginBody } from '@/shared/schemas';
 import { DEMO_TOKEN, demoAccount } from '@/server/demo/store';
 
-/** Вход: телефон или ИИН + пароль. */
+/** Вход: телефон или эл. почта + пароль. */
 export async function POST(req: Request) {
   const originErr = checkOrigin(req);
   if (originErr) return originErr;

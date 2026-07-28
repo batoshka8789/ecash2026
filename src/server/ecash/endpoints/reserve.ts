@@ -20,7 +20,10 @@ export type ReserveBody = {
   comment?: string;
 };
 
-export async function createReserve(accessToken: string, body: ReserveBody): Promise<ExchangeRequest> {
+export async function createReserve(
+  accessToken: string,
+  body: ReserveBody,
+): Promise<ExchangeRequest> {
   const raw = await ecashFetch<RawRequest>('/mobile/reserve', {
     method: 'POST',
     token: accessToken,
@@ -63,10 +66,11 @@ export async function confirmIndividualRate(
   accessToken: string,
   requestId: number,
 ): Promise<ExchangeRequest> {
-  const raw = await ecashFetch<RawRequest>(
-    `/mobile/reserve/${requestId}/individual-rate/confirm`,
-    { method: 'POST', token: accessToken, body: {} },
-  );
+  const raw = await ecashFetch<RawRequest>(`/mobile/reserve/${requestId}/individual-rate/confirm`, {
+    method: 'POST',
+    token: accessToken,
+    body: {},
+  });
   return mapRequest(raw);
 }
 
@@ -74,10 +78,11 @@ export async function rejectIndividualRate(
   accessToken: string,
   requestId: number,
 ): Promise<ExchangeRequest> {
-  const raw = await ecashFetch<RawRequest>(
-    `/mobile/reserve/${requestId}/individual-rate/reject`,
-    { method: 'POST', token: accessToken, body: {} },
-  );
+  const raw = await ecashFetch<RawRequest>(`/mobile/reserve/${requestId}/individual-rate/reject`, {
+    method: 'POST',
+    token: accessToken,
+    body: {},
+  });
   return mapRequest(raw);
 }
 
@@ -91,7 +96,10 @@ export async function listOperations(
   return mapOperationsPage(raw as Parameters<typeof mapOperationsPage>[0]);
 }
 
-export async function getOperation(accessToken: string, requestId: number): Promise<ExchangeRequest> {
+export async function getOperation(
+  accessToken: string,
+  requestId: number,
+): Promise<ExchangeRequest> {
   const raw = await ecashFetch<RawRequest>(`/mobile/operations/${requestId}`, {
     token: accessToken,
   });

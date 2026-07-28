@@ -4,13 +4,7 @@ import { clsx } from 'clsx';
  * Флаг валюты — скруглённый прямоугольник как в макете.
  * Для золота (GOLD) — золотистая текстура градиентом.
  */
-export function CurrencyFlag({
-  flag,
-  className,
-}: {
-  flag: string;
-  className?: string;
-}) {
+export function CurrencyFlag({ flag, className }: { flag: string; className?: string }) {
   if (flag === 'gold') {
     return (
       <span

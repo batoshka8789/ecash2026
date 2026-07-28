@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
+import { clsx } from 'clsx';
 import { SidebarLayout } from '@/components/profile/SidebarLayout';
 import { Reveal } from '@/components/ui/Reveal';
 import { Button } from '@/components/ui/Button';
@@ -43,7 +44,14 @@ export function NewsList() {
 
         {data?.posts.map((post, i) => (
           <Reveal key={post.id} delay={i * 0.06}>
-            <article className="rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:p-8">
+            {/* ниже xl карточки идут в край экрана: у первой (под полосой
+                навигации) верхние углы не скруглены — radius 0 0 28 28 */}
+            <article
+              className={clsx(
+                'rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:p-8',
+                i === 0 && 'max-xl:rounded-t-none',
+              )}
+            >
               <div className="relative h-[140px] w-full overflow-hidden rounded-2xl md:h-[260px]">
                 <Image
                   src={post.image}

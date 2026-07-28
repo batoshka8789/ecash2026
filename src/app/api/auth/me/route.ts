@@ -19,10 +19,7 @@ export async function GET() {
       ? demoAccount(s?.accountId.replace(/^demo-/, '') ?? '')
       : await accountMe(token);
 
-    const rows = await db
-      .select()
-      .from(profiles)
-      .where(eq(profiles.accountId, account.accountId));
+    const rows = await db.select().from(profiles).where(eq(profiles.accountId, account.accountId));
 
     return ok({ account: { ...account, profile: profileFromRow(rows[0]) } });
   } catch (e) {

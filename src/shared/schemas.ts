@@ -20,12 +20,21 @@ export const phoneSchema = z
 
 export const iinSchema = z.string().regex(/^\d{12}$/, 'errors.iinInvalid');
 
-/** Логин: телефон или ИИН (12 цифр — это и валидный ИИН, и валидный телефон без кода). */
+/**
+ * Логин: телефон или адрес эл. почты — ровно то, что обещает плейсхолдер
+ * поля «Номер телефона или эл.почта» (883:33233).
+ *
+ * Пробелы, скобки и дефисы — это оформление телефона (`+7 (705) 805-95-95`),
+ * его чистим. В почте те же символы значащие: `john-doe@my-company.kz` после
+ * такой чистки превращался в `johndoe@mycompany.kz`, и upstream отвечал
+ * «неверные учётные данные» на верный логин. Поэтому значение с «@» уходит
+ * как есть — регистр тоже не трогаем, его нормализует upstream.
+ */
 export const loginValueSchema = z
   .string()
   .trim()
   .min(1, 'errors.required')
-  .transform((s) => s.replace(/[\s()-]/g, ''));
+  .transform((s) => (s.includes('@') ? s : s.replace(/[\s()-]/g, '')));
 
 export const passwordSchema = z
   .string()
@@ -81,9 +90,7 @@ export const otpResetBody = z
 
 // ------------------------------------------------------------------- заявки
 
-export const currencyCodeSchema = z
-  .string()
-  .regex(/^[A-Z0-9]{2,8}$/, 'errors.CURRENCY_REQUIRED');
+export const currencyCodeSchema = z.string().regex(/^[A-Z0-9]{2,8}$/, 'errors.CURRENCY_REQUIRED');
 
 export const createRequestBody = z
   .object({

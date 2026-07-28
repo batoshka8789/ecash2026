@@ -15,7 +15,7 @@ import {
 } from '@/components/layout/AddressDropdown';
 import { useAuth } from '@/lib/auth';
 import { formatBranchAddress } from '@/lib/branch-address';
-import { useBranchPoints, useGeolocate } from '@/lib/branch-points';
+import { useBranchPoints } from '@/lib/branch-points';
 import { useErrorText } from '@/lib/useErrorText';
 import { api } from '@/lib/api';
 
@@ -40,8 +40,14 @@ const FOCUSABLE =
  * Спека ≤480: карточка во весь экран без радиуса, p 44/16/16/16, main:between —
  * «заголовок + поле» сверху (внутренний gap 20), карта тянется, «Сохранить»
  * на всю ширину прижата к низу, крестик внутри правого верхнего угла.
- * Заголовок 24/500, подпись 14/400.
- * На карте — пилюля «Развернуть на весь экран» (242×38, r20, 14/500).
+ * Заголовок 24/500, подпись 14/400. Шаг между блоками — 36 (gap карточки),
+ * внутри блока «заголовок ↔ поле» — 20 (Frame 1437255384).
+ * На карте — пилюля «Развернуть на весь экран» (242×38, r20, 14/500,
+ * fill #F5F3F2, 16 от низа карты); она есть на всех адаптивах до 1920.
+ *
+ * Своих контролов на карте макет не рисует: ни «Рядом со мной», ни крестика
+ * очистки поля (слот иконки «Icon wrapper» 885:33412 стоит visible=false во
+ * всех состояниях Input) — поэтому их здесь нет.
  */
 export function AddressModal({
   open,
@@ -64,7 +70,9 @@ export function AddressModal({
 
   const guestAddress = useGuestAddress();
   const [address, setAddress] = useState('');
-  const [focused, setFocused] = useState(false);
+  /** Панель подсказок. Открывается вводом/кликом, но НЕ автофокусом при
+   *  открытии модалки: в макете дефолт — поле без списка (1345:77513). */
+  const [listOpen, setListOpen] = useState(false);
   /** ≤480: карта раскрыта на весь лист (пилюля из макета). */
   const [expanded, setExpanded] = useState(false);
   /** Пользователь уже правил поле — поздняя синхронизация его не затрёт. */
@@ -101,20 +109,13 @@ export function AddressModal({
     [matched],
   );
 
-  const geo = useGeolocate(points, (p) => {
-    setAddress(p.address);
-    setDirty(true);
-    setFocused(false);
-  });
-  const geoReset = geo.reset;
-
   /* ------------------------------------------------------- подсказки ------ */
 
   // enabled по `open`, а не по фокусу: список открывается уже наполненным
   const { suggestions } = useAddressSuggestions(address, { enabled: open });
   const nav = useSuggestionNav(suggestions.length, (i) => setAddress(suggestions[i]));
   const navReset = nav.reset;
-  const showList = focused && suggestions.length > 0;
+  const showList = listOpen && suggestions.length > 0;
 
   /* -------------------------------------------------------- сохранение --- */
 
@@ -138,7 +139,7 @@ export function AddressModal({
       setSyncedSource(source);
       setAddress(source);
       // каждое открытие начинается с чистого листа: без подсказок и обычная карта
-      setFocused(false);
+      setListOpen(false);
       setExpanded(false);
     }
   } else if (syncedSource !== null) {
@@ -150,7 +151,6 @@ export function AddressModal({
   useEffect(() => {
     if (!open) return;
     resetSave();
-    geoReset();
     navReset();
     const prev = document.activeElement;
     // preventScroll: на коротком вьюпорте (1366×768) обычный focus прокручивает
@@ -159,7 +159,7 @@ export function AddressModal({
     return () => {
       if (prev instanceof HTMLElement) prev.focus();
     };
-  }, [open, resetSave, geoReset, navReset]);
+  }, [open, resetSave, navReset]);
 
   // Esc, ловушка Tab внутри модалки и блокировка прокрутки под ней.
   useEffect(() => {
@@ -213,6 +213,8 @@ export function AddressModal({
 
   const submit = () => {
     if (save.isPending) return;
+    // подсказки прячем: на их месте под полем показывается текст ошибки
+    setListOpen(false);
     const next = address.trim();
     // гость: адрес сохраняется в localStorage — введённое не выбрасывается
     if (!authed) {
@@ -230,16 +232,8 @@ export function AddressModal({
     });
   };
 
-  /** Одна живая область: ошибка сохранения важнее статуса геолокации. */
-  const status = save.isError
-    ? errorText(save.error.message)
-    : geo.status === 'pending'
-      ? t('locating')
-      : geo.status === 'denied'
-        ? t('locateDenied')
-        : geo.status === 'unsupported' || geo.status === 'empty'
-          ? t('locateEmpty')
-          : '';
+  /** Живая область под полем: единственный статус — ошибка сохранения. */
+  const status = save.isError ? errorText(save.error.message) : '';
 
   if (!open) return null;
 
@@ -274,39 +268,57 @@ export function AddressModal({
           // когда нет.
           className="anim-modal-card relative flex w-full xl:my-auto xl:max-w-[952px]"
         >
-            {/* ≤1024 крестик внутри правого верхнего угла листа, 1920 — снаружи */}
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label={t('close')}
-              className="absolute right-0 top-0 z-30 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-surface-page-surf1 text-text-default transition-colors hover:bg-comp-surface2-hover xl:-right-[60px] xl:top-3.5"
+          {/* ≤1024 крестик внутри правого верхнего угла листа, 1920 — снаружи */}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t('close')}
+            className="absolute right-0 top-0 z-30 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-surface-page-surf1 text-text-default transition-colors hover:bg-comp-surface2-hover xl:-right-[60px] xl:top-3.5"
+          >
+            <Icon name="close" size={20} />
+          </button>
+
+          {/* рамка 1px #333333 стоит у карточки на всех адаптивах (1355:102553,
+                1395:104269, 1395:106025, 1395:104750), скругление — только на 1920 */}
+          <div className="flex min-h-[100dvh] w-full flex-col gap-9 border border-stroke-surface1 bg-surface-page-surf1 p-4 pt-11 md:justify-center md:p-10 xl:min-h-0 xl:rounded-[20px]">
+            {/* до 768 шаг карточки 36, а внутри «заголовок ↔ поле» — 20 */}
+            <div
+              className={clsx('-mb-4 flex flex-col gap-1 md:mb-0', expanded && 'hidden xl:flex')}
             >
-              <Icon name="close" size={20} />
-            </button>
+              <h2
+                id={titleId}
+                className="text-2xl font-medium leading-[1.2] text-text-default md:text-[32px]"
+              >
+                {t('title')}
+              </h2>
+              <p className="text-sm leading-[1.1] text-text-default md:text-base md:leading-[1.24]">
+                {t('subtitle')}
+              </p>
+            </div>
 
-            <div className="flex min-h-[100dvh] w-full flex-col gap-5 border-stroke-surface1 bg-surface-page-surf1 p-4 pt-11 md:justify-center md:gap-9 md:p-10 xl:min-h-0 xl:rounded-[20px] xl:border">
-              <div className={clsx('flex flex-col gap-1', expanded && 'hidden md:flex')}>
-                <h2
-                  id={titleId}
-                  className="text-2xl font-medium leading-[1.2] text-text-default md:text-[32px]"
-                >
-                  {t('title')}
-                </h2>
-                <p className="text-sm leading-[1.1] text-text-default md:text-base md:leading-[1.24]">
-                  {t('subtitle')}
-                </p>
-              </div>
-
-              {/* ≤768 поле и «Сохранить» — прямые дети листа (contents), поэтому
+            {/* ≤768 поле и «Сохранить» — прямые дети листа (contents), поэтому
                   кнопка уезжает к нижнему краю (main:between макета) */}
-              <div className="contents md:flex md:items-start md:gap-2">
-                <div
-                  className={clsx(
-                    'relative order-2 md:order-none md:flex-1',
-                    expanded && 'hidden md:block',
-                  )}
-                >
-                  <div className="flex h-[54px] items-center gap-2 rounded-[20px] border border-surface-page-surf3 px-4 transition-colors focus-within:border-stroke-brand">
+            <div className="contents md:flex md:items-start md:gap-2">
+              <div
+                className={clsx(
+                  'relative order-2 md:order-none md:flex-1',
+                  expanded && 'hidden xl:block',
+                )}
+              >
+                {/* Обёртка ровно по полю: панель подсказок в макете стоит
+                      в 4px под ним (1347:80044 @0,58 при поле 54) */}
+                <div className="relative">
+                  <div
+                    className={clsx(
+                      'flex h-[54px] items-center rounded-[20px] border border-surface-page-surf3 pl-4 transition-colors',
+                      // «Input» с раскрытым списком: правый отступ 24 (1347:80043)
+                      showList ? 'pr-6' : 'pr-4',
+                      // hover — заливка #333333 и обводка #616161 (885:33285)
+                      '[&:hover:not(:focus-within)]:border-stroke-input-hover [&:hover:not(:focus-within)]:bg-surface-page-surf2',
+                      // фокус — обводка #EEEEEE (885:33279), в токенах это text/default
+                      'focus-within:border-text-default',
+                    )}
+                  >
                     <label htmlFor={inputId} className="sr-only">
                       {t('placeholder')}
                     </label>
@@ -317,20 +329,27 @@ export function AddressModal({
                       onChange={(e) => {
                         setAddress(e.target.value);
                         setDirty(true);
+                        setListOpen(true);
                         navReset();
-                        geoReset();
                       }}
-                      onFocus={() => setFocused(true)}
+                      // список раскрывает только явное действие пользователя:
+                      // клик по полю, ввод или ↓, но не автофокус при открытии
+                      onPointerDown={() => setListOpen(true)}
                       onBlur={() => {
-                        setFocused(false);
+                        setListOpen(false);
                         navReset();
                       }}
                       onKeyDown={(e) => {
+                        if (!listOpen && e.key === 'ArrowDown' && suggestions.length > 0) {
+                          e.preventDefault();
+                          setListOpen(true);
+                          return;
+                        }
                         if (nav.onKeyDown(e)) return;
                         if (e.key === 'Escape' && showList) {
                           // гасим событие, иначе document-обработчик закроет модалку
                           e.preventDefault();
-                          setFocused(false);
+                          setListOpen(false);
                           navReset();
                           return;
                         }
@@ -345,24 +364,11 @@ export function AddressModal({
                       aria-activedescendant={
                         nav.activeIndex >= 0 ? `${listId}-opt-${nav.activeIndex}` : undefined
                       }
-                      className="w-full bg-transparent text-base font-semibold leading-5 text-text-default outline-none placeholder:text-text-disabled"
+                      // кольцо :focus-visible здесь лишнее: фокус показывает
+                      // сама обводка поля (#EEEEEE), а в макете второй рамки
+                      // нет; глобальное правило объявлено вне слоёв
+                      className="w-full bg-transparent text-base font-semibold leading-5 text-text-default outline-none placeholder:text-text-disabled focus-visible:outline-none!"
                     />
-                    {address && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAddress('');
-                          setDirty(true);
-                          navReset();
-                          geoReset();
-                          inputRef.current?.focus();
-                        }}
-                        aria-label={t('clear')}
-                        className="cursor-pointer text-text-disabled transition-colors hover:text-text-default"
-                      >
-                        <Icon name="cancel" size={20} />
-                      </button>
-                    )}
                   </div>
 
                   {showList && (
@@ -380,84 +386,74 @@ export function AddressModal({
                       className="absolute left-0 right-0 top-full z-30 mt-1 max-h-[min(580px,45vh)] overflow-y-auto rounded-[20px] border border-stroke-modal bg-surface-modal-bg p-2 shadow-[0_0_6px_rgb(0_0_0/0.12)]"
                     />
                   )}
-
-                  <p aria-live="polite" className="min-h-5 pl-1 text-sm text-text-negative">
-                    {status}
-                  </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={submit}
-                  disabled={save.isPending}
-                  className={clsx(
-                    'order-4 mt-auto inline-flex h-[54px] w-full shrink-0 cursor-pointer items-center justify-center rounded-[20px] bg-btn-brand px-6 text-sm font-medium text-text-always-white transition-[filter] hover:brightness-110 disabled:opacity-60 md:order-none md:mt-0 md:w-[121px]',
-                    expanded && 'hidden md:inline-flex',
-                  )}
+                {/* Живая область вынесена из потока: в макете строка
+                      «поле + Сохранить» ровно 54px, лишние 20px ломали
+                      высоту карточки и её вертикальные отступы */}
+                <p
+                  aria-live="polite"
+                  className="absolute left-0 top-full mt-1 pl-1 text-sm text-text-negative"
                 >
-                  {t('save')}
-                </button>
+                  {status}
+                </p>
               </div>
 
-              {/* Настоящая карта отделений вместо статичной картинки: обещание
-                  «покажем ближайшие обменники» должно быть правдой. */}
-              <div
+              <button
+                type="button"
+                onClick={submit}
+                disabled={save.isPending}
                 className={clsx(
-                  'overflow-hidden bg-surface-page-surf2',
-                  // высоты по адаптивам макета: 768 и 1024 → 498, 1920 → 548
-                  expanded
-                    ? 'absolute inset-0 z-20 md:relative md:inset-auto md:z-auto md:h-[498px] md:rounded-[20px] xl:h-[548px]'
-                    : 'relative order-3 min-h-[220px] flex-1 rounded-[20px] md:h-[498px] md:min-h-0 md:flex-none xl:h-[548px]',
+                  'order-4 mt-auto inline-flex h-[54px] w-full shrink-0 cursor-pointer items-center justify-center rounded-[20px] bg-btn-brand px-6 text-sm font-medium text-text-always-white transition-[filter] hover:brightness-110 disabled:opacity-60 md:order-none md:mt-0 md:w-[121px]',
+                  expanded && 'hidden xl:inline-flex',
                 )}
               >
-                <BranchMap
-                  markers={markers}
-                  center={center}
-                  // после «Рядом со мной» показываем и саму позицию пользователя
-                  userPos={geo.position}
-                  onMarkerClick={(id) => {
-                    // клик по пину — тоже выбор адреса, не только ввод руками
-                    const point = points.find((p) => p.depId === id);
-                    if (!point) return;
-                    setAddress(point.address);
-                    setDirty(true);
-                    setFocused(false);
-                    geoReset();
-                  }}
-                  label={t('mapAlt')}
-                  // пока отделения грузятся, «не найдены» было бы неправдой
-                  emptyText={pointsLoading ? t('mapLoading') : t('mapEmpty')}
-                  className="h-full w-full"
-                />
-
-                <button
-                  type="button"
-                  onClick={geo.locate}
-                  disabled={geo.status === 'pending' || points.length === 0}
-                  aria-label={t('locate')}
-                  className="absolute right-3 top-3 z-10 inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-[20px] bg-surface-inverted px-3 text-sm font-medium text-text-inverted shadow-[0_2px_8px_rgb(0_0_0/0.25)] transition-opacity hover:opacity-90 disabled:opacity-60"
-                >
-                  <Icon
-                    name={geo.status === 'pending' ? 'progress_activity' : 'my_location'}
-                    size={18}
-                    className={clsx(geo.status === 'pending' && 'animate-spin')}
-                  />
-                  <span className="hidden md:inline">{t('locate')}</span>
-                </button>
-
-                {/* пилюля из адаптива ≤480: карта на весь лист и обратно */}
-                <button
-                  type="button"
-                  onClick={() => setExpanded((v) => !v)}
-                  // bottom-8, а не 16 по макету: ниже проходит полоса атрибуции
-                  // OpenStreetMap, которой в макете нет
-                  className="absolute bottom-8 left-1/2 z-10 inline-flex h-[38px] -translate-x-1/2 cursor-pointer items-center gap-2 whitespace-nowrap rounded-[20px] bg-surface-inverted pl-4 pr-6 text-sm font-medium text-text-inverted shadow-[0_2px_8px_rgb(0_0_0/0.25)] transition-opacity hover:opacity-90 md:hidden"
-                >
-                  <Icon name={expanded ? 'close_fullscreen' : 'open_in_full'} size={20} />
-                  {expanded ? t('mapCollapse') : t('mapExpand')}
-                </button>
-              </div>
+                {t('save')}
+              </button>
             </div>
+
+            {/* Настоящая карта отделений вместо статичной картинки: обещание
+                  «покажем ближайшие обменники» должно быть правдой. */}
+            <div
+              className={clsx(
+                'overflow-hidden bg-surface-page-surf2',
+                // высоты по адаптивам макета: 768 и 1024 → 498, 1920 → 548
+                expanded
+                  ? 'absolute inset-0 z-20 xl:relative xl:inset-auto xl:z-auto xl:h-[548px] xl:rounded-[20px]'
+                  : 'relative order-3 min-h-[220px] flex-1 rounded-[20px] md:h-[498px] md:min-h-0 md:flex-none xl:h-[548px]',
+              )}
+            >
+              <BranchMap
+                markers={markers}
+                center={center}
+                onMarkerClick={(id) => {
+                  // клик по пину — тоже выбор адреса, не только ввод руками
+                  const point = points.find((p) => p.depId === id);
+                  if (!point) return;
+                  setAddress(point.address);
+                  setDirty(true);
+                  setListOpen(false);
+                }}
+                label={t('mapAlt')}
+                // пока отделения грузятся, «не найдены» было бы неправдой
+                emptyText={pointsLoading ? t('mapLoading') : t('mapEmpty')}
+                className="h-full w-full"
+              />
+
+              {/* «a-button-main» 1404:105566 / 1395:106036: 242×38, r20,
+                    padding 8/24/8/16, fill #F5F3F2, 16 от нижнего края карты.
+                    На 1920 карта нарисована без пилюли, поэтому xl:hidden.
+                    Пилюля всегда светлая, поэтому подпись всегда тёмная. */}
+              <button
+                type="button"
+                onClick={() => setExpanded((v) => !v)}
+                className="absolute bottom-4 left-1/2 z-10 inline-flex h-[38px] w-[242px] -translate-x-1/2 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-[20px] bg-btn-always-white pl-4 pr-6 text-sm font-medium text-[#1A1A1A] shadow-[0_2px_8px_rgb(0_0_0/0.25)] transition-opacity hover:opacity-90 xl:hidden"
+              >
+                <Icon name={expanded ? 'close_fullscreen' : 'open_in_full'} size={20} />
+                {expanded ? t('mapCollapse') : t('mapExpand')}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </>

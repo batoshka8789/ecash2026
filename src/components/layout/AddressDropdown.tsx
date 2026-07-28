@@ -71,10 +71,7 @@ export function useGuestAddress(): string {
  * (`/api/departments`), внешних геокодеров нет. Пустой запрос отдаёт
  * первые `limit` адресов — есть что показать сразу после открытия.
  */
-export function useAddressSuggestions(
-  query: string,
-  opts?: { limit?: number; enabled?: boolean },
-) {
+export function useAddressSuggestions(query: string, opts?: { limit?: number; enabled?: boolean }) {
   const { limit = 6, enabled = true } = opts ?? {};
 
   const { data } = useQuery({
@@ -200,7 +197,9 @@ export function SuggestionList({
           }}
           className={clsx(
             'flex cursor-pointer items-center justify-between gap-4 rounded-xl px-4 py-2 transition-colors',
-            i === activeIndex ? 'bg-comp-surface2-active' : 'hover:bg-comp-surface2-hover',
+            // подсвеченная строка панели в макете одна и залита #404040
+            // (comp/surface2-active) — тем же цветом красим и hover
+            i === activeIndex ? 'bg-comp-surface2-active' : 'hover:bg-comp-surface2-active',
           )}
         >
           <span className="flex min-w-0 flex-col gap-0.5">
@@ -209,14 +208,13 @@ export function SuggestionList({
               {t('country')}
             </span>
           </span>
-          {selected !== undefined && s === selected && (
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-btn-2 text-text-default">
-              <Icon name="check" size={14} />
-            </span>
-          )}
+          {/* «check mark» 116:2511/116:2512 — кружок 20×20 r16 #4C4C4C стоит
+              у КАЖДОЙ строки: у невыбранной он пустой, у выбранной с галочкой 12 */}
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-btn-2 text-text-default">
+            {selected !== undefined && s === selected && <Icon name="check" size={12} />}
+          </span>
         </li>
       ))}
     </ul>
   );
 }
-

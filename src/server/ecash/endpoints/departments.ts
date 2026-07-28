@@ -22,10 +22,12 @@ export async function serviceGet<T>(path: string): Promise<T> {
 
 export async function depList(): Promise<Department[]> {
   const raw = await serviceGet<unknown[]>('/Department/depListApp');
-  return (raw ?? [])
-    .map((d) => mapDepartment(d as Parameters<typeof mapDepartment>[0]))
-    // dev-среда содержит тестовые записи без адреса — наружу их не отдаём
-    .filter((d) => d.depId > 0 && d.address.trim().length > 0);
+  return (
+    (raw ?? [])
+      .map((d) => mapDepartment(d as Parameters<typeof mapDepartment>[0]))
+      // dev-среда содержит тестовые записи без адреса — наружу их не отдаём
+      .filter((d) => d.depId > 0 && d.address.trim().length > 0)
+  );
 }
 
 export async function depInfo(depId: number): Promise<DepartmentInfo> {

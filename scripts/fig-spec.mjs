@@ -9,6 +9,13 @@
  *   node scripts/fig-spec.mjs pages
  *
  * Дереву нужен большой heap: NODE_OPTIONS=--max-old-space-size=8192.
+ *
+ * ВНИМАНИЕ. Для сверки вёрстки по брейкпоинтам бери scripts/fig-resolve.mjs,
+ * а не этот файл. Здесь разрешены только РАЗМЕРЫ детей инстансов (из
+ * derivedSymbolData, см. ниже), а координаты, отступы и тексты по-прежнему
+ * печатаются мастерские: у INSTANCE нет своих детей, содержимое лежит в
+ * мастер-компоненте. fig-resolve.mjs разрешает переопределения целиком —
+ * и symbolOverrides, и derivedSymbolData, с абсолютными координатами.
  */
 import fs from 'node:fs';
 
@@ -45,6 +52,32 @@ export const nodeById = (id) => byId.get(id);
  * содержимое лежит в SYMBOL, на который указывает symbolData.symbolID.
  * Без этого обход упирается в тупик на каждой плате дизайн-системы.
  */
+/**
+ * Реальные размеры детей инстанса.
+ *
+ * У INSTANCE своих детей нет: обход проваливается в мастер-символ и показывает
+ * ЕГО геометрию. Настоящие размеры конкретного инстанса Figma держит отдельно,
+ * в derivedSymbolData: список {guidPath, size}. Без этого больше половины
+ * размеров в выгрузке — дефолты мастера (кнопки шапки на 480/360 реально
+ * 38×38, мастер отдаёт 50×50).
+ *
+ * Устройство guidPath: путь накапливает ТОЛЬКО границы вложенных инстансов,
+ * обычные фреймы в него не входят. То есть ключ узла — это цепочка guid-ов
+ * инстансов-предков внутри мастера плюс собственный guid узла.
+ */
+const derivedSize = new Map();
+for (const n of nodes) {
+  const inst = gid(n.guid);
+  for (const e of n.derivedSymbolData ?? []) {
+    const path = e?.guidPath?.guids;
+    if (!e?.size || !path?.length) continue;
+    derivedSize.set(`${inst}|${path.map(gid).join('/')}`, e.size);
+  }
+}
+
+/** Узел — инстанс, содержимое которого берётся из мастера. */
+const isInstance = (id) => Boolean(byId.get(id)?.symbolData?.symbolID) && !kids.get(id)?.length;
+
 export function effectiveChildren(id) {
   const own = kids.get(id);
   if (own?.length) return own;
@@ -92,7 +125,15 @@ export function describe(n, opts = {}) {
   o.id = gid(n.guid);
   o.name = n.name;
   o.type = n.type;
-  if (n.size) o.size = `${+n.size.x.toFixed(2)}×${+n.size.y.toFixed(2)}`;
+  // размер конкретного инстанса приоритетнее мастерского, см. derivedSize
+  const size = opts.size ?? n.size;
+  if (size) o.size = `${+size.x.toFixed(2)}×${+size.y.toFixed(2)}`;
+  if (
+    opts.size &&
+    n.size &&
+    (Math.abs(n.size.x - opts.size.x) > 0.5 || Math.abs(n.size.y - opts.size.y) > 0.5)
+  )
+    o.masterSize = `${+n.size.x.toFixed(2)}×${+n.size.y.toFixed(2)}`;
   if (n.transform) o.at = `${+n.transform.m02.toFixed(2)},${+n.transform.m12.toFixed(2)}`;
   if (n.visible === false) o.visible = false;
   if (n.opacity !== undefined && n.opacity < 0.999) o.opacity = +n.opacity.toFixed(3);
@@ -180,14 +221,24 @@ const fmt = (o) =>
     .map(([k, v]) => `${k}=${v}`)
     .join('  ');
 
-export function tree(id, depth, indent = '', textOnly = false, out = []) {
+export function tree(id, depth, indent = '', textOnly = false, out = [], ctx = null) {
   const n = byId.get(id);
   if (!n) return out;
-  const d = describe(n);
+  // внутри инстанса размер ищем по «цепочка инстансов-предков + свой guid»
+  const size = ctx ? derivedSize.get(`${ctx.inst}|${[...ctx.chain, id].join('/')}`) : undefined;
+  const d = describe(n, size ? { size } : {});
   if (!textOnly || n.type === 'TEXT')
     out.push(`${indent}${n.type} «${n.name}» [${d.id}]  ${fmt(d)}`);
-  if (depth > 0)
-    for (const k of effectiveChildren(id)) tree(gid(k.guid), depth - 1, indent + '  ', textOnly, out);
+  if (depth > 0) {
+    // корень контекста — сам инстанс; глубже цепочка растёт только на инстансах
+    const next = ctx
+      ? { inst: ctx.inst, chain: isInstance(id) ? [...ctx.chain, id] : ctx.chain }
+      : isInstance(id)
+        ? { inst: id, chain: [] }
+        : null;
+    for (const k of effectiveChildren(id))
+      tree(gid(k.guid), depth - 1, indent + '  ', textOnly, out, next);
+  }
   return out;
 }
 

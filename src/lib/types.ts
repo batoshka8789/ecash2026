@@ -8,8 +8,7 @@ export type Locale = 'ru' | 'en' | 'kk';
 // ------------------------------------------------------------------ курсы
 
 export type CurrencyCode =
-  | 'USD' | 'EUR' | 'RUB' | 'CNY' | 'GOLD'
-  | 'GBP' | 'AED' | 'TRY' | 'UZS' | 'KGS' | 'KZT';
+  'USD' | 'EUR' | 'RUB' | 'CNY' | 'GOLD' | 'GBP' | 'AED' | 'TRY' | 'UZS' | 'KGS' | 'KZT';
 
 export type Currency = {
   code: CurrencyCode;

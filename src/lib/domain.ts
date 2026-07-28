@@ -11,8 +11,22 @@
  * Известные коды сохраняют автодополнение, остальные не ломают типизацию.
  */
 export type CurrencyCode =
-  | 'USD' | 'EUR' | 'RUB' | 'CNY' | 'GBP' | 'AED' | 'TRY' | 'UZS' | 'KGS' | 'KZT'
-  | 'GOLD1' | 'GOLD5' | 'GOLD10' | 'GOLD20' | 'GOLD50' | 'GOLD100'
+  | 'USD'
+  | 'EUR'
+  | 'RUB'
+  | 'CNY'
+  | 'GBP'
+  | 'AED'
+  | 'TRY'
+  | 'UZS'
+  | 'KGS'
+  | 'KZT'
+  | 'GOLD1'
+  | 'GOLD5'
+  | 'GOLD10'
+  | 'GOLD20'
+  | 'GOLD50'
+  | 'GOLD100'
   | (string & {});
 
 export type RateStat = {

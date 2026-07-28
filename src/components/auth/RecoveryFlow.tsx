@@ -8,8 +8,8 @@ import { Logo } from '@/components/ui/Logo';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { useResendTimer } from '@/lib/hooks';
 import { useErrorText } from '@/lib/useErrorText';
+import { useResendTimer } from '@/lib/hooks';
 import { api, ApiError } from '@/lib/api';
 
 type Step = 'phone' | 'code' | 'password' | 'done';
@@ -27,11 +27,14 @@ function isOtpError(e: unknown): e is ApiError {
 
 /**
  * Восстановление пароля по SMS (purpose 2): номер → код → новый пароль.
- * Вёрстка трёхшаговой карточки — из фрейма Recovery passwod макета;
- * upstream отзывает все сессии аккаунта после сброса.
+ * Вёрстка карточки — модалки макета «Подтверждение кода» (890:34113,
+ * 480×416) и «Установите пароль» (890:35314, 480×406) из секции
+ * Recovery passwod; upstream отзывает все сессии аккаунта после сброса.
  */
 export function RecoveryFlow() {
   const t = useTranslations('recovery');
+  // подписи повторной отправки общие с модалкой входа
+  const tAuth = useTranslations('auth');
   const router = useRouter();
   const errorText = useErrorText();
 
@@ -41,16 +44,18 @@ export function RecoveryFlow() {
   const [password, setPassword] = useState('');
   const [password2, setPassword2] = useState('');
   const [devCode, setDevCode] = useState<string | null>(null);
-  const [resendLeft, setResendLeft] = useResendTimer();
   /** код ошибки OTP, показываемый на шаге «код» после отката с шага пароля */
   const [otpStepError, setOtpStepError] = useState<string | null>(null);
+  /** Обратный отсчёт до повторной отправки кода. */
+  const [resendLeft, setResendLeft] = useResendTimer();
 
   const send = useMutation({
     mutationFn: () => api.auth.otp.send(phone.trim(), 2),
     onSuccess: (res) => {
-      setResendLeft(res.resendAfterSeconds);
       setDevCode(res.devCode ?? null);
       setStep('code');
+      // сервер сам говорит, через сколько разрешит следующую отправку
+      setResendLeft(res.resendAfterSeconds);
     },
   });
 
@@ -90,38 +95,64 @@ export function RecoveryFlow() {
   };
 
   const busy = send.isPending || reset.isPending;
+  /** описание под заголовком есть у всех шагов, кроме установки пароля */
+  const description =
+    step === 'phone'
+      ? t('phoneStep')
+      : step === 'code'
+        ? t('steps.code')
+        : step === 'done'
+          ? t('done')
+          : null;
 
   return (
-    <div className="relative w-full max-w-[480px]">
+    <div className="relative w-full max-w-[360px] md:max-w-[480px]">
+      {/* Кнопка возврата 44×44 — как в модалке входа: с 768 в правом верхнем
+          углу экрана (отступы 40 по макету), ниже — внутри модалки по её
+          боковому полю 20, иначе с экрана нечем уйти. */}
       <button
         type="button"
         onClick={() => router.push('/login')}
         aria-label={t('back')}
-        className="absolute right-0 top-0 z-10 inline-flex h-11 w-11 -translate-y-12 cursor-pointer items-center justify-center rounded-full bg-surface-page-surf2 text-text-default transition-colors hover:bg-comp-surface2-hover md:fixed md:right-10 md:top-10 md:translate-y-0"
+        className="absolute right-5 top-5 z-10 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-surface-page-surf2 text-text-default transition-colors hover:bg-comp-surface2-hover md:fixed md:right-10 md:top-10 md:bg-surface-page-surf1 md:hover:bg-comp-surface1-hover"
       >
         <Icon name="close" size={20} />
       </button>
 
+      {/* Модалка: колонка с зазором 36, padding 40 (20 по бокам до 768),
+          r20; на 360 растянута во весь экран без скруглений */}
       <form
         onSubmit={onSubmit}
-        className="rounded-[20px] bg-surface-page-surf1 px-5 py-10 md:px-10"
+        className="relative flex w-full flex-col gap-9 rounded-[20px] bg-surface-page-surf1 px-5 py-10 max-[361px]:min-h-screen max-[361px]:justify-center max-[361px]:rounded-none md:px-10"
         noValidate
       >
         <div className="flex justify-center">
           <Logo />
         </div>
 
-        <h1 className="mt-9 text-center text-xl font-medium leading-[1.4] text-text-default">
-          {t('title')}
-        </h1>
-
-        {step === 'phone' && (
-          <>
-            <p className="mt-3 text-center text-lg leading-[1.2] text-text-disabled">
-              {t('phoneStep')}
+        {/* txt: заголовок и описание с зазором 12 (890:34101) */}
+        <div className="flex flex-col gap-3">
+          <h1 className="text-center font-rubik text-xl font-medium leading-[1.4] text-text-default">
+            {t('title')}
+          </h1>
+          {description && (
+            <p
+              role={step === 'done' ? 'status' : undefined}
+              className={
+                step === 'done'
+                  ? 'text-center font-rubik text-lg leading-[1.2] text-text-positive'
+                  : 'text-center font-rubik text-lg leading-[1.2] text-text-disabled'
+              }
+            >
+              {description}
             </p>
+          )}
+        </div>
+
+        {/* Frame 1437255194: поля и кнопка с зазором 16 */}
+        <div className="flex flex-col gap-4">
+          {step === 'phone' && (
             <Input
-              className="mt-9"
               placeholder={t('phonePlaceholder')}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
@@ -129,16 +160,10 @@ export function RecoveryFlow() {
               autoComplete="tel"
               inputMode="tel"
             />
-          </>
-        )}
+          )}
 
-        {step === 'code' && (
-          <>
-            <p className="mt-3 text-center text-lg leading-[1.2] text-text-disabled">
-              {t('steps.code')}
-            </p>
+          {step === 'code' && (
             <Input
-              className="mt-9"
               placeholder={t('codePlaceholder')}
               value={otp}
               onChange={(e) => {
@@ -150,37 +175,29 @@ export function RecoveryFlow() {
               autoComplete="one-time-code"
               maxLength={6}
             />
-            {devCode && (
-              <p className="mt-2 text-center text-xs font-medium leading-[1.3] text-text-brand">
-                {t('devCode', { code: devCode })}
-              </p>
-            )}
-            <div className="mt-4 text-center text-sm font-medium leading-5" aria-live="polite">
-              {resendLeft > 0 ? (
-                <span className="text-text-disabled">{t('resendIn', { sec: resendLeft })}</span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOtpStepError(null);
-                    send.mutate();
-                  }}
-                  disabled={send.isPending}
-                  className="cursor-pointer text-text-brand transition-opacity hover:opacity-80 disabled:opacity-50"
-                >
-                  {t('resend')}
-                </button>
-              )}
-            </div>
-          </>
-        )}
+          )}
 
-        {step === 'password' && (
-          <>
-            <p className="mt-3 text-center text-lg leading-[1.2] text-text-disabled">
-              {t('steps.password')}
-            </p>
-            <div className="mt-9 flex flex-col gap-2">
+          {/* Как и в модалке входа: без повторной отправки шаг кода —
+              тупик, если SMS не дошло. В макете этого контрола нет. */}
+          {step === 'code' &&
+            (resendLeft > 0 ? (
+              <p className="text-center text-sm font-medium leading-5 text-text-disabled">
+                {tAuth('resendIn', { sec: resendLeft })}
+              </p>
+            ) : (
+              <button
+                type="button"
+                onClick={() => send.mutate()}
+                disabled={send.isPending}
+                className="cursor-pointer text-center text-sm font-medium leading-5 text-text-brand transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {tAuth('resend')}
+              </button>
+            ))}
+
+          {step === 'password' && (
+            /* Frame 1437255276 400×116: два поля с зазором 8 */
+            <div className="flex flex-col gap-2">
               <Input
                 placeholder={t('newPassword')}
                 value={password}
@@ -198,43 +215,32 @@ export function RecoveryFlow() {
                 autoComplete="new-password"
               />
             </div>
-          </>
-        )}
+          )}
 
-        {step === 'done' && (
-          <p role="status" className="mt-3 text-center text-lg leading-[1.2] text-text-positive">
-            {t('done')}
-          </p>
-        )}
+          {generalError && (
+            <p
+              role="alert"
+              className="text-center text-xs font-medium leading-[1.3] text-text-negative"
+            >
+              {generalError}
+            </p>
+          )}
 
-        {generalError && (
-          <p
-            role="alert"
-            className="mt-4 text-center text-xs font-medium leading-[1.3] text-text-negative"
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={busy || (step === 'code' && otp.length !== 6)}
           >
-            {generalError}
+            {step === 'done' ? t('toLogin') : t('continue')}
+          </Button>
+        </div>
+
+        {/* Демо-стенд отдаёт код в ответе; подсказка лежит в нижнем поле
+            карточки и не влияет на её высоту */}
+        {devCode && step === 'code' && (
+          <p className="absolute inset-x-5 bottom-3 text-center text-xs font-medium leading-[1.3] text-text-brand md:inset-x-10">
+            {t('devCode', { code: devCode })}
           </p>
-        )}
-
-        <Button
-          type="submit"
-          className="mt-4 w-full"
-          disabled={busy || (step === 'code' && otp.length !== 6)}
-        >
-          {step === 'done' ? t('toLogin') : t('continue')}
-        </Button>
-
-        {(step === 'code' || step === 'password') && (
-          <button
-            type="button"
-            onClick={() => {
-              if (step === 'code') setOtpStepError(null);
-              setStep(step === 'code' ? 'phone' : 'code');
-            }}
-            className="mt-4 w-full cursor-pointer text-center text-sm font-medium leading-5 text-text-disabled transition-colors hover:text-text-default"
-          >
-            {t('back')}
-          </button>
         )}
       </form>
     </div>

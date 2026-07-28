@@ -1,8 +1,9 @@
 'use client';
 
-import { motion, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion';
+import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
 import type { MotionValue } from 'framer-motion';
 import type { RefObject } from 'react';
+import { useReducedMotionSafe } from './effects';
 
 /**
  * Цветные свечения лендинга — эллипсы «bg blur» из макета.
@@ -17,7 +18,13 @@ import type { RefObject } from 'react';
  *
  * Поэтому пятна позиционируются по центру у кромок страницы и занимают
  * 145–245 vw на десктопе (на мобильных — до 440 vw, как во фреймах 360/480).
- * Слои идут в режиме screen: на тёмном фоне цвета складываются со светом.
+ *
+ * Режим наложения — обычный, как в макете: ни одному эллипсу лендинга Figma
+ * не задаёт blend (проверено по всем узлам фрейма 2153:195405). Раньше слои
+ * шли в mix-blend-mode: screen, и это давало заметный дефект — ряды карточек
+ * с overflow-x:auto становятся композитными слоями и разрывают наложение по
+ * своим прямоугольным границам, из-за чего вокруг карточек проступал
+ * прямоугольник с резкими углами.
  */
 const GLOWS = [
   {
@@ -59,7 +66,7 @@ const GLOWS = [
 ];
 
 export function Glows({ container }: { container: RefObject<HTMLDivElement | null> }) {
-  const reduced = useReducedMotion();
+  const reduced = useReducedMotionSafe();
   const { scrollYProgress } = useScroll({ target: container, offset: ['start start', 'end end'] });
   const progress = useSpring(scrollYProgress, { stiffness: 60, damping: 25, restDelta: 0.001 });
 
@@ -104,9 +111,10 @@ function Glow({
         style={{
           background: `radial-gradient(closest-side, ${glow.color} 0%, ${glow.color}d9 26%, ${glow.color}80 48%, ${glow.color}33 66%, transparent 80%)`,
           opacity: 0.42 * s,
-          mixBlendMode: 'screen',
         }}
-        animate={reduced ? undefined : { scale: [1, 1.08, 1], opacity: [0.42 * s, 0.56 * s, 0.42 * s] }}
+        animate={
+          reduced ? undefined : { scale: [1, 1.08, 1], opacity: [0.42 * s, 0.56 * s, 0.42 * s] }
+        }
         transition={{ duration: 15 + index * 2.5, repeat: Infinity, ease: 'easeInOut' }}
       />
       {/* плотное ядро */}
@@ -115,9 +123,10 @@ function Glow({
         style={{
           background: `radial-gradient(closest-side, ${glow.core} 0%, ${glow.core}aa 42%, transparent 74%)`,
           opacity: 0.5 * s,
-          mixBlendMode: 'screen',
         }}
-        animate={reduced ? undefined : { scale: [1, 1.13, 1], opacity: [0.5 * s, 0.68 * s, 0.5 * s] }}
+        animate={
+          reduced ? undefined : { scale: [1, 1.13, 1], opacity: [0.5 * s, 0.68 * s, 0.5 * s] }
+        }
         transition={{ duration: 11 + index * 2, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
       />
       {/* яркая искра */}
@@ -126,9 +135,10 @@ function Glow({
         style={{
           background: `radial-gradient(closest-side, #ffffff 0%, ${glow.core}bb 38%, transparent 72%)`,
           opacity: 0.2 * s,
-          mixBlendMode: 'screen',
         }}
-        animate={reduced ? undefined : { scale: [1, 1.22, 1], opacity: [0.2 * s, 0.32 * s, 0.2 * s] }}
+        animate={
+          reduced ? undefined : { scale: [1, 1.22, 1], opacity: [0.2 * s, 0.32 * s, 0.2 * s] }
+        }
         transition={{ duration: 8 + index, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
       />
     </motion.span>

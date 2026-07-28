@@ -29,7 +29,8 @@ function getKeys(): Promise<CryptoKey[]> {
   return keysPromise;
 }
 
-const b64url = (buf: ArrayBuffer | Uint8Array) => Buffer.from(buf as Uint8Array).toString('base64url');
+const b64url = (buf: ArrayBuffer | Uint8Array) =>
+  Buffer.from(buf as Uint8Array).toString('base64url');
 const fromB64url = (s: string) => new Uint8Array(Buffer.from(s, 'base64url'));
 
 export async function seal(payload: unknown): Promise<string> {

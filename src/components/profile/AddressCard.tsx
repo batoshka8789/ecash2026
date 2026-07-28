@@ -110,92 +110,107 @@ export function AddressCard() {
           ? t('locateEmpty')
           : '';
 
-  return (
-    <div className="rounded-[20px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:p-10">
-      <h2 className="text-2xl font-medium leading-[1.2] text-text-default sm:text-[32px]">
-        {t('title')}
-      </h2>
-      <p className="mt-1 text-base leading-[1.24] text-text-default">{t('subtitle')}</p>
+  const saveButton = (
+    <Button
+      onClick={() => save.mutate(address)}
+      disabled={save.isPending}
+      className="h-[54px] w-full rounded-[20px] text-sm md:w-[121px]"
+    >
+      {saved ? t('saved') : t('save')}
+    </Button>
+  );
 
-      <div className="mt-9 flex flex-col gap-2 sm:flex-row">
-        <div className="relative flex-1">
-          <div className="flex items-center rounded-[20px] border border-stroke-surface3 transition-colors focus-within:border-stroke-brand">
-            <label htmlFor={inputId} className="sr-only">
-              {t('placeholder')}
-            </label>
-            <input
-              id={inputId}
-              ref={inputRef}
-              value={address}
-              onChange={(e) => {
-                setAddress(e.target.value);
-                nav.reset();
-                geoReset();
-              }}
-              onFocus={() => setFocused(true)}
-              onBlur={() => {
-                setFocused(false);
-                nav.reset();
-              }}
-              onKeyDown={(e) => {
-                if (nav.onKeyDown(e)) return;
-                if (e.key === 'Escape') setFocused(false);
-              }}
-              placeholder={t('placeholder')}
-              maxLength={300}
-              role="combobox"
-              aria-autocomplete="list"
-              aria-expanded={showList}
-              aria-controls={listId}
-              aria-activedescendant={
-                nav.activeIndex >= 0 ? `${listId}-opt-${nav.activeIndex}` : undefined
-              }
-              className="h-[54px] w-full bg-transparent px-4 text-base font-semibold leading-5 text-text-default outline-none placeholder:font-medium placeholder:text-text-disabled"
-            />
-            {address && (
-              <button
-                type="button"
-                onClick={() => {
-                  setAddress('');
+  return (
+    /* «Frame 1437255127» [1810:156873] на ≤480: padding 16, r28, блоки через 24;
+       на ≥768 — «header» [1810:153731]: padding 40, r20, блоки через 36 */
+    <div className="flex flex-col gap-6 rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:gap-9 md:rounded-[20px] md:p-10">
+      <div className="flex flex-col gap-4 md:gap-9">
+        <div>
+          <h2 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+            {t('title')}
+          </h2>
+          <p className="mt-1 text-xs leading-[1.3] text-text-default md:text-base md:leading-[1.24]">
+            {t('subtitle')}
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2 md:flex-row">
+          <div className="relative flex-1">
+            {/* «Input» [1810:153737] 54×r20, обводка #4C4C4C (52 + 2 бордера) */}
+            <div className="flex items-center rounded-[20px] border border-surface-page-surf3 transition-colors focus-within:border-stroke-brand">
+              <label htmlFor={inputId} className="sr-only">
+                {t('placeholder')}
+              </label>
+              <input
+                id={inputId}
+                ref={inputRef}
+                value={address}
+                onChange={(e) => {
+                  setAddress(e.target.value);
                   nav.reset();
-                  inputRef.current?.focus();
+                  geoReset();
                 }}
-                aria-label={t('clear')}
-                className="cursor-pointer px-3 text-text-disabled transition-colors hover:text-text-default"
-              >
-                <Icon name="cancel" size={20} />
-              </button>
+                onFocus={() => setFocused(true)}
+                onBlur={() => {
+                  setFocused(false);
+                  nav.reset();
+                }}
+                onKeyDown={(e) => {
+                  if (nav.onKeyDown(e)) return;
+                  if (e.key === 'Escape') setFocused(false);
+                }}
+                placeholder={t('placeholder')}
+                maxLength={300}
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded={showList}
+                aria-controls={listId}
+                aria-activedescendant={
+                  nav.activeIndex >= 0 ? `${listId}-opt-${nav.activeIndex}` : undefined
+                }
+                className="h-[52px] w-full bg-transparent px-4 text-base font-semibold leading-5 text-text-default outline-none placeholder:font-medium placeholder:text-text-disabled"
+              />
+              {address && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddress('');
+                    nav.reset();
+                    inputRef.current?.focus();
+                  }}
+                  aria-label={t('clear')}
+                  className="cursor-pointer px-3 text-text-disabled transition-colors hover:text-text-default"
+                >
+                  <Icon name="cancel" size={20} />
+                </button>
+              )}
+            </div>
+            {showList && (
+              <SuggestionList
+                id={listId}
+                suggestions={suggestions}
+                activeIndex={nav.activeIndex}
+                selected={address.trim()}
+                onPick={(v) => {
+                  setAddress(v);
+                  nav.reset();
+                }}
+                className="absolute left-0 right-0 top-full z-20 mt-1 max-h-72 overflow-y-auto rounded-[20px] border border-stroke-modal bg-surface-modal-bg p-2 shadow-[0_0_6px_rgb(0_0_0/0.12)]"
+              />
             )}
           </div>
-          {showList && (
-            <SuggestionList
-              id={listId}
-              suggestions={suggestions}
-              activeIndex={nav.activeIndex}
-              selected={address.trim()}
-              onPick={(v) => {
-                setAddress(v);
-                nav.reset();
-              }}
-              className="absolute left-0 right-0 top-full z-20 mt-1 max-h-72 overflow-y-auto rounded-[20px] border border-stroke-modal bg-surface-modal-bg p-2 shadow-[0_0_6px_rgb(0_0_0/0.12)]"
-            />
-          )}
+          {/* ≤480 «Сохранить» уходит под карту [1810:156883] */}
+          <div className="hidden md:block">{saveButton}</div>
         </div>
-        <Button
-          onClick={() => save.mutate(address)}
-          disabled={save.isPending}
-          className="h-[54px] rounded-[20px] text-sm sm:w-[121px]"
-        >
-          {saved ? t('saved') : t('save')}
-        </Button>
       </div>
 
-      <div aria-live="polite">
-        {status && <p className="mt-3 text-sm text-text-negative">{status}</p>}
+      {/* без сообщения область не должна занимать место в колонке (зазор 36/24) */}
+      <div aria-live="polite" className={clsx(!status && 'sr-only')}>
+        {status && <p className="text-sm text-text-negative">{status}</p>}
         <span className="sr-only">{saved ? t('saved') : ''}</span>
       </div>
 
-      <div className="relative mt-9 overflow-hidden rounded-[20px]">
+      <div className="relative overflow-hidden rounded-[20px]">
         <BranchMap
           markers={markers}
           center={center}
@@ -212,24 +227,27 @@ export function AddressCard() {
           label={t('title')}
           // пока отделения грузятся, «не найдены» было бы неправдой
           emptyText={pointsLoading ? t('mapLoading') : t('mapEmpty')}
-          className="h-64 sm:h-96 xl:h-[477px]"
+          className="h-[480px] md:h-[477px]"
         />
 
+        {/* «a-button-main» [1810:156882] 242×38 по центру у нижнего края карты;
+            на ≥768 в макете кнопка скрыта (visible=false) */}
         <button
           type="button"
           onClick={geo.locate}
           disabled={geo.status === 'pending' || points.length === 0}
-          aria-label={t('locate')}
-          className="absolute right-3 top-3 z-10 inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-[20px] bg-surface-inverted px-3 text-sm font-medium text-text-inverted shadow-[0_2px_8px_rgb(0_0_0/0.25)] transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="absolute bottom-4 left-1/2 z-10 inline-flex h-[38px] w-[242px] -translate-x-1/2 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-[20px] bg-btn-always-white pl-4 pr-6 text-sm font-medium leading-5 text-[#1A1A1A] shadow-[0_2px_8px_rgb(0_0_0/0.25)] transition-opacity hover:opacity-90 disabled:opacity-60 md:hidden"
         >
           <Icon
             name={geo.status === 'pending' ? 'progress_activity' : 'my_location'}
-            size={18}
+            size={20}
             className={clsx(geo.status === 'pending' && 'animate-spin')}
           />
-          <span className="hidden sm:inline">{t('locate')}</span>
+          {t('locate')}
         </button>
       </div>
+
+      <div className="md:hidden">{saveButton}</div>
     </div>
   );
 }

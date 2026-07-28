@@ -37,13 +37,13 @@ export function Input({ errors, password, label, className, id, ...rest }: Input
         className={clsx(
           // 54×r20 c бордером 1px — «Input» из дизайн-системы (883:33235)
           'flex items-center rounded-[20px] border bg-transparent transition-colors',
-          // hover: подложка surface/surf2 + светлее обводка (885:33285)
+          // hover: подложка surface/surf2 + обводка #616161 (885:33285)
           'hover:bg-surface-page-surf2',
           // focus перебивает и hover, и ошибку — в макете обводка surface/inverted
           'focus-within:border-surface-inverted focus-within:hover:border-surface-inverted',
           invalid
             ? 'border-negative hover:border-negative'
-            : 'border-surface-page-surf3 hover:border-stroke-surface3',
+            : 'border-surface-page-surf3 hover:border-stroke-input-hover',
         )}
       >
         <input
@@ -53,8 +53,9 @@ export function Input({ errors, password, label, className, id, ...rest }: Input
           aria-invalid={invalid || undefined}
           aria-describedby={invalid ? errId : undefined}
           type={password && !show ? 'password' : (rest.type ?? 'text')}
-          // 52 + 2px бордера = 54; «Input txt/placeholder M» — Roboto Medium 16/20
-          className="h-[52px] w-full bg-transparent px-4 text-base font-medium leading-5 text-text-default outline-none placeholder:font-medium placeholder:text-text-disabled"
+          // 52 + 2px бордера = 54. Значение — Roboto SemiBold 16/20
+          // (885:34028), плейсхолдер — Inter Semi Bold 16/21 (883:33233)
+          className="h-[52px] w-full bg-transparent px-4 text-base font-semibold leading-5 text-text-default outline-none placeholder:font-inter placeholder:font-semibold placeholder:leading-[21px] placeholder:text-text-disabled"
         />
         {password && (
           <button

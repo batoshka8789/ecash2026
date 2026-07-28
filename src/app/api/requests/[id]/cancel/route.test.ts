@@ -31,9 +31,12 @@ vi.mock('@/server/ecash/endpoints/reserve', () => ({
 import { POST } from './route';
 
 const post = (id: string, payload?: string) =>
-  POST(new Request(`http://localhost/api/requests/${id}/cancel`, { method: 'POST', body: payload }), {
-    params: Promise.resolve({ id }),
-  });
+  POST(
+    new Request(`http://localhost/api/requests/${id}/cancel`, { method: 'POST', body: payload }),
+    {
+      params: Promise.resolve({ id }),
+    },
+  );
 
 describe('POST /api/requests/[id]/cancel', () => {
   it('без тела — успех, а не errors.badBody', async () => {

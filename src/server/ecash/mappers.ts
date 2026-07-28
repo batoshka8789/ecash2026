@@ -269,7 +269,8 @@ export function mapRequest(raw: RawRequest): ExchangeRequest {
     value: num(raw.value),
     rate: num(raw.rate),
     amount: num(raw.amount),
-    actionType: raw.actionType === 'sell' || raw.actionType === 'buy' ? raw.actionType : sideOf(currencyFrom),
+    actionType:
+      raw.actionType === 'sell' || raw.actionType === 'buy' ? raw.actionType : sideOf(currencyFrom),
     depId: int(raw.depId),
     kassaId: int(raw.kassaId),
     isReserve: raw.isReserve === true,

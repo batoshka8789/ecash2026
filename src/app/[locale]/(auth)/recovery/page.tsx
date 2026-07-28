@@ -3,9 +3,10 @@ import { pageMetadata } from '@/lib/metadata';
 
 export default function RecoveryPage() {
   return (
+    /* На 360 модалка макета занимает экран целиком, поэтому полей у страницы нет */
     <main
       id="main"
-      className="flex min-h-screen items-center justify-center bg-surface-page-bg px-4 py-10"
+      className="flex min-h-screen items-center justify-center bg-surface-page-bg px-4 py-10 max-[361px]:p-0"
     >
       <RecoveryFlow />
     </main>

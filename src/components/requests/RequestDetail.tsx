@@ -266,11 +266,7 @@ function BranchBlock({ depId }: { depId: number }) {
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-start gap-2 text-sm text-text-default sm:text-base">
-            <Icon
-              name="account_balance"
-              size={18}
-              className="mt-0.5 shrink-0 text-text-disabled"
-            />
+            <Icon name="account_balance" size={18} className="mt-0.5 shrink-0 text-text-disabled" />
             <span className="min-w-0">{dep.address}</span>
           </div>
           {dep.timetable && (
@@ -396,7 +392,10 @@ function StatusHead({ request: r }: { request: ExchangeRequest }) {
       </h1>
 
       {r.phase === 'pending' && !r.needsClientConfirmation && (
-        <p className="mt-2 max-w-md text-base font-medium leading-5 text-text-disabled" aria-live="polite">
+        <p
+          className="mt-2 max-w-md text-base font-medium leading-5 text-text-disabled"
+          aria-live="polite"
+        >
           {t('awaiting')}
         </p>
       )}

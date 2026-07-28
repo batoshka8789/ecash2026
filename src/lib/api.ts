@@ -75,7 +75,10 @@ function httpFallback(status: number): string {
 }
 
 const post = <T>(path: string, payload?: unknown) =>
-  request<T>(path, { method: 'POST', body: payload !== undefined ? JSON.stringify(payload) : '{}' });
+  request<T>(path, {
+    method: 'POST',
+    body: payload !== undefined ? JSON.stringify(payload) : '{}',
+  });
 
 /** Единая точка доступа к BFF. Браузер никогда не ходит в api-dev.quiq.kz напрямую. */
 export const api = {

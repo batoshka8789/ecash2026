@@ -24,6 +24,14 @@ const PRIMARY_CODES: readonly CurrencyCode[] = ['USD', 'EUR', 'RUB', 'CNY', 'GOL
 
 type RatesResponse = Awaited<ReturnType<typeof api.rates.forDep>>;
 
+/**
+ * Типографика строк конкурентов: до 1024 в макете Roboto Regular 16/1.24,
+ * с 1024 — SF Pro Semibold 17/22 с трекингом −0.43 (font-system: свободно
+ * распространять SF Pro нельзя, а system-ui на Apple и есть он).
+ */
+const competitorText =
+  'text-base leading-[1.24] lg:font-system lg:text-[17px] lg:font-semibold lg:leading-[22px] lg:tracking-[-0.43px]';
+
 /** Блок «Курсы валют»: живые курсы отделения, избранное и конкуренты из BFF. */
 export function RatesList() {
   const t = useTranslations('home.rates');
@@ -88,17 +96,25 @@ export function RatesList() {
 
   return (
     <section className="container-page bleed-mobile pt-3 sm:pt-6">
-      <div className="rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 p-4 sm:p-8">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xl font-medium leading-[1.2] text-text-default sm:text-[32px]">
+      {/* боковые поля карточки в макете: 4 на 360, 16 на 480, 32 с 768 */}
+      <div className="rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 px-1 py-4 min-[480px]:p-4 md:p-8">
+        {/* на 360 у шапки блока свои 12 по бокам («Frame 1437255344») */}
+        <div className="flex flex-wrap items-center justify-between gap-3 px-3 min-[480px]:px-0">
+          {/* три ступени кегля из макета: 18 (<480), 24 (480…767), 32 (≥768) */}
+          <h2 className="text-[18px] font-medium leading-[1.2] text-text-default min-[480px]:text-[24px] md:text-[32px]">
             {t('title')}
           </h2>
           {/* Единственная точка входа на /locations с главной — в макете
               этого перехода нет ни на одном фрейме, но без него страница
-              со списком/картой отделений недостижима из приложения вообще. */}
+              со списком/картой отделений недостижима из приложения вообще.
+              Высоту ссылке не задаём: строку шапки в макете задаёт заголовок
+              (21.6 / 28.8 / 38.4), поэтому вертикальные поля ссылки на каждой
+              ступени заведомо меньше его высоты и не растягивают строку. */}
           <Link
             href="/locations"
-            className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-text-brand transition-colors hover:bg-comp-surface1-hover sm:h-10 sm:px-4"
+            // на 360 поля гасим отрицательными: тач-зона остаётся 28, а в
+            // строку шапки ссылка отдаёт те же 20, что и без паддинга
+            className="-my-1 inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-3 py-1 text-sm font-medium text-text-brand transition-colors hover:bg-comp-surface1-hover min-[480px]:my-0 sm:px-4 md:py-2"
           >
             <Icon name="location_on" size={18} />
             {t('allBranches')}
@@ -106,7 +122,7 @@ export function RatesList() {
         </div>
 
         {isPending && (
-          <div className="mt-6 flex flex-col gap-1 sm:mt-10" role="status">
+          <div className="mt-6 flex flex-col gap-1 md:mt-10" role="status">
             <span className="sr-only">{tRoot('system.loading')}</span>
             {PRIMARY_CODES.map((code) => (
               <div
@@ -134,7 +150,7 @@ export function RatesList() {
 
         {data && (
           <>
-            <div id={listId} className="mt-6 flex flex-col gap-1 sm:mt-10">
+            <div id={listId} className="mt-6 flex flex-col gap-1 md:mt-10">
               {list.map((stat, i) => (
                 <div key={stat.currencyCode} className="anim-row-in">
                   <RateRow
@@ -216,7 +232,7 @@ function RateRow({
       )}
     >
       {/* 360/480 — три строки, 768 — курсы в шапке и кнопки отдельно, 1024+ — одна строка */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-6 lg:flex-nowrap lg:gap-3">
+      <div className="flex flex-wrap items-center gap-y-6 lg:flex-nowrap">
         {showBookmark && (
           <button
             type="button"
@@ -224,8 +240,8 @@ function RateRow({
             aria-label={`${t('bookmark')} — ${name}`}
             aria-pressed={favorite}
             className={clsx(
-              // в макете между закладкой и флагом 24 — 12 от gap строки плюс этот отступ
-              'mr-3 cursor-pointer transition-colors',
+              // «Frame 1437254881»: между закладкой и флагом 24
+              'mr-6 cursor-pointer transition-colors',
               favorite ? 'text-brand' : 'text-text-disabled hover:text-text-default',
             )}
           >
@@ -235,39 +251,54 @@ function RateRow({
           </button>
         )}
 
-        {flag ? (
-          <CurrencyFlag flag={flag} className="h-10 w-[50px] shrink-0" />
-        ) : (
-          <span
-            aria-hidden
-            className="flex h-10 w-[50px] shrink-0 items-center justify-center rounded-lg bg-surface-modal-surf1 text-[10px] font-bold text-text-disabled"
-          >
-            {code.slice(0, 3)}
-          </span>
-        )}
-
-        <div className="min-w-0 sm:min-w-24">
-          <div className="text-xl font-medium text-text-default">{code}</div>
-          <div className="truncate text-xs font-medium text-text-disabled">{name}</div>
+        {/* «Frame 1437255195»: флаг 50×40 r10 и пара код/название, зазор 12.
+            «!» у радиуса — у самого CurrencyFlag стоит rounded-lg (8). */}
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          {flag ? (
+            <CurrencyFlag flag={flag} className="h-10 w-[50px] shrink-0 rounded-[10px]!" />
+          ) : (
+            <span
+              aria-hidden
+              className="flex h-10 w-[50px] shrink-0 items-center justify-center rounded-[10px] bg-surface-modal-surf1 text-[10px] font-bold text-text-disabled"
+            >
+              {code.slice(0, 3)}
+            </span>
+          )}
+          <div className="min-w-0">
+            {/* код валюты в макете набран Rubik Medium 20/1.4 */}
+            <div className="font-rubik text-xl font-medium leading-[1.4] text-text-default">
+              {code}
+            </div>
+            {/* Intl.DisplayNames отдаёт «доллар США» — в макете с прописной */}
+            <div className="truncate text-xs font-medium leading-[1.3] text-text-disabled first-letter:uppercase">
+              {name}
+            </div>
+          </div>
         </div>
 
-        {/* колонки 114px — в макете они выровнены с колонками строк конкурентов */}
-        <div className="grid w-full shrink-0 grid-cols-[auto_auto] justify-start gap-6 text-center sm:ml-auto sm:w-auto sm:gap-10">
-          <div className="flex flex-col gap-1 sm:w-[114px]">
-            <div className="text-sm text-text-disabled">{t('buy')}</div>
-            <div className="text-lg text-text-default lg:text-xl">
+        {/* «Frame 1437255355»: колонки 154 (20 + 114 + 20), ниже 640 — по содержимому */}
+        <div className="flex w-full shrink-0 text-center sm:ml-auto sm:w-auto">
+          <div className="flex flex-col justify-center gap-1 px-3 sm:w-[154px] sm:px-5">
+            <div className="text-sm leading-[1.1] text-text-disabled lg:font-inter lg:leading-[1.4]">
+              {t('buy')}
+            </div>
+            <div className="text-lg leading-5 text-text-default">
               {formatNumber(stat.buy, locale, 2)}
             </div>
           </div>
-          <div className="flex flex-col gap-1 sm:w-[114px]">
-            <div className="text-sm text-text-disabled">{t('sell')}</div>
-            <div className="text-lg text-text-default lg:text-xl">
+          <div className="flex flex-col justify-center gap-1 px-3 sm:w-[154px] sm:px-5">
+            <div className="text-sm leading-[1.1] text-text-disabled lg:font-inter lg:leading-[1.4]">
+              {t('sell')}
+            </div>
+            <div className="text-lg leading-5 text-text-default">
               {formatNumber(stat.sell, locale, 2)}
             </div>
           </div>
         </div>
 
-        <div className="flex w-full items-center gap-2 lg:w-auto">
+        {/* «Frame 1437254997» 208×46 с отступом 20 слева; ниже 768 в макете
+            оранжевая кнопка идёт первой, а карта — за ней */}
+        <div className="flex w-full flex-row-reverse items-center gap-2 md:flex-row lg:w-auto lg:pl-5">
           {/* «list-map» из макета — своей иконки под комбо документ+карта в
               Material Symbols нет, ближайший по смыслу — map (тот же, что и
               на переключателе Списком/На карте). Ведёт туда же, куда и общая
@@ -281,10 +312,11 @@ function RateRow({
           >
             <Icon name="map" size={28} />
           </Link>
-          {/* «!» у радиуса: size кнопки приносит rounded-full, в макете 20 */}
+          {/* с 1024 кнопка в макете ровно 134×46 при подписи 102 — то есть
+              фактические боковые поля 16, а не 24 из размера M */}
           <Button
             size="md"
-            className="h-[46px] flex-1 px-6 sm:min-w-[134px]"
+            className="flex-1 lg:w-[134px] lg:flex-none lg:px-4"
             onClick={() => router.push('/booking')}
           >
             {t('book')}
@@ -292,11 +324,14 @@ function RateRow({
         </div>
       </div>
 
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+      {/* «Frame 1437255007»: подпись с плашкой и пилюля «Сравнить»;
+          на 1024/1920 подпись отбита от края строки на 48, пилюля — по краю */}
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 lg:pl-12">
         {marketRate !== null ? (
-          <div className="flex items-center gap-3 text-sm text-text-disabled sm:pl-12">
+          <div className="flex items-center gap-2 text-xs font-medium leading-[1.3] text-text-disabled min-[480px]:gap-3 min-[480px]:text-sm min-[480px]:font-normal min-[480px]:leading-[1.1] lg:font-medium lg:leading-5">
             {t('exchangeRate')}
-            <span className="rounded-xl bg-surface-modal-surf1 px-3 py-1 text-text-disabled">
+            {/* цвет текста плашки в макете тот же text-disabled, что и у подписи */}
+            <span className="rounded-xl bg-surface-modal-surf1 px-2 py-0.5 font-normal leading-[18px] min-[480px]:px-3 min-[480px]:py-1 min-[480px]:leading-[1.1]">
               {tRates('perUnit', {
                 rate: formatNumber(marketRate, locale, 2),
                 code: currencySymbol(code),
@@ -306,20 +341,38 @@ function RateRow({
         ) : (
           <span aria-hidden />
         )}
+        {/* «a-button-main» 77×32 (короткая подпись) и 169×32 (полная): заливка
+            в цвет строки, подпись Roboto Regular 14/1.1 цветом #8C8C8C —
+            своего токена под этот серый нет. Ширина у нас выходит больше: в
+            макете текстовый слой фиксирован (55×14 и 147×14), и реальная
+            строка в него не влезает — настоящий Roboto 14 даёт 63.1 и 171.1. */}
         <button
           type="button"
           aria-expanded={open}
           aria-controls={open ? panelId : undefined}
           onClick={() => setOpen((v) => !v)}
-          className="ml-auto flex cursor-pointer items-center gap-2 text-sm font-medium text-text-disabled transition-colors hover:text-text-default"
+          className="ml-auto flex h-8 cursor-pointer items-center gap-2 rounded-[20px] bg-surface-page-surf2 text-sm leading-[1.1] font-normal text-[#8C8C8C] transition-colors hover:bg-comp-surface2-hover"
         >
-          {open ? t('collapse') : t('compare')}
+          {/* на 360/480 в макете короткая подпись «Сравнить» (кнопка 77×32),
+              с 768 — полная (169×32); переключаем по sm, между 640 и 768
+              ступени в макете нет. «Свернуть» везде полная. */}
+          {open ? (
+            t('collapse')
+          ) : (
+            <>
+              <span className="sm:hidden">{t('compareShort')}</span>
+              <span className="hidden sm:inline">{t('compare')}</span>
+            </>
+          )}
+          {/* слот стрелки в макете 12×12 («Icon wrapper» 847:36891); вложенные
+              20×20 — это габарит плейсхолдера-заглушки, а не самой иконки.
+              Цвет у стрелки свой: вектор #EEEEEE при подписи #8C8C8C */}
           <motion.span
             animate={{ rotate: open ? 180 : 0 }}
             transition={{ duration: 0.2 }}
-            className="flex"
+            className="flex text-text-default"
           >
-            <Icon name="arrow_drop_down" size={20} />
+            <Icon name="arrow_drop_down" size={12} />
           </motion.span>
         </button>
       </div>
@@ -332,29 +385,57 @@ function RateRow({
               {competitors.map((comp) => (
                 <div
                   key={comp.id}
-                  className="flex flex-wrap items-center gap-x-4 gap-y-3 sm:flex-nowrap sm:gap-4"
+                  className="flex flex-wrap items-center gap-y-3 sm:flex-nowrap lg:pl-12"
                 >
-                  {/* «logo»: 50×42 r14 на modal-surf1, обводка цветом конкурента, глиф вместо точки */}
-                  <span
-                    aria-hidden
-                    className="inline-flex h-[42px] w-[50px] shrink-0 items-center justify-center rounded-[14px] border bg-surface-modal-surf1"
-                    style={{ borderColor: comp.color }}
-                  >
-                    <Icon name="location_on" size={24} className="text-text-default" />
-                  </span>
-                  <span className="min-w-0 truncate text-base text-text-disabled">
-                    {t(`competitors.${comp.nameKey}`)}
-                  </span>
-                  <div className="grid w-full shrink-0 grid-cols-[auto_auto] justify-start gap-4 text-center sm:ml-auto sm:w-auto sm:gap-10">
-                    <span className="w-16 text-base text-text-default sm:w-[114px]">
+                  {/* «Frame 1437254881»: логотип 50×42 r14 и название, зазор 16.
+                      Ниже 640 занимает всю строку — колонки уходят под неё */}
+                  <div className="flex min-w-0 basis-full items-center gap-4 sm:basis-0 sm:grow">
+                    {/* «logo»: на modal-surf1, обводка цветом конкурента, глиф вместо точки */}
+                    <span
+                      aria-hidden
+                      className="inline-flex h-[42px] w-[50px] shrink-0 items-center justify-center rounded-[14px] border bg-surface-modal-surf1"
+                      style={{ borderColor: comp.color }}
+                    >
+                      <Icon name="location_on" size={24} className="text-text-default" />
+                    </span>
+                    <span className={clsx('min-w-0 truncate text-text-disabled', competitorText)}>
+                      {t(`competitors.${comp.nameKey}`)}
+                    </span>
+                  </div>
+                  {/* «Frame 1437254872»: с 640 те же 154, что и в колонках строки
+                      курса; ниже — ячейка по содержимому (число и поля 8) */}
+                  <div className="flex w-full shrink-0 text-center sm:ml-auto sm:w-auto">
+                    <span
+                      className={clsx(
+                        'px-2 text-text-default sm:w-[154px] sm:px-5',
+                        competitorText,
+                      )}
+                    >
                       {formatNumber(comp.buy, locale, 2)}
                     </span>
-                    <span className="w-16 text-base text-text-default sm:w-[114px]">
+                    <span
+                      className={clsx(
+                        'px-2 text-text-default sm:w-[154px] sm:px-5',
+                        competitorText,
+                      )}
+                    >
                       {formatNumber(comp.sell, locale, 2)}
                     </span>
                   </div>
-                  {/* «отбивка» под блок кнопок строки курса — с 1024 колонки должны совпасть */}
-                  <span className="hidden lg:block lg:w-[184px]" />
+                  {/*
+                   * «Отбивка» под блок кнопок строки курса: в макете колонки
+                   * конкурента и колонки курса начинаются на одном x, поэтому
+                   * здесь стоит невидимая копия блока — 20 + 46 + 8 + 134 = 208.
+                   */}
+                  <span
+                    aria-hidden
+                    className="hidden shrink-0 lg:flex lg:invisible lg:items-center lg:gap-2 lg:pl-5"
+                  >
+                    <span className="w-[46px]" />
+                    <span className="inline-flex w-[134px] justify-center text-sm font-medium leading-5">
+                      {t('book')}
+                    </span>
+                  </span>
                 </div>
               ))}
             </div>

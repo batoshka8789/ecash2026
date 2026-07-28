@@ -8,12 +8,23 @@ import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/lib/auth';
 
+/** «+7 (777) 019 63 44» — маска телефона из макета [1810:153571]. */
+function formatPhone(phone: string): string {
+  const d = phone.replace(/\D/g, '');
+  // 11 цифр с ведущей 7/8 либо 10 без кода страны — иначе показываем как есть
+  const n = d.length === 11 && (d[0] === '7' || d[0] === '8') ? d.slice(1) : d;
+  if (n.length !== 10) return phone;
+  return `+7 (${n.slice(0, 3)}) ${n.slice(3, 6)} ${n.slice(6, 8)} ${n.slice(8)}`;
+}
+
 /**
  * Карточка профиля.
- * Спека макета (1810:160270): col gap24, аватар 84×84 r25.2,
- * имя 18/700 lh21.6 center, телефон 14/400 lh15.4 center,
- * ряд из трёх кнопок row gap4, каждая p16/4 r24 fill #333333,
- * активная — border 1px #F15A25.
+ * Спека макета («Frame 1437255280» [1810:153566] 838×329): padding 32 (16 по
+ * бокам и снизу на ≤480), col gap24, аватар 84×84 r25.2, имя 18/700 lh21.6
+ * center, телефон 14/400 lh15.4 center, ряд из трёх кнопок row gap4, каждая
+ * p16/4 r24 fill #333333, активная — border 1px #F15A25.
+ * Ниже xl карточка идёт в край экрана, поэтому верхние углы не скруглены
+ * (radius 0 0 28 28).
  */
 export function ProfileCard() {
   const t = useTranslations('profile');
@@ -28,9 +39,6 @@ export function ProfileCard() {
   const name = [account?.firstName, account?.lastName, account?.middleName]
     .filter(Boolean)
     .join(' ');
-  const initials = account
-    ? `${account.firstName.charAt(0)}${account.lastName.charAt(0)}`.toUpperCase()
-    : '';
 
   const avatar = account?.profile.avatar ?? null;
   const showAvatar =
@@ -56,7 +64,7 @@ export function ProfileCard() {
   };
 
   return (
-    <div className="rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 px-4 pb-4 pt-8 md:p-8">
+    <div className="rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 px-4 pb-4 pt-8 max-xl:rounded-t-none md:p-8">
       <div className="flex flex-col items-center gap-6">
         {loading ? (
           // скелет повторяет размеры контента — без скачка раскладки
@@ -80,14 +88,17 @@ export function ProfileCard() {
                 className="h-[84px] w-[84px] rounded-[25.2px] object-cover"
               />
             ) : (
-              <span className="flex h-[84px] w-[84px] items-center justify-center rounded-[25.2px] bg-brand text-2xl font-bold text-text-always-white">
-                {initials || <Icon name="person" size={32} />}
+              /* пустой аватар — подложка #333333 и иконка загрузки 36 [1810:161100] */
+              <span className="flex h-[84px] w-[84px] items-center justify-center rounded-[25.2px] bg-surface-page-surf2 text-text-default">
+                <Icon name="add_photo_alternate" size={36} filled />
               </span>
             )}
 
             <div className="flex flex-col items-center gap-2 text-center">
               <div className="text-lg font-bold leading-[1.2] text-text-default">{name}</div>
-              <div className="text-sm leading-[1.1] text-text-default">{account?.phoneNumber}</div>
+              <div className="text-sm leading-[1.1] text-text-default">
+                {account?.phoneNumber ? formatPhone(account.phoneNumber) : ''}
+              </div>
             </div>
           </>
         )}

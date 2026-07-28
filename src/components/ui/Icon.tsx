@@ -8,7 +8,14 @@ type IconProps = {
   className?: string;
 };
 
-/** Иконка Material Symbols Rounded — набор, использованный в макете. */
+/**
+ * Иконка Material Symbols Rounded.
+ *
+ * В макете набор свой (vuesax, lucide, собственные векторы на плате Atoms
+ * 459:14068) — как SVG он из .fig не выгружен, поэтому подбираем ближайшие
+ * символы Material. Начертания в макете преимущественно контурные, так что
+ * filled ставим только там, где в макете действительно залитая фигура.
+ */
 export function Icon({ name, size = 24, filled = false, className }: IconProps) {
   return (
     <span

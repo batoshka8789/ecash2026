@@ -15,9 +15,11 @@ export function PillTabs<T extends string>({
   className?: string;
 }) {
   return (
-    /* Макет 847:37405: подложка r24 с padding 4 и gap 4, пилюли 50px r20;
-       активная — surface/surf1 (#262626), у неактивной фон совпадает
-       с подложкой, поэтому видна только смена цвета текста. */
+    /* Подложка r24 с padding 4 и gap 4, активная пилюля — surface/surf1
+       (#262626); у неактивной фон совпадает с подложкой, поэтому видна
+       только смена цвета текста.
+       Высота — 54/46, как во всех инстансах tabbar на экранах (модалка
+       входа 872:33197 — 400×54), а не 58/50 с платы дизайн-системы. */
     <div className={clsx('flex gap-1 rounded-3xl bg-surface-page-bg p-1', className)}>
       {tabs.map((tab) => (
         <button
@@ -25,7 +27,7 @@ export function PillTabs<T extends string>({
           type="button"
           onClick={() => onChange(tab.value)}
           className={clsx(
-            'h-[50px] flex-1 cursor-pointer rounded-[20px] text-sm font-medium leading-5 transition-colors',
+            'h-[46px] flex-1 cursor-pointer rounded-[20px] text-sm font-medium leading-5 transition-colors',
             tab.value === value
               ? 'bg-surface-page-surf1 text-text-default'
               : 'text-text-default hover:text-text-brand',

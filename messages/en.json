@@ -63,6 +63,7 @@
       "compareIcon": "Compare rates",
       "exchangeRate": "Exchange rate",
       "compare": "Compare with competitors",
+      "compareShort": "Compare",
       "collapse": "Collapse",
       "showAll": "Show all currencies",
       "hideAll": "Collapse",
@@ -105,7 +106,7 @@
       "signup": "Sign up"
     },
     "emailPlaceholder": "Phone number or email",
-    "passwordPlaceholder": "Password",
+    "passwordPlaceholder": "Enter password",
     "password2Placeholder": "Repeat password",
     "forgot": "Forgot password?",
     "continue": "Continue",
@@ -119,26 +120,20 @@
       "passwordMatch": "Passwords do not match"
     },
     "confirm": {
-      "title": "Email confirmation",
-      "text": "We sent a code to {email}. Enter the code from the email to finish registration",
-      "codePlaceholder": "Code from email",
-      "submit": "Sign up",
-      "devCode": "Test code: {code}",
-      "phonePlaceholder": "Phone number"
+      "emailTitle": "Email confirmation",
+      "emailText": "We sent a code to {login}. Enter the code from the email to finish registration",
+      "emailCode": "Code from email",
+      "phoneTitle": "Phone number confirmation",
+      "phoneText": "We sent an SMS code to {login}. Enter the code from the SMS to finish registration",
+      "phoneCode": "SMS code"
     },
-    "loginLabel": "Phone number or IIN",
-    "phoneLabel": "Phone number",
-    "otpTitle": "Verify your number",
-    "otpSent": "We sent an SMS code to {phone}. Enter it to continue",
-    "otpPlaceholder": "SMS code",
+    "loginLabel": "Phone number or email",
     "resend": "Resend code",
     "resendIn": "Resend available in {sec} s",
     "byOtp": "Sign in with SMS code",
     "byPassword": "Sign in with password",
     "devCodeHint": "Demo mode: code {code}",
-    "iinOptional": "IIN (optional)",
-    "register": "Sign up",
-    "completeTitle": "Set a password"
+    "register": "Sign up"
   },
   "recovery": {
     "title": "Password recovery",

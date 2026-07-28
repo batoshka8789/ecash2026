@@ -20,11 +20,7 @@ export const updateClient = (
     body: patch,
   });
 
-export const changePassword = (
-  accessToken: string,
-  currentPassword: string,
-  newPassword: string,
-) =>
+export const changePassword = (accessToken: string, currentPassword: string, newPassword: string) =>
   ecashFetch<unknown>('/mobile/account/change-password', {
     method: 'POST',
     token: accessToken,

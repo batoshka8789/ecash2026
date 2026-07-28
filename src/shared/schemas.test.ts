@@ -25,6 +25,15 @@ describe('loginBody', () => {
     );
     expect(loginBody.parse({ login: '990101300123', password: 'x' }).login).toBe('990101300123');
   });
+
+  // Поле обещает «Номер телефона или эл.почта», а чистка формата телефона
+  // выедала из адреса дефисы и точки-разделители доменов
+  it('адрес почты доходит без изменений', () => {
+    expect(loginBody.parse({ login: 'john-doe@my-company.kz', password: 'x' }).login).toBe(
+      'john-doe@my-company.kz',
+    );
+    expect(loginBody.parse({ login: '  a.b@mail.ru  ', password: 'x' }).login).toBe('a.b@mail.ru');
+  });
 });
 
 describe('registerBody', () => {

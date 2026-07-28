@@ -9,9 +9,12 @@ import { competitors, news, rateSnapshots } from './schema';
  * Запуск: npx tsx src/server/db/seed.ts — или npm run db:seed.
  */
 async function main() {
-  const client = postgres(process.env.DATABASE_URL ?? 'postgres://ecash:ecash@localhost:5432/ecash', {
-    max: 1,
-  });
+  const client = postgres(
+    process.env.DATABASE_URL ?? 'postgres://ecash:ecash@localhost:5432/ecash',
+    {
+      max: 1,
+    },
+  );
   const db = drizzle(client);
 
   await db
@@ -61,7 +64,12 @@ async function main() {
  * и самоограничивается по мере реального аптайма).
  */
 async function backfillRateHistory(db: ReturnType<typeof drizzle>) {
-  const pairs = await db.execute<{ currency_code: string; oldest: string; buy: string; sell: string }>(sql`
+  const pairs = await db.execute<{
+    currency_code: string;
+    oldest: string;
+    buy: string;
+    sell: string;
+  }>(sql`
     select distinct on (currency_code)
       currency_code,
       first_value(taken_at) over w as oldest,
@@ -106,7 +114,9 @@ async function backfillRateHistory(db: ReturnType<typeof drizzle>) {
   for (let i = 0; i < rows.length; i += CHUNK) {
     await db.insert(rateSnapshots).values(rows.slice(i, i + CHUNK));
   }
-  console.warn(`seed: rate_snapshots backfill — ${rows.length} строк по ${pairs.length} валютам (dep 1)`);
+  console.warn(
+    `seed: rate_snapshots backfill — ${rows.length} строк по ${pairs.length} валютам (dep 1)`,
+  );
 }
 
 main().catch((e) => {

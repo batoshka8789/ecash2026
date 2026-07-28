@@ -9,29 +9,44 @@ import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { PillTabs } from '@/components/ui/PillTabs';
+import { GoogleIcon, TelegramIcon } from '@/components/ui/BrandIcons';
 import { useAuth } from '@/lib/auth';
-import { useResendTimer } from '@/lib/hooks';
 import { useErrorText } from '@/lib/useErrorText';
+import { useResendTimer } from '@/lib/hooks';
+import { passwordSchema } from '@/shared/schemas';
 import { api, ApiError } from '@/lib/api';
 
 type Tab = 'login' | 'signup';
 
-/**
- * Ошибка кода из SMS: сервер проверяет OTP только финальным POST-ом
- * (шаг пароля), поэтому такую ошибку нужно показывать на шаге кода.
- */
-function isOtpError(e: unknown): e is ApiError {
-  return (
-    e instanceof ApiError &&
-    (e.field === 'otp' || e.message === 'errors.INVALID_OTP' || e.message === 'errors.OTP_EXPIRED')
-  );
+/** Поля первого экрана регистрации — их ошибки видны только на нём. */
+const REG_FORM_FIELDS = ['login', 'phoneNumber', 'password', 'password2'];
+
+/** Ошибка поля логина: оно видно только на первом шаге входа. */
+function isLoginFieldError(e: unknown): e is ApiError {
+  return e instanceof ApiError && (e.field === 'login' || e.field === 'phoneNumber');
 }
 
 /**
- * Авторизация по контракту Ecash Mobile: телефон/ИИН + пароль,
- * вход по SMS-коду, регистрация «номер → SMS-код → пароль».
- * Вёрстка и состояния карточки — из макета (фрейм Log in 1784:153588),
- * e-mail-полей в реальном API не существует.
+ * Авторизация по контракту Ecash Mobile: вход «логин → пароль»,
+ * регистрация «логин + пароль + повтор → код подтверждения».
+ *
+ * Вёрстка — модалки макета: 883:33240 (вход, 480×600) из секции Log in,
+ * 885:33840 (регистрация, «Sign up step1 (User data)» 480×690) и 890:34113
+ * («Sign up step2 (mes gmail)», подтверждение кода, 480×416) из секции
+ * Sign up. Вход в макете разбит на два экрана с одним полем — «log in step1
+ * (name)» и «log in step2 (password)».
+ *
+ * Порядок экранов регистрации — из секции Sign up (1222:69959): сначала все
+ * данные (три поля), потом одно поле кода. Контракту это не противоречит:
+ * otp.send уходит по «Продолжить» с первого экрана, а register — вместе с
+ * кодом со второго, пароли к тому моменту уже собраны в состоянии.
+ *
+ * Плейсхолдер поля входа — «Номер телефона или эл.почта», как в макете
+ * (883:33233): loginValueSchema произвольную строку пропускает, нормализует
+ * логин апстрим. Клавиатуру не форсируем — с почтой inputMode="tel" мешал бы.
+ * Регистрация пока остаётся телефонной: otp.send и register требуют
+ * phoneNumber и шлют SMS, поэтому почта здесь сработает только когда апстрим
+ * научится слать код на неё.
  */
 export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
   const t = useTranslations('auth');
@@ -40,22 +55,23 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
   const errorText = useErrorText();
 
   const [tab, setTab] = useState<Tab>(initialTab);
-  // вход
-  const [loginMode, setLoginMode] = useState<'password' | 'otp'>('password');
+  // вход: логин → пароль (в макете это два отдельных экрана)
+  const [loginStep, setLoginStep] = useState<'login' | 'password'>('login');
   const [loginValue, setLoginValue] = useState('');
   const [password, setPassword] = useState('');
-  // регистрация: phone → code → password
-  const [regStep, setRegStep] = useState<'phone' | 'code' | 'password'>('phone');
-  const [phone, setPhone] = useState('');
-  const [iin, setIin] = useState('');
+  // регистрация: данные (логин + пароли) → код подтверждения
+  const [regStep, setRegStep] = useState<'form' | 'code'>('form');
+  const [regLogin, setRegLogin] = useState('');
   const [otp, setOtp] = useState('');
   const [password2, setPassword2] = useState('');
   const [devCode, setDevCode] = useState<string | null>(null);
+  /** Обратный отсчёт до повторной отправки кода. */
   const [resendLeft, setResendLeft] = useResendTimer();
-  /** код ошибки OTP, показываемый на шаге «код» после отката с шага пароля */
-  const [otpStepError, setOtpStepError] = useState<string | null>(null);
-  /** клиентская ошибка ИИН — сервер проверил бы его только на финальном шаге */
-  const [iinError, setIinError] = useState(false);
+  /**
+   * Ошибка полей первого экрана регистрации: своя проверка паролей до отправки
+   * SMS и ответ сервера, прилетевший уже на экране кода, — там этих полей нет.
+   */
+  const [formError, setFormError] = useState<{ field: string; message: string } | null>(null);
 
   const finish = async () => {
     await invalidate();
@@ -65,48 +81,48 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
   };
 
   const loginMut = useMutation({
-    mutationFn: () =>
-      loginMode === 'password'
-        ? api.auth.login(loginValue.trim(), password)
-        : api.auth.otp.login(loginValue.trim(), otp),
+    mutationFn: () => api.auth.login(loginValue.trim(), password),
     onSuccess: finish,
+    // поле логина есть только на первом шаге — иначе ошибка останется невидимой
+    onError: (e) => {
+      if (isLoginFieldError(e)) setLoginStep('login');
+    },
   });
 
   const sendMut = useMutation({
-    mutationFn: (purpose: 0 | 1) =>
-      api.auth.otp.send(tab === 'signup' ? phone.trim() : loginValue.trim(), purpose),
+    mutationFn: () => api.auth.otp.send(regLogin.trim(), 0),
     onSuccess: (res) => {
-      setResendLeft(res.resendAfterSeconds);
       setDevCode(res.devCode ?? null);
-      if (tab === 'signup') setRegStep('code');
+      setRegStep('code');
+      // сервер сам говорит, через сколько разрешит следующую отправку
+      setResendLeft(res.resendAfterSeconds);
     },
   });
 
   const registerMut = useMutation({
-    mutationFn: () =>
-      api.auth.register({
-        phoneNumber: phone.trim(),
-        otp,
-        password,
-        password2,
-        iin: iin.trim() || undefined,
-      }),
+    mutationFn: () => api.auth.register({ phoneNumber: regLogin.trim(), otp, password, password2 }),
     onSuccess: finish,
     onError: (e) => {
-      // Код проверяется только этим запросом: при неверном/истёкшем OTP
-      // возвращаем на шаг кода — иначе ошибка поля otp останется невидимой.
-      if (isOtpError(e)) {
-        setOtpStepError(e.message);
-        setOtp('');
-        setRegStep('code');
-      }
+      // Пароли уходят вместе с кодом, но полей для них на экране кода нет:
+      // если сервер забракует именно их, возвращаем на первый экран.
+      if (!(e instanceof ApiError) || !e.field || !REG_FORM_FIELDS.includes(e.field)) return;
+      setFormError({ field: e.field, message: e.message });
+      setRegStep('form');
     },
   });
 
-  const active = tab === 'login' ? loginMut : regStep === 'password' ? registerMut : sendMut;
-  const activeError = active.error instanceof ApiError ? active.error : null;
-  const err = (field: string) =>
-    activeError && activeError.field === field ? [errorText(activeError.message)] : [];
+  /**
+   * На экране кода ошибку может дать и регистрация, и повторная отправка —
+   * берём ту, что случилась (регистрация приоритетнее: она свежее).
+   */
+  const screenMuts =
+    tab === 'login' ? [loginMut] : regStep === 'form' ? [sendMut] : [registerMut, sendMut];
+  const activeError =
+    screenMuts.map((m) => m.error).find((e): e is ApiError => e instanceof ApiError) ?? null;
+  const err = (field: string) => {
+    if (formError?.field === field) return [errorText(formError.message)];
+    return activeError && activeError.field === field ? [errorText(activeError.message)] : [];
+  };
   /** ошибка без привязки к полю — показываем под формой */
   const generalError = activeError && !activeError.field ? errorText(activeError.message) : null;
 
@@ -114,335 +130,319 @@ export function AuthCard({ initialTab = 'login' }: { initialTab?: Tab }) {
     loginMut.reset();
     sendMut.reset();
     registerMut.reset();
-    setOtpStepError(null);
-    setIinError(false);
+    setFormError(null);
   };
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (tab === 'login') {
-      if (loginMode === 'otp' && !sendMut.data) {
-        sendMut.mutate(1);
+      if (loginStep === 'login') {
+        if (loginValue.trim()) setLoginStep('password');
         return;
       }
       loginMut.mutate();
       return;
     }
-    if (regStep === 'phone') {
-      // ИИН необязателен, но если заполнен — ровно 12 цифр (iinSchema);
-      // сервер проверит его только финальным POST-ом, где поля уже нет.
-      if (iin.trim() && iin.trim().length !== 12) {
-        setIinError(true);
+    if (regStep === 'form') {
+      // Пароль сервер проверит только финальным POST-ом — со второго экрана,
+      // где полей уже нет. Проверяем теми же схемами до отправки SMS.
+      const pw = passwordSchema.safeParse(password);
+      if (!pw.success) {
+        setFormError({ field: 'password', message: pw.error.issues[0].message });
         return;
       }
-      sendMut.mutate(0);
-    } else if (regStep === 'code') {
-      if (otp.length === 6) setRegStep('password');
-    } else registerMut.mutate();
+      if (password !== password2) {
+        setFormError({ field: 'password2', message: 'errors.passwordMatch' });
+        return;
+      }
+      setFormError(null);
+      sendMut.mutate();
+      return;
+    }
+    registerMut.mutate();
   };
 
   const busy = loginMut.isPending || sendMut.isPending || registerMut.isPending;
+  /** экраны с вкладками — единственные, где под формой есть соц-входы */
+  const withTabs = tab === 'login' || regStep === 'form';
+  /** заголовок и текст экрана подтверждения — по тому, что ввёл пользователь */
+  const byEmail = regLogin.includes('@');
 
   return (
-    <div className="relative w-full max-w-[480px]">
+    <div className="relative w-full max-w-[360px] md:max-w-[480px]">
+      {/* Кнопка закрытия 44×44. С 768 макет выносит её за модалку, в правый
+          верхний угол экрана с отступами 40 (1195:61487 на 1920, 1784:153736
+          на 768). На 480 и 360 её в макете нет вовсе, но без неё экран входа —
+          ловушка: уйти с него нечем. Поэтому там кладём кнопку внутрь модалки
+          по её же боковому полю 20; логотип по центру, налезать не на что.
+          Подложка — на ступень светлее того, что под кнопкой: surf1 на фоне
+          страницы, surf2 на фоне модалки. */}
       <button
         type="button"
         onClick={() => router.push('/')}
         aria-label={t('close')}
-        className="absolute right-0 top-0 z-10 inline-flex h-11 w-11 -translate-y-12 cursor-pointer items-center justify-center rounded-full bg-surface-page-surf2 text-text-default transition-colors hover:bg-comp-surface2-hover md:fixed md:right-10 md:top-10 md:translate-y-0"
+        className="absolute right-5 top-5 z-10 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-surface-page-surf2 text-text-default transition-colors hover:bg-comp-surface2-hover md:fixed md:right-10 md:top-10 md:bg-surface-page-surf1 md:hover:bg-comp-surface1-hover"
       >
         <Icon name="close" size={20} />
       </button>
 
+      {/* Модалка: колонка с зазором 36, padding 40 (20 по бокам до 768),
+          r20; на 360 растянута во весь экран без скруглений */}
       <form
         onSubmit={onSubmit}
-        className="rounded-[20px] bg-surface-page-surf1 px-5 py-10 md:px-10"
+        className="relative flex w-full flex-col gap-9 rounded-[20px] bg-surface-page-surf1 px-5 py-10 max-[361px]:min-h-screen max-[361px]:justify-center max-[361px]:rounded-none md:px-10"
         noValidate
       >
         <div className="flex justify-center">
           <Logo />
         </div>
 
-        {tab === 'login' || regStep === 'phone' ? (
+        {withTabs ? (
           <>
-            <PillTabs
-              className="mt-9"
-              value={tab}
-              onChange={(v) => {
-                setTab(v);
-                setOtp('');
-                setDevCode(null);
-                resetErrors();
-              }}
-              tabs={[
-                { value: 'login', label: t('tabs.login') },
-                { value: 'signup', label: t('tabs.signup') },
-              ]}
-            />
+            {/* Вкладки и форма — колонка 400×256 с зазором 44 (890:34371) */}
+            <div className="flex flex-col gap-11">
+              <PillTabs
+                value={tab}
+                onChange={(v) => {
+                  setTab(v);
+                  setLoginStep('login');
+                  setOtp('');
+                  setDevCode(null);
+                  // Состояние пароля общее у входа и регистрации, а после
+                  // перестановки шагов поле пароля есть на ПЕРВОМ экране обеих
+                  // вкладок. Без сброса пароль, набранный во «Входе», молча
+                  // подставлялся в «Регистрацию» (и наоборот): пользователь
+                  // видел точки, которых не вводил, а пустой «Повторите
+                  // пароль» давал «Пароли не совпадают» на чужое значение.
+                  setPassword('');
+                  setPassword2('');
+                  resetErrors();
+                }}
+                tabs={[
+                  { value: 'login', label: t('tabs.login') },
+                  { value: 'signup', label: t('tabs.signup') },
+                ]}
+              />
 
-            {tab === 'login' ? (
-              <div className="mt-11 flex flex-col gap-2">
-                <Input
-                  placeholder={t('loginLabel')}
-                  value={loginValue}
-                  onChange={(e) => setLoginValue(e.target.value)}
-                  errors={err('login').concat(err('phoneNumber'))}
-                  autoComplete="username"
-                  inputMode="tel"
-                />
-                {loginMode === 'password' ? (
-                  <>
-                    <Input
-                      placeholder={t('passwordPlaceholder')}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      password
-                      errors={err('password')}
-                      autoComplete="current-password"
-                    />
+              {tab === 'login' ? (
+                /* 400×158: поле + ссылка (зазор 4), затем кнопка через 12 */
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-1">
+                    {loginStep === 'login' ? (
+                      <Input
+                        placeholder={t('loginLabel')}
+                        value={loginValue}
+                        onChange={(e) => setLoginValue(e.target.value)}
+                        errors={err('login').concat(err('phoneNumber'))}
+                        autoComplete="username"
+                      />
+                    ) : (
+                      <Input
+                        placeholder={t('passwordPlaceholder')}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        password
+                        errors={err('password')}
+                        autoComplete="current-password"
+                      />
+                    )}
+                    {/* «a-button-main» 103×34, padding 8/0. В макете подпись
+                        #FFFFFF, но макет нарисован только тёмным: в светлой
+                        теме это белое по белой модалке. Берём text/default —
+                        #EEEEEE в тёмной (та же подпись на глаз) и #3F3F3F
+                        в светлой. */}
                     <button
                       type="button"
                       onClick={() => router.push('/recovery')}
-                      className="cursor-pointer self-start py-2 text-sm font-medium leading-5 text-text-brand transition-opacity hover:opacity-80"
+                      className="flex h-[34px] w-fit cursor-pointer items-center rounded-[20px] text-sm font-medium leading-5 text-text-default transition-opacity hover:opacity-80"
                     >
                       {t('forgot')}
                     </button>
-                  </>
-                ) : sendMut.data ? (
-                  <OtpField
-                    value={otp}
-                    onChange={setOtp}
-                    errors={err('otp')}
-                    devCode={devCode}
-                    resendLeft={resendLeft}
-                    onResend={() => sendMut.mutate(1)}
-                    resending={sendMut.isPending}
-                  />
-                ) : null}
-              </div>
-            ) : (
-              <div className="mt-11 flex flex-col gap-2">
-                <Input
-                  placeholder={t('phoneLabel')}
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  errors={err('phoneNumber')}
-                  autoComplete="tel"
-                  inputMode="tel"
-                />
-                <Input
-                  placeholder={t('iinOptional')}
-                  value={iin}
-                  onChange={(e) => {
-                    setIinError(false);
-                    setIin(e.target.value.replace(/\D/g, '').slice(0, 12));
-                  }}
-                  errors={iinError ? [errorText('errors.iinInvalid')] : err('iin')}
-                  inputMode="numeric"
-                  maxLength={12}
-                />
-              </div>
-            )}
+                  </div>
 
-            {generalError && (
-              <p
-                role="alert"
-                className="mt-4 text-center text-xs font-medium leading-[1.3] text-text-negative"
-              >
-                {generalError}
-              </p>
-            )}
+                  {generalError && <GeneralError text={generalError} />}
+                  <Button type="submit" className="w-full" disabled={busy}>
+                    {t('continue')}
+                  </Button>
+                </div>
+              ) : (
+                /* Frame 1437255052 400×248: поля 400×54 с зазором 8
+                   (Frame 1437255272 400×178), затем кнопка через 16 */
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
+                    {/*
+                      Подпись как в макете (883:33233) — «Номер телефона или
+                      эл.почта», по прямому указанию владельца. Оговорка:
+                      регистрация шлёт SMS (otp.send с purpose 0), поэтому
+                      почта здесь сработает только если апстрим научится
+                      слать код на неё. inputMode="tel" поэтому убран —
+                      цифровая клавиатура мешала бы вводить адрес.
+                    */}
+                    <Input
+                      placeholder={t('loginLabel')}
+                      value={regLogin}
+                      onChange={(e) => {
+                        setFormError(null);
+                        setRegLogin(e.target.value);
+                      }}
+                      errors={err('login').concat(err('phoneNumber'))}
+                      autoComplete="username"
+                    />
+                    <Input
+                      placeholder={t('passwordPlaceholder')}
+                      value={password}
+                      onChange={(e) => {
+                        setFormError(null);
+                        setPassword(e.target.value);
+                      }}
+                      password
+                      errors={err('password')}
+                      autoComplete="new-password"
+                    />
+                    <Input
+                      placeholder={t('password2Placeholder')}
+                      value={password2}
+                      onChange={(e) => {
+                        setFormError(null);
+                        setPassword2(e.target.value);
+                      }}
+                      password
+                      errors={err('password2')}
+                      autoComplete="new-password"
+                    />
+                  </div>
 
-            <Button type="submit" className="mt-4 w-full" disabled={busy}>
-              {t('continue')}
-            </Button>
+                  {generalError && <GeneralError text={generalError} />}
+                  <Button type="submit" className="w-full" disabled={busy}>
+                    {t('continue')}
+                  </Button>
+                </div>
+              )}
+            </div>
 
-            {tab === 'login' && (
-              <button
-                type="button"
-                onClick={() => {
-                  setLoginMode((m) => (m === 'password' ? 'otp' : 'password'));
-                  setOtp('');
-                  resetErrors();
-                }}
-                className="mt-4 w-full cursor-pointer text-center text-sm font-medium leading-5 text-text-brand transition-opacity hover:opacity-80"
-              >
-                {loginMode === 'password' ? t('byOtp') : t('byPassword')}
-              </button>
-            )}
-          </>
-        ) : regStep === 'code' ? (
-          <>
-            <h1 className="mt-9 text-center text-xl font-medium leading-[1.4] text-text-default">
-              {t('otpTitle')}
-            </h1>
-            <p className="mt-3 text-center text-lg leading-[1.2] text-text-disabled">
-              {t('otpSent', { phone })}
-            </p>
+            {/* Line 21: 1px, в раскладке макета высота 0. Цвет — divider/hole:
+                в тёмной теме это ровно #1A1A1A из макета, в светлой #E0E0E0,
+                иначе линия сливалась бы с белой модалкой. */}
+            <div aria-hidden className="-mt-px h-px bg-divider-hole" />
 
-            <OtpField
-              className="mt-9"
-              value={otp}
-              onChange={(v) => {
-                setOtpStepError(null);
-                setOtp(v);
-              }}
-              errors={otpStepError ? [errorText(otpStepError)] : err('otp')}
-              devCode={devCode}
-              resendLeft={resendLeft}
-              onResend={() => {
-                setOtpStepError(null);
-                sendMut.mutate(0);
-              }}
-              resending={sendMut.isPending}
-            />
-
-            {generalError && (
-              <p
-                role="alert"
-                className="mt-4 text-center text-xs font-medium leading-[1.3] text-text-negative"
-              >
-                {generalError}
-              </p>
-            )}
-
-            <Button type="submit" className="mt-4 w-full" disabled={busy || otp.length !== 6}>
-              {t('continue')}
-            </Button>
-            <BackLink
-              onClick={() => {
-                setOtpStepError(null);
-                setRegStep('phone');
-              }}
-            />
+            {/* btns 400×116 (877:33288) */}
+            <div className="flex flex-col gap-2">
+              <SocialButton icon={<TelegramIcon />} label={t('withTelegram')} />
+              <SocialButton icon={<GoogleIcon />} label={t('withGoogle')} />
+            </div>
           </>
         ) : (
           <>
-            <h1 className="mt-9 text-center text-xl font-medium leading-[1.4] text-text-default">
-              {t('completeTitle')}
-            </h1>
-            <div className="mt-9 flex flex-col gap-2">
-              <Input
-                placeholder={t('passwordPlaceholder')}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                password
-                errors={err('password')}
-                autoComplete="new-password"
-              />
-              <Input
-                placeholder={t('password2Placeholder')}
-                value={password2}
-                onChange={(e) => setPassword2(e.target.value)}
-                password
-                errors={err('password2')}
-                autoComplete="new-password"
-              />
-              <PasswordRules password={password} />
+            {/* txt 400×100: заголовок и описание с зазором 12 (890:34101).
+                Заголовков в макете два — «Подтверждение электронной почты»
+                и «Подтверждение номера телефона»; какой показать, решаем по
+                введённому логину: «@» — почта, иначе телефон. */}
+            <div className="flex flex-col gap-3">
+              <ModalTitle>{byEmail ? t('confirm.emailTitle') : t('confirm.phoneTitle')}</ModalTitle>
+              <ModalText>
+                {byEmail
+                  ? t('confirm.emailText', { login: regLogin.trim() })
+                  : t('confirm.phoneText', { login: regLogin.trim() })}
+              </ModalText>
             </div>
 
-            {generalError && (
-              <p
-                role="alert"
-                className="mt-4 text-center text-xs font-medium leading-[1.3] text-text-negative"
-              >
-                {generalError}
-              </p>
-            )}
-
-            <Button type="submit" className="mt-4 w-full" disabled={busy}>
-              {t('register')}
-            </Button>
-            <BackLink onClick={() => setRegStep('code')} />
+            {/* Frame 1437255194 400×124: поле и кнопка с зазором 16 */}
+            <div className="flex flex-col gap-4">
+              <Input
+                placeholder={byEmail ? t('confirm.emailCode') : t('confirm.phoneCode')}
+                value={otp}
+                onChange={(e) => {
+                  // код проверяет только register — его же ошибку и гасим
+                  registerMut.reset();
+                  setOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
+                }}
+                errors={err('otp')}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+              />
+              {generalError && <GeneralError text={generalError} />}
+              <Button type="submit" className="w-full" disabled={busy || otp.length !== 6}>
+                {t('register')}
+              </Button>
+              {/* Кнопки повторной отправки в макете нет, но без неё экран кода —
+                  тупик: не дошло SMS, и пройти дальше нечем. Набрана
+                  типографикой подписей макета (Roboto Medium 14/20). */}
+              {resendLeft > 0 ? (
+                <p className="text-center text-sm font-medium leading-5 text-text-disabled">
+                  {t('resendIn', { sec: resendLeft })}
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    registerMut.reset();
+                    setOtp('');
+                    sendMut.mutate();
+                  }}
+                  disabled={sendMut.isPending}
+                  className="cursor-pointer text-center text-sm font-medium leading-5 text-text-brand transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {t('resend')}
+                </button>
+              )}
+            </div>
           </>
+        )}
+
+        {/* Демо-стенд отдаёт код в ответе; подсказка лежит в нижнем поле
+            карточки и не влияет на её высоту */}
+        {devCode && regStep === 'code' && (
+          <p className="absolute inset-x-5 bottom-3 text-center text-xs font-medium leading-[1.3] text-text-brand md:inset-x-10">
+            {t('devCodeHint', { code: devCode })}
+          </p>
         )}
       </form>
     </div>
   );
 }
 
-/** Поле SMS-кода с таймером повторной отправки и подсказкой демо-режима. */
-function OtpField({
-  value,
-  onChange,
-  errors,
-  devCode,
-  resendLeft,
-  onResend,
-  resending,
-  className,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  errors: string[];
-  devCode: string | null;
-  resendLeft: number;
-  onResend: () => void;
-  resending: boolean;
-  className?: string;
-}) {
-  const t = useTranslations('auth');
+/** Заголовок модалки: Rubik Medium 20/1.4 #EEEEEE по центру. */
+function ModalTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div className={className}>
-      <Input
-        placeholder={t('otpPlaceholder')}
-        value={value}
-        onChange={(e) => onChange(e.target.value.replace(/\D/g, '').slice(0, 6))}
-        errors={errors}
-        inputMode="numeric"
-        autoComplete="one-time-code"
-        maxLength={6}
-      />
-      {devCode && (
-        <p className="mt-2 text-center text-xs font-medium leading-[1.3] text-text-brand">
-          {t('devCodeHint', { code: devCode })}
-        </p>
-      )}
-      <div className="mt-4 text-center text-sm font-medium leading-5" aria-live="polite">
-        {resendLeft > 0 ? (
-          <span className="text-text-disabled">{t('resendIn', { sec: resendLeft })}</span>
-        ) : (
-          <button
-            type="button"
-            onClick={onResend}
-            disabled={resending}
-            className="cursor-pointer text-text-brand transition-opacity hover:opacity-80 disabled:opacity-50"
-          >
-            {t('resend')}
-          </button>
-        )}
-      </div>
-    </div>
+    <h1 className="text-center font-rubik text-xl font-medium leading-[1.4] text-text-default">
+      {children}
+    </h1>
   );
 }
 
-/** Живые подсказки требований к паролю — тексты из макета. */
-function PasswordRules({ password }: { password: string }) {
-  const t = useTranslations('errors');
-  const rules = [
-    { ok: password.length >= 8, label: t('passwordMin') },
-    { ok: /\d/.test(password), label: t('passwordDigit') },
-  ];
+/** Описание под заголовком: Rubik Regular 18/1.2 #6B6B6B по центру. */
+function ModalText({ children }: { children: React.ReactNode }) {
   return (
-    <ul className="flex flex-col gap-0.5 text-xs font-medium leading-[1.3]">
-      {rules.map((r) => (
-        <li key={r.label} className={r.ok ? 'text-text-positive' : 'text-text-disabled'}>
-          {r.ok ? '✓' : '•'} {r.label}
-        </li>
-      ))}
-    </ul>
+    <p className="text-center font-rubik text-lg leading-[1.2] text-text-disabled">{children}</p>
   );
 }
 
-function BackLink({ onClick }: { onClick: () => void }) {
-  const t = useTranslations('recovery');
+function GeneralError({ text }: { text: string }) {
+  return (
+    <p role="alert" className="text-center text-xs font-medium leading-[1.3] text-text-negative">
+      {text}
+    </p>
+  );
+}
+
+/**
+ * Соц-вход «a-button-main» 400×54 (847:36810): фон surface/surf2, r20,
+ * иконка 20×20 у левого края (отступ 16 + 1px обводки), подпись по центру
+ * кнопки — Roboto Medium 14/20.
+ *
+ * Подпись в макете #FFFFFF, но макета светлой темы нет, а surface/surf2 в ней
+ * #F5F3F2 — белым по белому подпись пропадала. Ставим text/default: в тёмной
+ * теме #EEEEEE (от белого не отличить), в светлой #3F3F3F.
+ */
+function SocialButton({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
     <button
       type="button"
-      onClick={onClick}
-      className="mt-4 w-full cursor-pointer text-center text-sm font-medium leading-5 text-text-disabled transition-colors hover:text-text-default"
+      className="relative flex h-[54px] w-full cursor-pointer items-center justify-center rounded-[20px] bg-surface-page-surf2 text-sm font-medium leading-5 text-text-default transition-colors hover:bg-comp-surface2-hover"
     >
-      {t('back')}
+      <span className="absolute left-[17px] flex h-5 w-5 items-center justify-center">{icon}</span>
+      {label}
     </button>
   );
 }

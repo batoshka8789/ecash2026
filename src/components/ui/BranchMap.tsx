@@ -71,15 +71,16 @@ function makePin(marker: BranchMapMarker): HTMLButtonElement {
   el.type = 'button';
   el.title = marker.label;
   el.setAttribute('aria-label', marker.label);
+  // font-sans — пин лежит внутри .maplibregl-map, где библиотека своим
+  // правилом навязывает Helvetica Neue; Roboto макета иначе не наследуется.
   el.className =
-    'relative flex h-12 w-12 cursor-pointer items-center justify-center border-0 bg-transparent p-0';
+    'relative flex h-12 w-12 cursor-pointer items-center justify-center border-0 bg-transparent p-0 font-sans';
   if (marker.active) el.style.zIndex = '2';
 
+  // Пин по мастеру «Frame 1437255198»: круг 40×40 без тени; выбранного
+  // состояния в макете нет, подсветку не рисуем.
   const dot = document.createElement('span');
-  dot.className = clsx(
-    'flex h-10 w-10 items-center justify-center rounded-full bg-brand shadow-[0_2px_8px_rgb(0_0_0/0.45)] transition-transform',
-    marker.active && 'scale-110 ring-[6px] ring-brand-hardsoft',
-  );
+  dot.className = 'flex h-10 w-10 items-center justify-center rounded-full bg-brand';
 
   const mark = document.createElement('img');
   mark.src = '/img/mark-white.png';
@@ -345,23 +346,24 @@ export function BranchMap({
     });
   }, [center]);
 
-  // Кнопки карты по фрейму «on map» ≤480: 44×44, radius 40, сплошной surf1.
+  // Кнопки карты по мастеру «close» [991:32738]: 44×44, radius 40, сплошной
+  // surf1, иконка 20 (padding 12), без тени; отступ от края 16.
   const controlClass =
-    'inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-surface-page-surf1 text-text-default shadow-lg transition-colors hover:bg-comp-surface2-hover';
+    'inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-surface-page-surf1 text-text-default transition-colors hover:bg-comp-surface2-hover';
 
   return (
     <div className={clsx('relative overflow-hidden bg-surface-page-surf2', className)}>
       <div ref={containerRef} role="region" aria-label={label} className="h-full w-full" />
 
       {controls && (
-        <div className="absolute right-3 top-3 z-10 flex flex-col gap-2">
+        <div className="absolute right-4 top-4 z-10 flex flex-col gap-2">
           <button
             type="button"
             aria-label={l.zoomIn}
             onClick={() => mapRef.current?.zoomIn()}
             className={controlClass}
           >
-            <Icon name="add" size={22} />
+            <Icon name="add" size={20} />
           </button>
           <button
             type="button"
@@ -369,7 +371,7 @@ export function BranchMap({
             onClick={() => mapRef.current?.zoomOut()}
             className={controlClass}
           >
-            <Icon name="remove" size={22} />
+            <Icon name="remove" size={20} />
           </button>
           {userPos && (
             <button

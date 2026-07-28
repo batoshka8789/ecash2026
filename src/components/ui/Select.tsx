@@ -1,6 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
+import { createPortal } from 'react-dom';
 import { clsx } from 'clsx';
 import { Icon } from './Icon';
 
@@ -10,9 +19,29 @@ import { Icon } from './Icon';
  * С searchable внутри попапа появляется поле поиска: фильтрация опций
  * по подстроке (label + hint + value, без учёта регистра), клавиатурная
  * навигация работает по отфильтрованному списку.
+ *
+ * На узких экранах searchable-вариант (в макете это селектор валюты) не
+ * попап, а боттомшит «bottomsheet» 1770:124797 / 1774:148975: лист во всю
+ * ширину у нижнего края, грабер сверху и без поля поиска.
  */
 
 export type SelectOption = { value: string; label: string; hint?: string };
+
+/** Ширина, ниже которой раскрытый список — боттомшит (макеты 480 и 360). */
+const SHEET_QUERY = '(width < 40rem)';
+
+function useSheetLayout(): boolean {
+  return useSyncExternalStore(
+    (onChange) => {
+      const mq = window.matchMedia(SHEET_QUERY);
+      mq.addEventListener('change', onChange);
+      return () => mq.removeEventListener('change', onChange);
+    },
+    () => window.matchMedia(SHEET_QUERY).matches,
+    // на сервере список всегда закрыт, поэтому расхождения гидратации нет
+    () => false,
+  );
+}
 
 export function Select({
   value,
@@ -53,12 +82,19 @@ export function Select({
   const [active, setActive] = useState(0);
   const [query, setQuery] = useState('');
   const rootRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const id = useId();
 
+  const narrow = useSheetLayout();
+  /** Боттомшит вместо попапа: только у searchable-варианта и только ≤480. */
+  const sheet = searchable && narrow;
+
   const selected = options.find((o) => o.value === value) ?? null;
+  /** В закрытом поле нарисован не текст, а свой визуал (флаг + код валюты). */
+  const customValue = selected !== null && renderValue !== undefined;
 
   /** Опции после фильтра поиска; без searchable/запроса — исходный список. */
   const visible = useMemo(() => {
@@ -79,28 +115,39 @@ export function Select({
   useEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) close(false);
+      const target = e.target as Node;
+      // боттомшит живёт в портале и в rootRef не попадает
+      if (rootRef.current?.contains(target) || sheetRef.current?.contains(target)) return;
+      close(false);
     };
     document.addEventListener('pointerdown', onDown);
     return () => document.removeEventListener('pointerdown', onDown);
   }, [open, close]);
 
-  /** открытие: активная позиция ставится в обработчике, не в эффекте */
-  const openList = useCallback(() => {
-    setQuery('');
-    const idx = Math.max(
-      0,
-      options.findIndex((o) => o.value === value),
-    );
-    setActive(idx);
-    setOpen(true);
-    requestAnimationFrame(() => {
-      if (searchable) searchRef.current?.focus();
-      listRef.current?.querySelector<HTMLElement>(`[data-idx="${idx}"]`)?.scrollIntoView({
-        block: 'nearest',
+  /**
+   * Открытие: активная позиция ставится в обработчике, не в эффекте.
+   * Фокус в поле поиска переводим только при открытии с клавиатуры: в макете
+   * только что раскрытый дропдаун показан с обычной обводкой поля (116:5090),
+   * а не с брендовой, и подсветка родительского поля суммы не включена.
+   */
+  const openList = useCallback(
+    (fromKeyboard: boolean) => {
+      setQuery('');
+      const idx = Math.max(
+        0,
+        options.findIndex((o) => o.value === value),
+      );
+      setActive(idx);
+      setOpen(true);
+      requestAnimationFrame(() => {
+        if (searchable && !sheet && fromKeyboard) searchRef.current?.focus();
+        listRef.current?.querySelector<HTMLElement>(`[data-idx="${idx}"]`)?.scrollIntoView({
+          block: 'nearest',
+        });
       });
-    });
-  }, [options, value, searchable]);
+    },
+    [options, value, searchable, sheet],
+  );
 
   const commit = useCallback(
     (idx: number) => {
@@ -116,7 +163,7 @@ export function Select({
     if (!open) {
       if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        openList();
+        openList(true);
       }
       return;
     }
@@ -173,10 +220,14 @@ export function Select({
       role="listbox"
       aria-labelledby={`${id}-label`}
       className={
-        searchable
-          ? 'max-h-72 overflow-auto'
-          : // попап «Frame 1437254896»: r20, p8, обводка stroke/modal, тень 0 0 6px 12%
-            'absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-[20px] border border-stroke-modal bg-surface-modal-bg p-2 shadow-[0_0_6px_rgb(0_0_0/0.12)]'
+        sheet
+          ? // «Frame 1437254947» боттомшита — 336 видимой высоты (6 строк по 56)
+            'max-h-[336px] overflow-auto'
+          : searchable
+            ? // «Frame 1437254947» попапа: 376 − 8 − 52 − 16 − 8 − 2 = 290
+              'max-h-[290px] overflow-auto'
+            : // попап «Frame 1437254896»: r20, p8, обводка stroke/modal, тень 0 0 6px 12%
+              'absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-[20px] border border-stroke-modal bg-surface-modal-bg p-2 shadow-[0_0_6px_rgb(0_0_0/0.12)]'
       }
     >
       {visible.map((opt, idx) => (
@@ -239,9 +290,8 @@ export function Select({
               opt.value === value ? 'bg-brand' : 'bg-surface-modal-surf1',
             )}
           >
-            {opt.value === value && (
-              <Icon name="done" size={12} className="text-text-always-white" />
-            )}
+            {/* «done» 902:38026 — глиф 12×12 цветом #EEEEEE (text/default) */}
+            {opt.value === value && <Icon name="done" size={12} className="text-text-default" />}
           </span>
         </li>
       ))}
@@ -272,8 +322,8 @@ export function Select({
         aria-haspopup="listbox"
         aria-labelledby={`${id}-label`}
         aria-controls={open ? `${id}-list` : undefined}
-        aria-activedescendant={searchable ? undefined : activeId}
-        onClick={() => (open ? close(false) : openList())}
+        aria-activedescendant={activeId}
+        onClick={() => (open ? close(false) : openList(false))}
         className={clsx(
           // геометрия «Input» M: 54×r20, паддинг 16, текст Roboto Medium 16/20
           'flex h-[54px] w-full cursor-pointer items-center justify-between gap-2 rounded-[20px] border bg-transparent px-4 text-left text-base font-medium leading-5 text-text-default transition-colors',
@@ -284,7 +334,17 @@ export function Select({
           buttonClassName,
         )}
       >
-        <span className={clsx('truncate', !selected && 'text-text-disabled')}>
+        {/* renderValue рисует не строку, а блочный визуал (флаг + код): у строчного
+            бокса добавляется нижний выносной элемент шрифта и содержимое съезжает
+            на 1px вниз от центра поля — здесь центрируем его флексом. Для обычного
+            текста обёртка остаётся строчной, иначе перестанет работать многоточие */}
+        <span
+          className={clsx(
+            'truncate',
+            customValue && 'flex items-center',
+            !selected && 'text-text-disabled',
+          )}
+        >
           {selected ? (renderValue ? renderValue(selected) : selected.label) : (placeholder ?? '—')}
         </span>
         {/* в макете это заливной треугольник arrow_down (10.67×6), не «птичка»
@@ -296,13 +356,28 @@ export function Select({
         />
       </button>
 
-      {open &&
-        (searchable ? (
-          // Попап с поиском: обёртка несёт стили списка, ul остаётся listbox.
-          <div className="absolute left-0 right-0 top-full z-30 mt-1 rounded-[20px] border border-stroke-modal bg-surface-modal-bg p-2 shadow-[0_0_6px_rgb(0_0_0/0.12)]">
-            {/* «search field S»: 52×r12 на surf1 модалки, брендовая обводка в фокусе */}
-            <div className="mb-4 flex h-13 items-center gap-3 rounded-xl border border-surface-modal-surf1 bg-surface-modal-surf1 px-4 transition-colors focus-within:border-stroke-brand">
-              <Icon name="search" size={24} className="shrink-0 text-text-default" />
+      {open && !searchable && listbox}
+
+      {open && searchable && !sheet && (
+        // Попап с поиском: обёртка несёт стили списка, ul остаётся listbox.
+        <div className="absolute left-0 right-0 top-full z-30 mt-1 rounded-[20px] border border-stroke-modal bg-surface-modal-bg p-2 shadow-[0_0_6px_rgb(0_0_0/0.12)]">
+          {/* «search field S» 116:5090 — 52×r12 на surf1 модалки: в покое
+              обводка #4C4C4C, брендовая только у состояния с вводом (116:5087) */}
+          <div
+            className={clsx(
+              'mb-4 flex h-13 items-center gap-3 rounded-xl border bg-surface-modal-surf1 px-4 transition-colors',
+              query ? 'border-stroke-brand' : 'border-surface-modal-surf1',
+            )}
+          >
+            <Icon name="search" size={24} className="shrink-0 text-text-default" />
+            <span className="flex min-w-0 flex-1 flex-col justify-center">
+              {/* «Frame 1437254953»: у заполненного поля над значением
+                  встаёт его подпись Roboto Medium 12/1.2× */}
+              {query !== '' && (
+                <span className="truncate text-xs font-medium leading-[1.2] text-text-disabled">
+                  {searchPlaceholder}
+                </span>
+              )}
               <input
                 ref={searchRef}
                 type="text"
@@ -318,15 +393,38 @@ export function Select({
                 aria-autocomplete="list"
                 autoComplete="off"
                 spellCheck={false}
-                // «Input txt S» — Roboto Medium 14/20, плейсхолдер SemiBold 14/20
-                className="w-full min-w-0 bg-transparent text-sm font-medium leading-5 text-text-default outline-none placeholder:font-semibold placeholder:text-text-disabled"
+                // значение — Inter Regular 14/1.4× (116:5065), плейсхолдер —
+                // Roboto Regular 14 (116:5046). Глобальное кольцо :focus-visible
+                // здесь лишнее (подсветку несёт рамка поля), а объявлено оно вне
+                // слоёв — перебить его можно только важностью
+                className="w-full min-w-0 bg-transparent font-inter text-sm font-normal leading-[1.4] text-text-default outline-none placeholder:font-sans placeholder:font-normal placeholder:text-text-disabled focus-visible:outline-none!"
               />
-            </div>
-            {listbox}
+            </span>
           </div>
-        ) : (
-          listbox
-        ))}
+          {listbox}
+        </div>
+      )}
+
+      {open &&
+        sheet &&
+        createPortal(
+          // «bottomsheet» 1770:124797: лист во всю ширину у нижнего края,
+          // r24 сверху, fill #333333, обводка #404040, тень 0 0 6px 12%
+          <div
+            ref={sheetRef}
+            // обводка внутренняя (strokeAlign=INSIDE): обычный border съел бы
+            // по 1px ширины у строк списка — они должны быть ровно 328/448
+            className="fixed inset-x-0 bottom-0 z-50 rounded-t-[24px] bg-surface-modal-bg shadow-[0_0_6px_rgb(0_0_0/0.12)] inset-ring-1 inset-ring-stroke-modal"
+          >
+            {/* «grabber» 1770:124798 — 24px с полоской 64×4 r2 #6B6B6B */}
+            <div aria-hidden className="flex h-6 items-center justify-center">
+              <span className="h-1 w-16 rounded-[2px] bg-text-disabled" />
+            </div>
+            {/* «Frame 1437255423» — padding 12 16 8 16, поля поиска в макете нет */}
+            <div className="px-4 pb-2 pt-3">{listbox}</div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

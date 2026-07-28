@@ -8,7 +8,21 @@ npm run fig:spec -- spec <node-id> --depth 4          # спека узла
 npm run fig:spec -- spec <node-id> --depth 6 --text   # только тексты
 npm run fig:spec -- find '<regexp>'                   # поиск по имени слоя
 npm run fig:spec -- vars                              # переменные-токены
+
+# спека экранов с РАЗРЕШЁННЫМИ переопределениями инстансов
+node --max-old-space-size=8192 scripts/fig-resolve.mjs dump   # → design/raw/spec/resolved/
+node --max-old-space-size=8192 scripts/fig-resolve.mjs <node-id> --depth 6
 ```
+
+> **Сверять вёрстку по брейкпоинтам можно только по `design/raw/spec/resolved/`.**
+> У INSTANCE в `.fig` нет собственных детей — содержимое лежит в мастер-компоненте, и `fig-spec.mjs`
+> проваливается в него как есть. Поэтому `design/raw/spec/screens/` для каждого брейкпоинта печатает
+> одну и ту же геометрию 1920 (дампы 1920 и 1024 совпадали побайтово, кроме корневой строки).
+> Реальные значения Figma хранит внутри инстанса в `symbolData.symbolOverrides` (авторские
+> переопределения) и `derivedSymbolData` (посчитанная раскладка), адресуя узлы через `guidPath`.
+> `scripts/fig-resolve.mjs` их применяет. Пример разницы: карточки действий «modal/service list» —
+> старый дамп даёт 224×142 на всех ширинах, разрешённый — 224 на 1920, 179.2 на 1024, 134.8 на 768,
+> 108 на 480/360.
 
 REST API для этого файла не годится: он слишком большой, `/nodes` и `/files`
 отдают 429 даже на `depth=1`. MCP требует прав редактора, которых нет.

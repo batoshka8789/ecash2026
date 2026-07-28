@@ -1,17 +1,73 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { clsx } from 'clsx';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@/i18n/navigation';
 import { Icon } from '@/components/ui/Icon';
 import { CurrencyFlag } from '@/components/ui/CurrencyFlag';
-import { PillTabs } from '@/components/ui/PillTabs';
 import { api, ApiError, type NotificationDto } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { useCountdown } from '@/lib/hooks';
-import { formatDateTime } from '@/lib/format';
+import { formatBranchAddress } from '@/lib/branch-address';
+import { intlLocale } from '@/lib/format';
 import { useErrorText } from '@/lib/useErrorText';
+
+/** Дата уведомления в макете — без времени: «12.06.2026» [961:32160]. */
+function formatDate(iso: string | null, locale: string): string {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString(intlLocale(locale), {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
+/** «7 704 *** ** 84» — как в макете: видны код оператора и две последние цифры. */
+function maskPhone(phone: string): string {
+  const d = phone.replace(/\D/g, '');
+  if (d.length < 6) return phone;
+  return `${d.slice(0, 1)} ${d.slice(1, 4)} *** ** ${d.slice(-2)}`;
+}
+
+/**
+ * Таб-бар уведомлений — «tabbar» [1810:138545]: подложка #1A1A1A r24,
+ * высота 62 (54 на ≤480), кнопки с иконкой 20 и зазором 8.
+ */
+function NotificationTabs({
+  value,
+  onChange,
+  tabs,
+}: {
+  value: 'actual' | 'history';
+  onChange: (v: 'actual' | 'history') => void;
+  tabs: { value: 'actual' | 'history'; icon: string; label: string }[];
+}) {
+  return (
+    <div className="flex h-[54px] gap-1 rounded-3xl bg-surface-page-bg p-0.5 md:h-[62px]">
+      {tabs.map((tab) => {
+        const active = tab.value === value;
+        return (
+          <button
+            key={tab.value}
+            type="button"
+            onClick={() => onChange(tab.value)}
+            className={clsx(
+              'flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-[20px] pl-4 pr-6 text-sm font-medium leading-5 transition-colors',
+              active
+                ? 'bg-surface-page-surf1 text-text-default'
+                : 'text-text-default hover:text-text-brand',
+            )}
+          >
+            <Icon name={tab.icon} size={20} filled={active} />
+            {tab.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 /** Страница уведомлений: табы Актуальное / История, проекция заявок и подписок. */
 export function NotificationsCard() {
@@ -29,14 +85,33 @@ export function NotificationsCard() {
   const { data } = query;
   const errorStatus = query.error instanceof ApiError ? query.error.status : undefined;
 
+  // Адрес отделения в строке уведомления берём из общего списка отделений:
+  // ключ тот же, что на /locations и в профиле, — запрос переиспользуется.
+  const deps = useQuery({
+    queryKey: ['departments'],
+    queryFn: ({ signal }) => api.departments.list(signal),
+    staleTime: 5 * 60_000,
+  });
+
+  /** requestId → человекочитаемый адрес отделения заявки. */
+  const addressByRequest = useMemo(() => {
+    const byDep = new Map((deps.data?.departments ?? []).map((d) => [d.depId, d.address]));
+    const out = new Map<number, string>();
+    for (const r of data?.requests ?? []) {
+      const raw = r.depId === null ? undefined : byDep.get(r.depId);
+      if (raw) out.set(r.requestId, formatBranchAddress(raw));
+    }
+    return out;
+  }, [deps.data, data]);
+
   return (
-    <div className="rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 px-4 py-8 md:px-8">
-      <PillTabs
+    <div className="rounded-[28px] border border-stroke-surface1 bg-surface-page-surf1 px-4 py-8 max-xl:rounded-t-none md:px-8">
+      <NotificationTabs
         value={tab}
         onChange={setTab}
         tabs={[
-          { value: 'actual', label: t('tabs.actual') },
-          { value: 'history', label: t('tabs.history') },
+          { value: 'actual', icon: 'notifications', label: t('tabs.actual') },
+          { value: 'history', icon: 'history', label: t('tabs.history') },
         ]}
       />
 
@@ -84,8 +159,14 @@ export function NotificationsCard() {
             query.isFetching && 'opacity-60',
           )}
         >
-          {data.notifications.map((n) => (
-            <NotificationRow key={n.id} n={n} />
+          {data.notifications.map((n, i) => (
+            <NotificationRow
+              key={n.id}
+              n={n}
+              branch={n.requestId === null ? null : (addressByRequest.get(n.requestId) ?? null)}
+              // подсветку «нового» в макете несёт только верхняя карточка списка
+              fresh={i === 0 && tab === 'actual'}
+            />
           ))}
         </div>
       )}
@@ -102,20 +183,30 @@ const badgeStyles: Record<string, string> = {
 /** Бейджи с известным переводом; чужой бейдж показываем как есть. */
 const knownBadges = new Set(['booking30', 'rateAlert', 'individual']);
 
+/** «a-button-main» [965:34101] 256×38: padding 8 16, r20, колонкой через 8. */
 const actionCls = (variant: 'solid' | 'outline') =>
   clsx(
-    'inline-flex h-[38px] cursor-pointer items-center justify-center rounded-[20px] border px-4 text-sm font-medium leading-5 transition-colors disabled:cursor-default disabled:opacity-60',
+    'inline-flex h-[38px] w-full max-w-[256px] cursor-pointer items-center justify-center rounded-[20px] border px-4 text-sm font-medium leading-5 transition-colors disabled:cursor-default disabled:opacity-60',
     variant === 'solid'
       ? 'border-btn-brand bg-btn-brand text-text-always-white hover:brightness-110'
       : 'border-stroke-brand text-text-brand hover:bg-brand-hardsoft',
   );
 
-function NotificationRow({ n }: { n: NotificationDto }) {
+function NotificationRow({
+  n,
+  branch,
+  fresh,
+}: {
+  n: NotificationDto;
+  branch: string | null;
+  fresh: boolean;
+}) {
   const t = useTranslations('notifications');
   const tRequests = useTranslations('requests');
   const locale = useLocale();
   const qc = useQueryClient();
   const errorText = useErrorText();
+  const { account } = useAuth();
 
   const act = useMutation({
     mutationFn: ({
@@ -161,20 +252,36 @@ function NotificationRow({ n }: { n: NotificationDto }) {
         </span>
 
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1">
-            {n.badges.map((b) => (
-              <span
-                key={b}
-                className={clsx(
-                  'rounded-xl px-2 py-0.5 text-xs font-bold leading-[18px]',
-                  badgeStyles[b] ?? 'bg-surface-page-surf2 text-text-default',
-                )}
-              >
-                {knownBadges.has(b) ? t(`badges.${b}`) : b}
-              </span>
-            ))}
-            <span className="ml-auto text-xs font-medium leading-4 text-text-default">
-              {formatDateTime(n.createdAt, locale)}
+          {/* «Frame 1437255320» [965:32751]: бейджи слева (переносом), дата справа */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-1">
+              {n.badges.map((b) => (
+                <span
+                  key={b}
+                  className={clsx(
+                    'rounded-xl px-2 py-0.5 text-xs font-bold leading-[18px]',
+                    badgeStyles[b] ?? 'bg-surface-page-surf2 text-text-default',
+                  )}
+                >
+                  {knownBadges.has(b) ? t(`badges.${b}`) : b}
+                </span>
+              ))}
+              {/* «big badge» [1167:64926]: номер заявителя, 14/500 на фоне #F15A25 20% */}
+              {requestId !== null && account?.phoneNumber && (
+                <span className="rounded-xl bg-brand-hardsoft px-2 py-0.5 text-sm font-medium leading-[18px] text-text-brand">
+                  {t('badges.numberValue', { value: maskPhone(account.phoneNumber) })}
+                </span>
+              )}
+            </div>
+            {/* «date» [961:32167]: 12/500 lh16, у непрочитанной строки — точка 6 */}
+            <span
+              className={clsx(
+                'mt-[3px] flex shrink-0 items-center gap-1 text-xs font-medium leading-4',
+                fresh ? 'text-text-default' : 'text-[#707070]',
+              )}
+            >
+              {formatDate(n.createdAt, locale)}
+              {fresh && <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-text-default" />}
             </span>
           </div>
 
@@ -184,15 +291,17 @@ function NotificationRow({ n }: { n: NotificationDto }) {
 
           {n.phase === 'held' && n.reservedUntil && <HoldCountdown until={n.reservedUntil} />}
           {n.phase === 'cancelled' && (
-            <span className="mt-3 inline-block rounded-xl bg-surface-modal-surf1 px-3 py-2 text-sm font-semibold text-text-disabled">
+            /* «Booking Timer» [1187:60553] 133×38: обводка #4C4C4C, текст 16/400 */
+            <span className="mt-3 inline-flex h-[38px] items-center rounded-xl border border-divider-elevated bg-surface-modal-surf1 px-3 text-base leading-[1.24] text-text-disabled">
               {t('cancelled')}
             </span>
           )}
 
-          <div className="mt-3 flex flex-col gap-1.5 border-t border-divider-elevated pt-3 text-sm font-semibold">
+          {/* «Frame 1437255296» [943:45729]: строки 16 через 6, Inter SemiBold 14/1.0 */}
+          <div className="mt-3 flex flex-col gap-1.5 border-t border-divider-elevated pt-3 font-inter text-sm font-semibold leading-none">
             <span
               className={clsx(
-                'flex items-center gap-2',
+                'flex h-4 items-center gap-2',
                 n.side === 'buy' ? 'text-text-positive' : 'text-text-negative',
               )}
             >
@@ -203,14 +312,20 @@ function NotificationRow({ n }: { n: NotificationDto }) {
               />
               {t(n.side === 'buy' ? 'buy' : 'sell')}
             </span>
-            <span className="flex items-center gap-2 text-text-disabled">
+            <span className="flex h-4 items-center gap-2 text-text-disabled">
               <Icon name="paid" size={16} />
               {n.amount}
             </span>
+            {branch && (
+              <span className="flex h-4 items-center gap-2 text-text-disabled">
+                <Icon name="account_balance" size={16} />
+                <span className="truncate underline">{branch}</span>
+              </span>
+            )}
           </div>
 
           {(canConfirm || canCancel || canResume || canDisable) && (
-            <div className="mt-6 flex flex-wrap gap-2">
+            <div className="mt-6 flex flex-col items-start gap-2">
               {requestId !== null && (
                 <>
                   {canConfirm && (
@@ -274,7 +389,11 @@ function NotificationRow({ n }: { n: NotificationDto }) {
   );
 }
 
-/** Живой таймер брони — отдельный компонент, чтобы секундный тик не перерисовывал список. */
+/**
+ * Живой таймер брони — отдельный компонент, чтобы секундный тик не перерисовывал
+ * список. «Booking Timer» [1187:60388] 148×38: обводка #4C4C4C, padding 4,
+ * число 16/400 lh19.84, единица измерения 14/400 lh15.4.
+ */
 function HoldCountdown({ until }: { until: string }) {
   const t = useTranslations('notifications');
   const left = useCountdown(until);
@@ -282,13 +401,15 @@ function HoldCountdown({ until }: { until: string }) {
   const ss = String(left % 60).padStart(2, '0');
 
   return (
-    <div className="mt-3 flex w-fit items-center gap-1 rounded-xl bg-surface-modal-surf1 p-1 text-base leading-[1.24] text-text-default">
-      <span className="rounded-2xl px-2 py-1">
-        {mm} {t('min')}
+    <div className="mt-3 flex h-[38px] w-fit items-center gap-1 rounded-xl border border-divider-elevated bg-surface-modal-surf1 p-1 text-base leading-[1.24] text-text-default">
+      <span className="flex items-baseline gap-1 rounded-2xl px-2 py-1">
+        {mm}
+        <span className="text-sm leading-[1.1]">{t('min')}</span>
       </span>
       :
-      <span className="rounded-2xl px-2 py-1">
-        {ss} {t('sec')}
+      <span className="flex items-baseline gap-1 rounded-2xl px-2 py-1">
+        {ss}
+        <span className="text-sm leading-[1.1]">{t('sec')}</span>
       </span>
     </div>
   );

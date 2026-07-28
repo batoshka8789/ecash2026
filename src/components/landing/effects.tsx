@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /* eslint-disable @next/next/no-img-element */
 
@@ -6,19 +6,19 @@ import {
   motion,
   useMotionTemplate,
   useMotionValue,
-  useReducedMotion,
   useSpring,
   useTransform,
   useScroll,
-} from "framer-motion";
-import { clsx } from "clsx";
+} from 'framer-motion';
+import { clsx } from 'clsx';
 import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type PointerEvent,
   type ReactNode,
-} from "react";
+} from 'react';
 
 /**
  * Интерактивные эффекты лендинга.
@@ -46,22 +46,48 @@ export function useAnimReady(): boolean {
       raf = requestAnimationFrame(() => setReady(true));
     };
 
-    if (document.visibilityState === "visible") {
+    if (document.visibilityState === 'visible') {
       arm();
     }
 
     const onVisible = () => {
-      if (document.visibilityState === "visible") arm();
+      if (document.visibilityState === 'visible') arm();
     };
-    document.addEventListener("visibilitychange", onVisible);
+    document.addEventListener('visibilitychange', onVisible);
 
     return () => {
       cancelAnimationFrame(raf);
-      document.removeEventListener("visibilitychange", onVisible);
+      document.removeEventListener('visibilitychange', onVisible);
     };
   }, []);
 
   return ready;
+}
+
+/* --------------------------------------------------- reduced-motion */
+
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+
+function subscribeReducedMotion(onChange: () => void) {
+  const mq = window.matchMedia(REDUCED_MOTION_QUERY);
+  mq.addEventListener('change', onChange);
+  return () => mq.removeEventListener('change', onChange);
+}
+
+const readReducedMotion = () => window.matchMedia(REDUCED_MOTION_QUERY).matches;
+
+/**
+ * prefers-reduced-motion, безопасный для гидратации.
+ *
+ * useReducedMotion из framer-motion читает медиазапрос синхронно уже в первом
+ * рендере: на сервере получается false, на клиенте — настоящее значение, и там,
+ * где от него зависит разметка, Next валится с «Hydration failed».
+ * useSyncExternalStore отдаёт false и на сервере, и в первом клиентском рендере
+ * (getServerSnapshot), а настоящее значение подставляет уже после гидратации —
+ * сами анимации при этом не меняются.
+ */
+export function useReducedMotionSafe(): boolean {
+  return useSyncExternalStore(subscribeReducedMotion, readReducedMotion, () => false);
 }
 
 /* ------------------------------------------------------------- спотлайт */
@@ -74,16 +100,16 @@ export function useAnimReady(): boolean {
 export function Spotlight({
   children,
   className,
-  tone = "#F6844B",
-  as: Tag = "article",
+  tone = '#F6844B',
+  as: Tag = 'article',
 }: {
   children: ReactNode;
   className?: string;
   /** цвет пятна — оранжевый для обычных карточек, сиреневый для акцентных */
   tone?: string;
-  as?: "article" | "div";
+  as?: 'article' | 'div';
 }) {
-  const reduced = useReducedMotion();
+  const reduced = useReducedMotionSafe();
   const mx = useMotionValue(-9999);
   const my = useMotionValue(-9999);
 
@@ -101,13 +127,13 @@ export function Spotlight({
     my.set(-9999);
   };
 
-  const MotionTag = Tag === "div" ? motion.div : motion.article;
+  const MotionTag = Tag === 'div' ? motion.div : motion.article;
 
   return (
     <MotionTag
       onPointerMove={onMove}
       onPointerLeave={onLeave}
-      className={clsx("group/spot relative isolate overflow-hidden", className)}
+      className={clsx('group/spot relative isolate overflow-hidden', className)}
     >
       {/* световое пятно за курсором */}
       <motion.span
@@ -137,21 +163,15 @@ export function Tilt({
   className?: string;
   strength?: number;
 }) {
-  const reduced = useReducedMotion();
+  const reduced = useReducedMotionSafe();
   const ref = useRef<HTMLDivElement>(null);
 
   const px = useMotionValue(0.5);
   const py = useMotionValue(0.5);
 
   const spring = { stiffness: 180, damping: 18 };
-  const rotateX = useSpring(
-    useTransform(py, [0, 1], [strength, -strength]),
-    spring,
-  );
-  const rotateY = useSpring(
-    useTransform(px, [0, 1], [-strength, strength]),
-    spring,
-  );
+  const rotateX = useSpring(useTransform(py, [0, 1], [strength, -strength]), spring);
+  const rotateY = useSpring(useTransform(px, [0, 1], [-strength, strength]), spring);
 
   const onMove = (e: PointerEvent<HTMLDivElement>) => {
     if (reduced) return;
@@ -173,9 +193,9 @@ export function Tilt({
       ref={ref}
       onPointerMove={onMove}
       onPointerLeave={reset}
-      className={clsx("[perspective:1200px]", className)}
+      className={clsx('[perspective:1200px]', className)}
     >
-      <motion.div style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}>
+      <motion.div style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}>
         {children}
       </motion.div>
     </div>
@@ -194,7 +214,7 @@ export function Magnetic({
   className?: string;
   radius?: number;
 }) {
-  const reduced = useReducedMotion();
+  const reduced = useReducedMotionSafe();
   const ref = useRef<HTMLDivElement>(null);
 
   const spring = { stiffness: 260, damping: 20, mass: 0.4 };
@@ -219,39 +239,10 @@ export function Magnetic({
       ref={ref}
       onPointerMove={onMove}
       onPointerLeave={reset}
-      className={clsx("inline-block", className)}
+      className={clsx('inline-block', className)}
     >
       <motion.div style={{ x, y }}>{children}</motion.div>
     </div>
-  );
-}
-
-/* -------------------------------------------------------------- зерно */
-
-/**
- * Плёночное зерно и виньетка поверх всей страницы — дают глубину
- * и «прижимают» края, за счёт чего цветные свечения читаются контрастнее.
- */
-export function GrainOverlay() {
-  return (
-    <>
-      <span
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-30 opacity-[0.055] mix-blend-overlay"
-        style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)'/%3E%3C/svg%3E\")",
-        }}
-      />
-      <span
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-20"
-        style={{
-          background:
-            "radial-gradient(120% 80% at 50% 0%, transparent 45%, rgb(0 0 0 / 0.45) 100%)",
-        }}
-      />
-    </>
   );
 }
 
@@ -276,7 +267,7 @@ export function FloatImage({
   className?: string;
   delay?: number;
 }) {
-  const reduced = useReducedMotion();
+  const reduced = useReducedMotionSafe();
   const ref = useRef<HTMLDivElement>(null);
 
   // наклон за курсором
@@ -289,7 +280,7 @@ export function FloatImage({
   // параллакс при скролле
   const { scrollYProgress } = useScroll({
     target: ref,
-    offset: ["start end", "end start"],
+    offset: ['start end', 'end start'],
   });
   const parallax = useSpring(useTransform(scrollYProgress, [0, 1], [40, -40]), {
     stiffness: 70,
@@ -310,9 +301,11 @@ export function FloatImage({
     py.set(0.5);
   };
 
+  // ref нужен и здесь: useScroll выше уже подписался на него, и без
+  // привязки к узлу motion валится с «Target ref is defined but not hydrated».
   if (reduced) {
     return (
-      <div className={clsx("relative", className)}>
+      <div ref={ref} className={clsx('relative', className)}>
         <img src={src} alt="" className="relative w-full" />
       </div>
     );
@@ -324,7 +317,7 @@ export function FloatImage({
       onPointerMove={onMove}
       onPointerLeave={reset}
       style={{ y: parallax, scale }}
-      className={clsx("relative [perspective:1200px]", className)}
+      className={clsx('relative [perspective:1200px]', className)}
     >
       {/* пульсирующий ореол под картинкой */}
       <motion.span
@@ -332,17 +325,17 @@ export function FloatImage({
         className="pointer-events-none absolute left-1/2 top-1/2 -z-10 aspect-square w-[135%] -translate-x-1/2 -translate-y-1/2 rounded-full"
         style={{
           background: `radial-gradient(closest-side, ${tone}88 0%, ${tone}44 45%, transparent 72%)`,
-          mixBlendMode: "screen",
+          mixBlendMode: 'screen',
         }}
         animate={{ scale: [1, 1.15, 1], opacity: [0.55, 0.9, 0.55] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay }}
+        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay }}
       />
 
       {/* парение + наклон */}
       <motion.div
-        style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+        style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
         animate={{ y: [0, -14, 0] }}
-        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay }}
+        transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay }}
       >
         <img
           src={src}

@@ -60,7 +60,12 @@ function withExpiry(r: ExchangeRequest): ExchangeRequest {
   return r;
 }
 
-function treasurerAccept(actionType: 1 | 2, rate: number, value: number, amount: number): RequestAccept {
+function treasurerAccept(
+  actionType: 1 | 2,
+  rate: number,
+  value: number,
+  amount: number,
+): RequestAccept {
   return {
     acceptId: store.nextId++,
     actionType,
@@ -75,7 +80,11 @@ function treasurerAccept(actionType: 1 | 2, rate: number, value: number, amount:
   };
 }
 
-export function demoCreate(accountId: string, body: ReserveBody, individual: boolean): ExchangeRequest {
+export function demoCreate(
+  accountId: string,
+  body: ReserveBody,
+  individual: boolean,
+): ExchangeRequest {
   const existing = list(accountId).find(
     (r) =>
       withExpiry(r).status === 0 ||
@@ -84,7 +93,11 @@ export function demoCreate(accountId: string, body: ReserveBody, individual: boo
         r.currencyTo === body.currencyTo &&
         (r.depId ?? 0) === (body.depId ?? 0)),
   );
-  if (existing && existing.currencyFrom === body.currencyFrom && existing.currencyTo === body.currencyTo) {
+  if (
+    existing &&
+    existing.currencyFrom === body.currencyFrom &&
+    existing.currencyTo === body.currencyTo
+  ) {
     const err = new Error('duplicate') as Error & { demoDuplicate?: ExchangeRequest };
     err.demoDuplicate = withExpiry(existing);
     throw err;
@@ -190,7 +203,11 @@ export function demoCancel(accountId: string, requestId: number): ExchangeReques
   const cur = withExpiry(r);
   // терминальные статусы (1 Проведена / 3 Отмена, в т.ч. истёкшая бронь) — как upstream: 409
   if (cur.status !== 0 && cur.status !== 8) {
-    throw new EcashError('REQUEST_NOT_CANCELLABLE', 409, `request ${requestId} in status ${cur.status}`);
+    throw new EcashError(
+      'REQUEST_NOT_CANCELLABLE',
+      409,
+      `request ${requestId} in status ${cur.status}`,
+    );
   }
   Object.assign(r, {
     status: 3,
@@ -209,18 +226,33 @@ export function demoCancel(accountId: string, requestId: number): ExchangeReques
 function assertAwaitingDecision(cur: ExchangeRequest): void {
   if (cur.needsClientConfirmation) return;
   if (!cur.isIndividual) {
-    throw new EcashError('NOT_INDIVIDUAL_REQUEST', 409, `request ${cur.requestId} is not individual`);
+    throw new EcashError(
+      'NOT_INDIVIDUAL_REQUEST',
+      409,
+      `request ${cur.requestId} is not individual`,
+    );
   }
   if (cur.isExpired) {
     throw new EcashError('RATE_EXPIRED', 409, `request ${cur.requestId} offer expired`);
   }
   if (cur.status === 0) {
-    throw new EcashError('RATE_NOT_CONFIRMED', 409, `request ${cur.requestId} has no treasurer answer yet`);
+    throw new EcashError(
+      'RATE_NOT_CONFIRMED',
+      409,
+      `request ${cur.requestId} has no treasurer answer yet`,
+    );
   }
-  throw new EcashError('REQUEST_NOT_ACTIVE', 409, `request ${cur.requestId} in status ${cur.status}`);
+  throw new EcashError(
+    'REQUEST_NOT_ACTIVE',
+    409,
+    `request ${cur.requestId} in status ${cur.status}`,
+  );
 }
 
-export function demoConfirmIndividual(accountId: string, requestId: number): ExchangeRequest | null {
+export function demoConfirmIndividual(
+  accountId: string,
+  requestId: number,
+): ExchangeRequest | null {
   const r = list(accountId).find((x) => x.requestId === requestId);
   if (!r) return null;
   assertAwaitingDecision(withExpiry(r));

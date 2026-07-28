@@ -89,7 +89,9 @@ export function LangSwitcher() {
       {open && (
         <div
           role="listbox"
-          className="absolute right-0 top-full z-50 mt-2 min-w-28 overflow-hidden rounded-2xl bg-surface-modal-bg py-2 shadow-lg"
+          // раскрывается вверх: контрол стоит в строке копирайта, в самом низу
+          // страницы, и списку вниз просто некуда открыться
+          className="absolute bottom-full right-0 z-50 mb-2 min-w-28 overflow-hidden rounded-2xl bg-surface-modal-bg py-2 shadow-lg"
         >
           {routing.locales.map((l, i) => (
             <button

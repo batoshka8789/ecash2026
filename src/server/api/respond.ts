@@ -21,7 +21,11 @@ export function fail(
   extra?: { field?: string; data?: unknown },
 ): NextResponse {
   return NextResponse.json(
-    { error, ...(extra?.field ? { field: extra.field } : {}), ...(extra?.data !== undefined ? { data: extra.data } : {}) },
+    {
+      error,
+      ...(extra?.field ? { field: extra.field } : {}),
+      ...(extra?.data !== undefined ? { data: extra.data } : {}),
+    },
     { status, headers: serverTime() },
   );
 }

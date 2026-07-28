@@ -61,7 +61,11 @@ export function rateLimited(req: Request, key: string, limit: number, windowMs: 
  * refresh и ротацией куки), 401 без валидной сессии.
  */
 export function withUser(
-  handler: (req: Request, token: string, ctx: { params: Promise<Record<string, string>> }) => Promise<NextResponse>,
+  handler: (
+    req: Request,
+    token: string,
+    ctx: { params: Promise<Record<string, string>> },
+  ) => Promise<NextResponse>,
 ) {
   return async (req: Request, ctx: { params: Promise<Record<string, string>> }) => {
     const originErr = checkOrigin(req);

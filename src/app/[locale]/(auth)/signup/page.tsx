@@ -3,7 +3,11 @@ import { pageMetadata } from '@/lib/metadata';
 
 export default function SignupPage() {
   return (
-    <main id="main" className="flex min-h-screen items-center justify-center bg-surface-page-bg px-4 py-10">
+    /* На 360 модалка макета занимает экран целиком, поэтому полей у страницы нет */
+    <main
+      id="main"
+      className="flex min-h-screen items-center justify-center bg-surface-page-bg px-4 py-10 max-[361px]:p-0"
+    >
       <AuthCard initialTab="signup" />
     </main>
   );

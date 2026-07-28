@@ -4,16 +4,20 @@ import { useTranslations } from 'next-intl';
 
 /**
  * Переводит код ошибки бэкенда («errors.INVALID_OTP») в текст.
- * next-intl не бросает исключение на неизвестном ключе, а возвращает
- * сам ключ — поэтому фоллбэк проверяется сравнением, не try/catch.
+ *
+ * Кодов у апстрима больше, чем ключей в messages: наличие перевода проверяем
+ * заранее через t.has(). Если звать t() на отсутствующем ключе, next-intl
+ * вернёт сам ключ, но попутно напишет в консоль MISSING_MESSAGE — на страницах
+ * с недоступным апстримом это давало по десятку ошибок на загрузку.
  */
 export function useErrorText() {
   const t = useTranslations();
   return (code: string | null | undefined) => {
     if (!code) return '';
-    const key = code.startsWith('errors.') ? code : `errors.${code}`;
-    const text = t(key as Parameters<typeof t>[0]);
+    const key = (code.startsWith('errors.') ? code : `errors.${code}`) as Parameters<
+      typeof t.has
+    >[0];
     // не нашли перевод → человеку показываем «непредвиденную ошибку»
-    return text === key || text.endsWith(`.${key}`) ? t('errors.unknown') : text;
+    return t.has(key) ? t(key) : t('errors.unknown');
   };
 }

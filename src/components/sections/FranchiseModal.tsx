@@ -45,7 +45,9 @@ export function FranchiseModal({ open, onClose }: { open: boolean; onClose: () =
   const nameError = fieldError('name');
   const phoneError = fieldError('phone');
   const generalError =
-    sendError && sendError.field !== 'name' && sendError.field !== 'phone' ? sendError.message : null;
+    sendError && sendError.field !== 'name' && sendError.field !== 'phone'
+      ? sendError.message
+      : null;
 
   // Сброс полей формы при каждом открытии — старая заявка не должна «протухать»
   // под новой. Правка состояния во время рендера — тот же приём, что и в
@@ -151,128 +153,133 @@ export function FranchiseModal({ open, onClose }: { open: boolean; onClose: () =
         aria-modal="true"
         aria-labelledby={titleId}
       >
-        <div
-          ref={containerRef}
-          className="anim-modal-card relative w-full max-w-[560px]"
-        >
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label={tAddress('close')}
-              className="absolute -top-14 right-0 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-surface-page-surf1 text-text-default transition-colors hover:bg-comp-surface2-hover lg:-right-14 lg:top-0"
-            >
-              <Icon name="close" size={20} />
-            </button>
+        <div ref={containerRef} className="anim-modal-card relative w-full max-w-[560px]">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={tAddress('close')}
+            className="absolute -top-14 right-0 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-surface-page-surf1 text-text-default transition-colors hover:bg-comp-surface2-hover lg:-right-14 lg:top-0"
+          >
+            <Icon name="close" size={20} />
+          </button>
 
-            <div className="flex flex-col gap-6 rounded-[20px] border border-stroke-surface1 bg-surface-page-surf1 p-5 sm:p-10">
-              <div className="flex flex-col gap-1 text-center">
-                <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-hardsoft text-text-brand">
-                  <Icon name="groups" size={26} filled />
-                </span>
-                <h2
-                  id={titleId}
-                  className="mt-2 text-xl font-medium leading-tight text-text-default sm:text-[28px]"
+          <div className="flex flex-col gap-6 rounded-[20px] border border-stroke-surface1 bg-surface-page-surf1 p-5 sm:p-10">
+            <div className="flex flex-col gap-1 text-center">
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-hardsoft text-text-brand">
+                <Icon name="groups" size={26} filled />
+              </span>
+              <h2
+                id={titleId}
+                className="mt-2 text-xl font-medium leading-tight text-text-default sm:text-[28px]"
+              >
+                {t('title')}
+              </h2>
+              <p className="text-sm text-text-default sm:text-base">{t('subtitle')}</p>
+            </div>
+
+            {send.isSuccess ? (
+              <div role="status" className="flex flex-col items-center gap-3 py-4 text-center">
+                <Icon name="check_circle" size={40} filled className="text-text-positive" />
+                <p className="text-base text-text-default">{t('done')}</p>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="mt-2 inline-flex h-[54px] cursor-pointer items-center justify-center rounded-[20px] bg-btn-brand px-8 text-sm font-medium text-text-always-white transition-[filter] hover:brightness-110"
                 >
-                  {t('title')}
-                </h2>
-                <p className="text-sm text-text-default sm:text-base">{t('subtitle')}</p>
+                  {t('close')}
+                </button>
               </div>
-
-              {send.isSuccess ? (
-                <div role="status" className="flex flex-col items-center gap-3 py-4 text-center">
-                  <Icon name="check_circle" size={40} filled className="text-text-positive" />
-                  <p className="text-base text-text-default">{t('done')}</p>
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="mt-2 inline-flex h-[54px] cursor-pointer items-center justify-center rounded-[20px] bg-btn-brand px-8 text-sm font-medium text-text-always-white transition-[filter] hover:brightness-110"
-                  >
-                    {t('close')}
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={submit} noValidate className="flex flex-col gap-3">
-                  <div>
-                    <label htmlFor={`${uid}-name`} className="sr-only">
-                      {t('name')}
-                    </label>
-                    <input
-                      id={`${uid}-name`}
-                      ref={nameRef}
-                      value={name}
-                      onChange={(e) => {
-                        setName(e.target.value);
-                        setClientErr((c) => (c.name ? { ...c, name: undefined } : c));
-                      }}
-                      placeholder={t('name')}
-                      autoComplete="name"
-                      aria-invalid={Boolean(nameError) || undefined}
-                      aria-describedby={nameError ? `${uid}-name-err` : undefined}
-                      className={inputCls(Boolean(nameError))}
-                    />
-                    {nameError && (
-                      <p id={`${uid}-name-err`} role="alert" className="mt-1 pl-1 text-xs text-text-negative">
-                        {errorText(nameError)}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label htmlFor={`${uid}-phone`} className="sr-only">
-                      {t('phone')}
-                    </label>
-                    <input
-                      id={`${uid}-phone`}
-                      ref={phoneRef}
-                      value={phone}
-                      onChange={(e) => {
-                        setPhone(e.target.value);
-                        setClientErr((c) => (c.phone ? { ...c, phone: undefined } : c));
-                      }}
-                      placeholder={t('phone')}
-                      inputMode="tel"
-                      autoComplete="tel"
-                      aria-invalid={Boolean(phoneError) || undefined}
-                      aria-describedby={phoneError ? `${uid}-phone-err` : undefined}
-                      className={inputCls(Boolean(phoneError))}
-                    />
-                    {phoneError && (
-                      <p id={`${uid}-phone-err`} role="alert" className="mt-1 pl-1 text-xs text-text-negative">
-                        {errorText(phoneError)}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label htmlFor={`${uid}-city`} className="sr-only">
-                      {t('city')}
-                    </label>
-                    <input
-                      id={`${uid}-city`}
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      placeholder={t('city')}
-                      autoComplete="address-level2"
-                      className={inputCls(false)}
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={send.isPending}
-                    className="mt-1 inline-flex h-[54px] w-full cursor-pointer items-center justify-center gap-2 rounded-[20px] bg-btn-brand px-6 text-sm font-medium text-text-always-white transition-[filter] hover:brightness-110 disabled:opacity-60"
-                  >
-                    {t('cta')}
-                  </button>
-
-                  {generalError && (
-                    <p role="alert" className="text-center text-sm text-text-negative">
-                      {errorText(generalError)}
+            ) : (
+              <form onSubmit={submit} noValidate className="flex flex-col gap-3">
+                <div>
+                  <label htmlFor={`${uid}-name`} className="sr-only">
+                    {t('name')}
+                  </label>
+                  <input
+                    id={`${uid}-name`}
+                    ref={nameRef}
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      setClientErr((c) => (c.name ? { ...c, name: undefined } : c));
+                    }}
+                    placeholder={t('name')}
+                    autoComplete="name"
+                    aria-invalid={Boolean(nameError) || undefined}
+                    aria-describedby={nameError ? `${uid}-name-err` : undefined}
+                    className={inputCls(Boolean(nameError))}
+                  />
+                  {nameError && (
+                    <p
+                      id={`${uid}-name-err`}
+                      role="alert"
+                      className="mt-1 pl-1 text-xs text-text-negative"
+                    >
+                      {errorText(nameError)}
                     </p>
                   )}
-                </form>
-              )}
-            </div>
+                </div>
+
+                <div>
+                  <label htmlFor={`${uid}-phone`} className="sr-only">
+                    {t('phone')}
+                  </label>
+                  <input
+                    id={`${uid}-phone`}
+                    ref={phoneRef}
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      setClientErr((c) => (c.phone ? { ...c, phone: undefined } : c));
+                    }}
+                    placeholder={t('phone')}
+                    inputMode="tel"
+                    autoComplete="tel"
+                    aria-invalid={Boolean(phoneError) || undefined}
+                    aria-describedby={phoneError ? `${uid}-phone-err` : undefined}
+                    className={inputCls(Boolean(phoneError))}
+                  />
+                  {phoneError && (
+                    <p
+                      id={`${uid}-phone-err`}
+                      role="alert"
+                      className="mt-1 pl-1 text-xs text-text-negative"
+                    >
+                      {errorText(phoneError)}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor={`${uid}-city`} className="sr-only">
+                    {t('city')}
+                  </label>
+                  <input
+                    id={`${uid}-city`}
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder={t('city')}
+                    autoComplete="address-level2"
+                    className={inputCls(false)}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={send.isPending}
+                  className="mt-1 inline-flex h-[54px] w-full cursor-pointer items-center justify-center gap-2 rounded-[20px] bg-btn-brand px-6 text-sm font-medium text-text-always-white transition-[filter] hover:brightness-110 disabled:opacity-60"
+                >
+                  {t('cta')}
+                </button>
+
+                {generalError && (
+                  <p role="alert" className="text-center text-sm text-text-negative">
+                    {errorText(generalError)}
+                  </p>
+                )}
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </>

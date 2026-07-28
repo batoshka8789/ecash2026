@@ -11,7 +11,13 @@ import { CurrencyFlag } from '@/components/ui/CurrencyFlag';
 import { Select, type SelectOption } from '@/components/ui/Select';
 import { useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
-import { buildChart, tickGranularity } from '@/lib/chart';
+import {
+  COLUMNS_BY_PERIOD,
+  COLUMN_GAP,
+  MAX_COLUMNS,
+  buildChart,
+  tickGranularity,
+} from '@/lib/chart';
 import {
   currencyFlagClass,
   currencyName,
@@ -19,6 +25,7 @@ import {
   formatAxisTick,
   formatNumber,
   formatPointStamp,
+  intlLocale,
   type TickGranularity,
 } from '@/lib/format';
 import { useErrorText } from '@/lib/useErrorText';
@@ -63,6 +70,17 @@ function sanitizeAmount(input: string): string {
 function parseAmount(raw: string): number {
   const n = parseFloat(raw.replace(/\s/g, '').replace(',', '.'));
   return Number.isFinite(n) && n >= 0 ? n : NaN;
+}
+
+/**
+ * Подписи оси Y графика — в макете всегда с двумя знаками («488.50»),
+ * а formatNumber хвостовой ноль отбрасывает.
+ */
+function formatAxisValue(value: number, locale: string): string {
+  return value.toLocaleString(intlLocale(locale), {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 /** Число в «редактируемом» виде без групп разрядов: 1234,56 (en — с точкой). */
@@ -117,8 +135,8 @@ export function Calculator() {
 
   const stat = ratesQuery.data?.rates.find((r) => r.currencyCode === foreign);
   const rates = stat && stat.buy > 0 && stat.sell > 0 ? { buy: stat.buy, sell: stat.sell } : null;
-  /** «Курс на бирже» НБ РК по выбранной валюте (золота в фиде нет — null). */
-  const marketRate = ratesQuery.data?.marketRates?.[foreign] ?? null;
+  /* Отдельной строки «Официальный курс НБ РК» в макете нет ни на одном из пяти
+     фреймов: биржевой курс показан только плашкой рядом с «Курс на бирже». */
 
   /**
    * Правило направления: отдаю тенге → покупаю валюту по курсу ПРОДАЖИ
@@ -221,15 +239,17 @@ export function Calculator() {
       searchable
       searchPlaceholder={tRoot('flows.pair.searchCurrency')}
       noResultsText={tRoot('common.nothingFound')}
-      className="w-[140px] shrink-0 self-stretch border-l border-l-surface-page-surf1 [&>button]:aria-expanded:inset-ring-1 [&>button]:aria-expanded:inset-ring-stroke-brand [&>button]:h-full [&>button]:gap-1 [&>button]:rounded-none [&>button]:border-0 [&>button]:px-4 [&>div]:left-auto [&>div]:right-0 [&>div]:w-[290px] [&>span]:sr-only"
+      className="w-[136px] shrink-0 self-stretch border-l border-l-surface-page-surf1 min-[480px]:w-[140px] [&>button]:aria-expanded:inset-ring-1 [&>button]:aria-expanded:inset-ring-stroke-brand [&>button]:h-full [&>button]:gap-1 [&>button]:rounded-none [&>button]:border-0 [&>button]:px-4 [&>div]:left-auto [&>div]:right-0 [&>div]:w-[290px] [&>span]:sr-only"
     />
   );
 
   return (
     <section className="container-page bleed-mobile pt-8 sm:pt-13">
       <div className="rounded-[22px] border border-stroke-surface1 bg-surface-page-surf1 p-4 sm:rounded-[28px] sm:p-8">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <h2 className="text-xl font-medium leading-[1.2] text-text-default sm:text-[32px]">
+        {/* в макете заголовок и кнопка прижаты к верху строки (высоту задаёт кнопка 46) */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+          {/* три ступени кегля из макета: 18 (<480), 24 (480…767), 32 (≥768) */}
+          <h2 className="text-[18px] font-medium leading-[1.2] text-text-default min-[480px]:text-[24px] md:text-[32px]">
             {t('title')}
           </h2>
           <button
@@ -237,14 +257,29 @@ export function Calculator() {
             aria-expanded={graphOpen}
             aria-controls={graphOpen ? graphId : undefined}
             onClick={() => setGraphOpen((v) => !v)}
-            className="inline-flex h-[34px] w-fit cursor-pointer items-center gap-2 rounded-[20px] border border-divider-elevated px-3 text-sm text-text-default transition-colors hover:bg-comp-surface1-hover sm:h-[46px] sm:px-4"
+            className="inline-flex h-[34px] w-fit cursor-pointer items-center gap-2 rounded-[20px] border border-divider-elevated px-3 text-sm leading-5 text-text-default transition-colors hover:bg-comp-surface1-hover min-[480px]:h-[46px] min-[480px]:px-4"
           >
-            <Icon name={graphOpen ? 'visibility' : 'visibility_off'} size={20} />
-            {t('dynamics')}
-            {/* в макете это заливной треугольник (Figma-слой «arrow_down», 8×4.5 в рамке 20×20) —
-                arrow_drop_down в Material Symbols, как в Select.tsx */}
-            <motion.span animate={{ rotate: graphOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-              <Icon name="arrow_drop_down" size={20} />
+            {/* ведущая иконка: 16 ниже 480 и 20 дальше; Icon задаёт кегль инлайновым
+                стилем, перебить его можно только важностью */}
+            <Icon
+              name={graphOpen ? 'visibility' : 'visibility_off'}
+              size={16}
+              className="text-text-brand min-[480px]:text-[20px]!"
+            />
+            {/* в макете подпись #EEEEEE Medium (цвет наследуется от кнопки), а обе
+                иконки брендовые; кегль подписи 12 ниже 480 и 14 дальше */}
+            <span className="text-xs font-medium leading-[1.2] min-[480px]:text-sm min-[480px]:leading-5">
+              {t('dynamics')}
+            </span>
+            {/* в макете это заливной треугольник (Figma-слой «arrow_down», 8×4.5 в рамке 12×12) —
+                arrow_drop_down в Material Symbols, как в Select.tsx. flex у обёртки убирает
+                строчный интерлиньяж, иначе иконка встаёт выше центра кнопки */}
+            <motion.span
+              animate={{ rotate: graphOpen ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex"
+            >
+              <Icon name="arrow_drop_down" size={12} className="text-text-brand" />
             </motion.span>
           </button>
         </div>
@@ -258,9 +293,9 @@ export function Calculator() {
         <div
           className={clsx(
             'relative flex flex-col gap-3 lg:flex-row lg:items-center',
-            // в макете заголовок отбит от содержимого на 40; раскрытый график
-            // забирает этот отступ себе, и до полей остаётся 24
-            graphOpen ? 'mt-6' : 'mt-6 sm:mt-10',
+            // в макете заголовок отбит от содержимого на 40 (24 ниже 768);
+            // под раскрытым графиком отступ другой: 24 / 40 (768) / 24 (≥1024)
+            graphOpen ? 'mt-6 md:mt-10 lg:mt-6' : 'mt-6 md:mt-10',
           )}
         >
           <AmountField
@@ -272,11 +307,14 @@ export function Calculator() {
             onBlur={() => setEditing(null)}
             control={currencySelect('give', giveCode)}
           />
+          {/* на ≥1024 кнопка встаёт в поток между полями: в макете она занимает там
+              20px (зазор 44 = 12+20+12), поэтому 40px тач-зоны ужаты отрицательными
+              полями — сама зона остаётся 40×40 */}
           <button
             type="button"
             onClick={onSwap}
             aria-label={t('swap')}
-            className="absolute left-1/2 top-1/2 z-10 inline-flex h-9 w-9 shrink-0 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-[20px] border border-stroke-surface2 bg-surface-page-surf2 text-text-default shadow-[0_1px_4px_rgb(12_12_13/0.05),0_1px_4px_rgb(12_12_13/0.1)] transition-colors hover:bg-comp-surface2-hover lg:static lg:mx-auto lg:h-10 lg:w-10 lg:translate-x-0 lg:translate-y-0 lg:rounded-full lg:border-0 lg:bg-transparent lg:shadow-none lg:hover:bg-comp-surface1-hover"
+            className="absolute left-1/2 top-1/2 z-10 inline-flex h-9 w-9 shrink-0 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-[20px] border border-stroke-surface2 bg-surface-page-surf2 text-text-default shadow-[0_1px_4px_rgb(12_12_13/0.05),0_1px_4px_rgb(12_12_13/0.1)] transition-colors hover:bg-comp-surface2-hover lg:static lg:-mx-2.5 lg:h-10 lg:w-10 lg:translate-x-0 lg:translate-y-0 lg:rounded-full lg:border-0 lg:bg-transparent lg:shadow-none lg:hover:bg-comp-surface1-hover"
           >
             <motion.span
               animate={{ rotate: direction === 'foreignToKzt' ? 180 : 0 }}
@@ -323,33 +361,23 @@ export function Calculator() {
             </span>
           )}
           {activeRate !== null && (
-            <>
-              {/* «Курс на бирже» + badge — из макета: подпись font/default, плашка на surf1-alt */}
-              <span className="flex items-center gap-3 text-sm text-text-default">
-                {t('exchangeRate')}
-                <span className="rounded-xl bg-surface-page-surf1-alt px-3 py-1 text-text-disabled">
-                  {tRates('perUnit', {
-                    rate: formatNumber(activeRate, locale, 2),
-                    code: currencySymbol(foreign),
-                  })}
-                </span>
+            /* «Frame 1437254936»: подпись + плашка. Кегль и вес по брейкпоинтам —
+               12/1.3 Medium (<480), 14/1.1 Regular (480…1023), 14/20 Medium (≥1024);
+               зазор 8 ниже 480 и 12 дальше. Плашка на surf1-alt с брендовым текстом,
+               её собственный вес — Medium на 360 и Regular дальше */
+            <span className="flex items-center gap-2 text-xs font-medium leading-[1.3] text-text-default min-[480px]:gap-3 min-[480px]:text-sm min-[480px]:font-normal min-[480px]:leading-[1.1] lg:font-medium lg:leading-5">
+              {t('exchangeRate')}
+              <span className="rounded-xl bg-surface-page-surf1-alt px-2 font-medium leading-[18px] text-text-brand min-[480px]:px-3 min-[480px]:py-1 min-[480px]:font-normal min-[480px]:leading-[1.1]">
+                {tRates('perUnit', {
+                  rate: formatNumber(activeRate, locale, 2),
+                  code: currencySymbol(foreign),
+                })}
               </span>
-              {marketRate !== null && (
-                <span className="text-sm text-text-disabled">
-                  {tRates('marketSource')}:{' '}
-                  {tRates('perUnit', {
-                    rate: formatNumber(marketRate, locale, 2),
-                    code: currencySymbol(foreign),
-                  })}
-                </span>
-              )}
-            </>
+            </span>
           )}
-          {/* «!» у радиуса: size кнопки приносит rounded-full, в макете 20 */}
-          <Button
-            className="h-[46px] w-full px-6 text-sm sm:ml-auto sm:w-auto sm:min-w-[134px]"
-            onClick={goBooking}
-          >
+          {/* в макете кнопка фиксированные 134 при подписи 102 — то есть боковые
+              отступы 16, а не 24 из size="md"; ниже 640 она во всю строку */}
+          <Button size="md" className="w-full sm:ml-auto sm:w-[134px] sm:px-4" onClick={goBooking}>
             {t('book')}
           </Button>
         </div>
@@ -382,7 +410,10 @@ function renderCurrencyOption(opt: SelectOption) {
   return (
     <span className="inline-flex min-w-0 items-center gap-4">
       {renderCurrencyFlag(opt, 'pill')}
-      <span className="truncate font-semibold">{opt.value}</span>
+      {/* код валюты в макете: Medium 14 на 360 и SemiBold 16 дальше */}
+      <span className="truncate text-sm font-medium leading-5 min-[480px]:text-base min-[480px]:font-semibold">
+        {opt.value}
+      </span>
     </span>
   );
 }
@@ -433,7 +464,8 @@ function AmountField({
           placeholder={label}
           inputMode="decimal"
           autoComplete="off"
-          className="w-full min-w-0 bg-transparent text-base font-semibold leading-5 text-text-default outline-none placeholder:font-medium placeholder:text-text-disabled"
+          // кегль значения и плейсхолдера: 14 на 360, 16 дальше
+          className="w-full min-w-0 bg-transparent text-sm font-semibold leading-5 text-text-default outline-none placeholder:font-medium placeholder:text-text-disabled min-[480px]:text-base"
         />
       </label>
       {control}
@@ -452,6 +484,7 @@ function Graph({
   setPeriod: (p: Period) => void;
 }) {
   const t = useTranslations('home.calculator');
+  const tHome = useTranslations('home');
   const tRates = useTranslations('rates');
   const tRoot = useTranslations();
   const locale = useLocale();
@@ -468,24 +501,45 @@ function Graph({
   const points = historyQuery.data?.points;
   const current = historyQuery.data?.current ?? null;
 
-  const chart = useMemo(() => buildChart(points), [points]);
+  // число колонок задаёт период: год 12, месяц 16, неделя и сутки по 7
+  const chart = useMemo(
+    () => buildChart(points, COLUMNS_BY_PERIOD[period] ?? MAX_COLUMNS),
+    [points, period],
+  );
 
   /**
    * Подписи оси по фактическому размаху ряда (макет рисует Янв…Дек, но своя
-   * история короче года). Повтор соседней подписи пропускаем — иначе на
-   * коротком ряде ось превращается в «июль июль июль…».
+   * история короче года). Повтор соседней подписи гасим — иначе на коротком
+   * ряде ось превращается в «июль июль июль…»; место колонки при этом
+   * сохраняется, чтобы подписи стояли ровно под своими колонками.
    */
   const granularity: TickGranularity = chart ? tickGranularity(chart.spanMs) : 'date';
-  const xTicks = useMemo(() => {
+  const xLabels = useMemo(() => {
     if (!chart) return [];
-    const out: { fx: number; label: string }[] = [];
-    for (const c of chart.columns) {
-      const label = formatAxisTick(c.ms, locale, granularity);
-      if (out.length > 0 && out[out.length - 1].label === label) continue;
-      out.push({ fx: c.fx, label });
-    }
-    return out;
+    let prev = '';
+    return chart.columns.map((c) => {
+      // в макете месяц сокращён с прописной и без точки («Янв»), а Intl в ru
+      // даёт «янв.» — берём словарь home.months
+      const label =
+        granularity === 'month'
+          ? tHome(`months.${new Date(c.ms).getMonth()}`)
+          : formatAxisTick(c.ms, locale, granularity);
+      if (label === prev) return '';
+      prev = label;
+      return label;
+    });
+    // tHome пересоздаётся каждый рендер — зависимость через locale
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chart, locale, granularity]);
+  const filledLabels = xLabels.filter(Boolean).length;
+
+  /**
+   * Крайние точки в макете отступают от краёв поля на полколонки
+   * («grapg item» 82.83 при поле 1038 — центр первой точки на 41.4).
+   * Линия занимает ровно диапазон между центрами крайних колонок.
+   */
+  const colCount = chart?.columns.length ?? 0;
+  const edgeInset = `calc((100% - ${(colCount - 1) * COLUMN_GAP}px) / ${colCount * 2})`;
 
   /** Текстовое описание изменения курса — в подписи таблицы для скринридера. */
   const changeText = (): string => {
@@ -496,23 +550,17 @@ function Graph({
     return tRates('chart.changeFlat');
   };
 
-  const hovered = hover !== null && chart ? (chart.columns[hover] ?? null) : null;
-
-  /** Ближайшая колонка к позиции курсора — подсказка со значением и датой. */
+  /** Колонка под курсором — подсказка со значением и датой. */
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!chart) return;
     const rect = e.currentTarget.getBoundingClientRect();
     if (rect.width === 0) return;
-    const frac = ((e.clientX - rect.left) / rect.width) * 100;
-    let best = 0;
-    for (let i = 1; i < chart.columns.length; i += 1) {
-      if (Math.abs(chart.columns[i].fx - frac) < Math.abs(chart.columns[best].fx - frac)) best = i;
-    }
-    setHover(best);
+    const i = Math.floor(((e.clientX - rect.left) / rect.width) * colCount);
+    setHover(Math.min(colCount - 1, Math.max(0, i)));
   };
 
   return (
-    <div className="mt-6 sm:mt-10">
+    <div className="mt-6 lg:mt-10">
       {/* «Multitab»: пилюли 25px с отступом 20 слева, как в макете */}
       <div role="group" aria-label={tRates('chart.group')} className="flex flex-wrap gap-1 pl-5">
         {periods.map((p) => (
@@ -522,7 +570,7 @@ function Graph({
             aria-pressed={p === period}
             onClick={() => setPeriod(p)}
             className={clsx(
-              'h-[25px] cursor-pointer rounded-full border px-3 text-sm leading-none transition-colors',
+              'h-[25px] cursor-pointer rounded-full border px-3 text-sm leading-[1.1] transition-colors',
               p === period
                 ? 'border-stroke-brand bg-btn-brand text-text-always-white'
                 : 'border-stroke-surface1 bg-surface-page-surf1-alt text-text-default hover:bg-comp-surface2-hover',
@@ -572,13 +620,13 @@ function Graph({
               historyQuery.isPlaceholderData && 'opacity-60',
             )}
           >
-            {/* «Frame 4» — 5 подписей оси Y брендовым цветом */}
+            {/* «Frame 4» — 5 подписей оси Y брендовым цветом, всегда два знака */}
             <div
               aria-hidden
-              className="flex shrink-0 flex-col justify-between pb-8 pr-2 text-right text-sm leading-none text-text-brand"
+              className="flex shrink-0 flex-col justify-between pb-8 pr-2 text-right text-sm leading-[1.1] text-text-brand"
             >
               {chart.yTicks.map((v, i) => (
-                <span key={i}>{formatNumber(v, locale, 2)}</span>
+                <span key={i}>{formatAxisValue(v, locale)}</span>
               ))}
             </div>
 
@@ -589,59 +637,83 @@ function Graph({
                 onPointerMove={onPointerMove}
                 onPointerLeave={() => setHover(null)}
               >
-                {/* вертикальная сетка по колонкам — brand 20% из токенов */}
-                {chart.columns.map((c, i) => (
-                  <span
-                    key={`grid-${c.ms}`}
-                    className={clsx(
-                      'absolute bottom-0 top-0 w-px transition-colors',
-                      i === hover ? 'bg-brand-soft' : 'bg-brand-hardsoft',
-                    )}
-                    style={{ left: `${c.fx}%` }}
-                  />
-                ))}
+                {/* линия курса — от центра первой колонки до центра последней;
+                    у svg свои пропорции, поэтому рамку задаёт обёртка */}
+                <div className="absolute inset-y-0" style={{ left: edgeInset, right: edgeInset }}>
+                  <svg
+                    viewBox="0 0 100 100"
+                    preserveAspectRatio="none"
+                    className="h-full w-full overflow-visible"
+                  >
+                    <path
+                      key={`${code}-${period}`}
+                      d={chart.path}
+                      fill="none"
+                      stroke="var(--color-brand)"
+                      strokeWidth={1}
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                      vectorEffect="non-scaling-stroke"
+                      className="anim-chart-path"
+                    />
+                  </svg>
+                </div>
 
-                <svg
-                  viewBox="0 0 100 100"
-                  preserveAspectRatio="none"
-                  className="absolute inset-0 h-full w-full overflow-visible"
-                >
-                  <path
-                    key={`${code}-${period}`}
-                    d={chart.path}
-                    fill="none"
-                    stroke="var(--color-brand)"
-                    strokeWidth={1}
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                    vectorEffect="non-scaling-stroke"
-                    className="anim-chart-path"
-                  />
-                </svg>
+                {/* «grapg item» из макета: колонки равной ширины с зазором 4,
+                    линия сетки и маркер 8px — по центру своей колонки */}
+                <div className="absolute inset-0 flex gap-1">
+                  {chart.columns.map((c, i) => (
+                    <div key={`col-${c.ms}`} className="relative flex-1">
+                      <span
+                        className={clsx(
+                          'absolute inset-y-0 left-1/2 w-px -translate-x-1/2 transition-colors',
+                          i === hover ? 'bg-brand-soft' : 'bg-brand-hardsoft',
+                        )}
+                      />
+                      <span
+                        className={clsx(
+                          // маркер в макете светлее линии: palette/brand/60
+                          'anim-chart-dot absolute left-1/2 rounded-full bg-[#FF7332]',
+                          i === hover ? 'h-3 w-3' : 'h-2 w-2',
+                        )}
+                        style={
+                          {
+                            top: `${c.fy}%`,
+                            '--anim-delay': `${0.35 + i * 0.04}s`,
+                          } as React.CSSProperties
+                        }
+                      />
 
-                {/* точки-маркеры 8px на реальных значениях */}
-                {chart.columns.map((c, i) => (
-                  <span
-                    key={`dot-${c.ms}`}
-                    className={clsx(
-                      'anim-chart-dot absolute rounded-full bg-brand',
-                      i === hover ? 'h-3 w-3' : 'h-2 w-2',
-                    )}
-                    style={
-                      {
-                        left: `${c.fx}%`,
-                        top: `${c.fy}%`,
-                        '--anim-delay': `${0.35 + i * 0.04}s`,
-                      } as React.CSSProperties
-                    }
-                  />
-                ))}
+                      {/* читалка значения под курсором; уводится от краёв поля */}
+                      {i === hover && (
+                        <span
+                          className={clsx(
+                            'pointer-events-none absolute z-10 whitespace-nowrap rounded-xl bg-surface-modal-surf1 px-2 py-1 text-xs leading-4 text-text-default shadow-xl',
+                            // у верхнего края подсказка уходит под точку, иначе — над ней
+                            c.fy < 40 ? 'translate-y-3' : 'translate-y-[calc(-100%-12px)]',
+                            i === 0
+                              ? 'left-0'
+                              : i === colCount - 1
+                                ? 'right-0'
+                                : 'left-1/2 -translate-x-1/2',
+                          )}
+                          style={{ top: `${c.fy}%` }}
+                        >
+                          <span className="font-medium">{formatNumber(c.sell, locale, 2)}</span>
+                          <span className="ml-1.5 text-text-disabled">
+                            {formatPointStamp(c.ms, locale, granularity)}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
 
                 {/* «big badge» — процент изменения в правом верхнем углу поля графика */}
                 {current !== null && (
                   <span
                     className={clsx(
-                      'absolute right-0 top-0 inline-flex items-center gap-1.5 rounded-xl px-2 py-0.5 text-sm font-medium',
+                      'absolute right-0 top-0 inline-flex items-center gap-1.5 rounded-xl px-2 py-0.5 text-sm font-medium leading-[18px]',
                       current.change < 0
                         ? 'bg-negative-hardsoft text-text-negative'
                         : current.change > 0
@@ -658,45 +730,24 @@ function Graph({
                     {formatNumber(Math.abs(current.change), locale, 2)} %
                   </span>
                 )}
-
-                {/* читалка значения под курсором; уводится от краёв поля графика */}
-                {hovered && (
-                  <span
-                    className={clsx(
-                      'pointer-events-none absolute z-10 whitespace-nowrap rounded-xl bg-surface-modal-surf1 px-2 py-1 text-xs text-text-default shadow-xl',
-                      // у верхнего края подсказка уходит под точку, иначе — над ней
-                      hovered.fy < 40 ? 'translate-y-3' : 'translate-y-[calc(-100%-12px)]',
-                      hovered.fx < 15
-                        ? ''
-                        : hovered.fx > 85
-                          ? 'translate-x-[-100%]'
-                          : 'translate-x-[-50%]',
-                    )}
-                    style={{ left: `${hovered.fx}%`, top: `${hovered.fy}%` }}
-                  >
-                    <span className="font-medium">{formatNumber(hovered.sell, locale, 2)}</span>
-                    <span className="ml-1.5 text-text-disabled">
-                      {formatPointStamp(hovered.ms, locale, granularity)}
-                    </span>
-                  </span>
-                )}
               </div>
 
-              {/* подписи оси X; на узких экранах в макете показана каждая вторая */}
+              {/* подписи оси X — по одной на колонку (16 при интерлиньяже 1.3);
+                  на узких экранах в макете показана каждая вторая */}
               <div
                 aria-hidden
-                className="relative mt-6 h-4 text-xs font-medium leading-none text-text-brand"
+                className="mt-6 flex h-4 gap-1 text-xs font-medium leading-[1.3] text-text-brand"
               >
-                {xTicks.map((tick, i) => (
-                  <span
-                    key={`tick-${tick.fx}-${tick.label}`}
-                    className={clsx(
-                      'absolute top-0 -translate-x-1/2 whitespace-nowrap',
-                      xTicks.length > 6 && i % 2 === 1 && 'hidden sm:inline',
-                    )}
-                    style={{ left: `${tick.fx}%` }}
-                  >
-                    {tick.label}
+                {xLabels.map((label, i) => (
+                  <span key={`tick-${i}`} className="min-w-0 flex-1 text-center">
+                    <span
+                      className={clsx(
+                        'whitespace-nowrap',
+                        filledLabels > 6 && i % 2 === 1 && 'hidden sm:inline',
+                      )}
+                    >
+                      {label}
+                    </span>
                   </span>
                 ))}
               </div>

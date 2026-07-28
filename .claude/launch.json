@@ -2,10 +2,18 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "//": "Чистый дев без данных: апстрим без настоящего ECASH_CLIENT_SECRET отдаёт 401",
       "name": "ecash-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": ["run", "dev", "--", "--port", "3100"],
       "port": 3100
+    },
+    {
+      "//": "Дев поверх локальной заглушки апстрима — курсы, отделения и график с данными",
+      "name": "ecash-stub",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:stub"],
+      "port": 3101
     }
   ]
 }

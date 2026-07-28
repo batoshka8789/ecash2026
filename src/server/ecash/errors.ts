@@ -71,7 +71,9 @@ export function normalizeError(status: number, body: unknown): EcashError {
 /** Ошибки сети/таймаута — до получения HTTP-статуса. */
 export function networkError(cause: unknown): EcashError {
   const isTimeout =
-    cause instanceof DOMException ? cause.name === 'TimeoutError' || cause.name === 'AbortError' : false;
+    cause instanceof DOMException
+      ? cause.name === 'TimeoutError' || cause.name === 'AbortError'
+      : false;
   return new EcashError(
     isTimeout ? 'UPSTREAM_TIMEOUT' : 'UPSTREAM_UNREACHABLE',
     504,

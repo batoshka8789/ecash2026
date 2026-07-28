@@ -14,7 +14,8 @@ export function ExchangeHome() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main id="main" className="flex-1 pb-4">
+      {/* relative — база для тоста первого визита: ниже 768 он лежит поверх контента */}
+      <main id="main" className="relative flex-1 pb-4">
         {/* визуальный заголовок страницы — калькулятор, h1 только для АТ */}
         <h1 className="sr-only">{t('home')}</h1>
         <FirstVisitToast />
@@ -23,7 +24,14 @@ export function ExchangeHome() {
         <RatesList />
       </main>
       <Footer />
-      <div className="sticky bottom-0 z-40">
+      {/*
+       * Баннер в макете прижат к низу фрейма (vConstraint=MAX) и накладывается
+       * на хвост футера, собственной высоты документу не добавляя: высота всех
+       * пяти фреймов равна низу футера. Поэтому fixed, а не sticky в потоке —
+       * иначе под футером оставалась пустая полоса в высоту баннера (94 на
+       * 1920/1024, 158 на 768/480, 204 на 360).
+       */}
+      <div className="fixed inset-x-0 bottom-0 z-40">
         <AppBanner />
       </div>
     </div>

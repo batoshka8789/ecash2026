@@ -43,6 +43,9 @@ export function AmountBox({
   const id = inputId ?? autoId;
   const flag = currencyFlagClass(currency);
   const canPick = Boolean(currencyOptions?.length && onCurrencyChange);
+  /** Пустое поле в макете — однострочный мастер 116:2137 (плейсхолдер 16/20,
+   *  padding 22 16); заполненное — двухуровневый 116:2147 (лейбл 12/16 + значение). */
+  const filled = value !== '';
 
   /** Опции после фильтра поиска по коду/названию — как в Select.tsx. */
   const visibleOptions = useMemo(() => {
@@ -90,24 +93,31 @@ export function AmountBox({
         // «swap currency selector» 699:45952 — половина пары: 66px, две плитки
         // surf2 с зазором 1px, скругления 20 только по внешним углам.
         'relative flex h-[66px] flex-1 items-stretch gap-px rounded-[20px]',
-        invalid && 'border border-negative',
+        // рамка ошибки внутренней тенью — border сдвинул бы содержимое плитки
+        invalid && 'shadow-[inset_0_0_0_1px_var(--color-negative)]',
         className,
       )}
     >
       <label
         htmlFor={id}
-        className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 rounded-l-[20px] bg-surface-page-surf2 px-4 py-3"
+        className={clsx(
+          'flex min-w-0 flex-1 flex-col justify-center rounded-l-[20px] bg-surface-page-surf2 px-4',
+          filled ? 'gap-1.5 py-3' : 'py-[23px]',
+        )}
       >
-        <span className="block text-xs font-medium leading-4 text-text-disabled">{label}</span>
+        {filled && (
+          <span className="block text-xs font-medium leading-4 text-text-disabled">{label}</span>
+        )}
         <input
           id={id}
           value={value}
           readOnly={readOnly}
           onChange={(e) => onChange?.(e.target.value)}
           inputMode="decimal"
-          placeholder=" "
+          placeholder={filled ? ' ' : label}
+          aria-label={filled ? undefined : label}
           aria-invalid={invalid || undefined}
-          className="w-full bg-transparent text-base font-semibold leading-5 text-text-default outline-none placeholder:font-normal placeholder:text-text-disabled"
+          className="w-full bg-transparent text-base font-semibold leading-5 text-text-default outline-none placeholder:font-medium placeholder:text-text-disabled"
         />
       </label>
       <button
@@ -119,14 +129,18 @@ export function AmountBox({
         tabIndex={canPick ? 0 : -1}
         className={clsx(
           // «dropdown currency» 116:3180 — 66px, padding 16, флаг 40×32/r8,
-          // gap 16 до кода и 4 до стрелки.
-          'inline-flex shrink-0 items-center gap-4 rounded-r-[20px] bg-surface-page-surf2 px-4 text-base font-semibold text-text-default transition-colors',
+          // gap 16 до кода и 4 до стрелки, код 16/20.
+          'inline-flex shrink-0 items-center gap-4 rounded-r-[20px] bg-surface-page-surf2 px-4 text-base font-semibold leading-5 text-text-default transition-colors',
           canPick ? 'cursor-pointer hover:bg-comp-surface2-hover' : 'cursor-default',
         )}
       >
-        <CurrencyFlag flag={flag ?? 'gold'} className="h-8 w-10 rounded-lg" />
-        {currency}
-        {canPick && <Icon name="keyboard_arrow_down" size={16} className="-ml-3" />}
+        <CurrencyFlag flag={flag ?? 'gold'} className="h-8 w-10 shrink-0 rounded-lg" />
+        {/* «Frame 1437254882» 116:2327 — код + стрелка с зазором 4; стрелка стоит
+            в обеих плитках макета, в том числе у неизменяемой валюты */}
+        <span className="inline-flex items-center gap-1">
+          {currency}
+          <Icon name="keyboard_arrow_down" size={16} />
+        </span>
       </button>
 
       {open && canPick && (
@@ -196,44 +210,96 @@ export function AmountBox({
   );
 }
 
+/** Строка адреса/графика: иконка 20 (16 на мобиле) + текст, точка и хвост. */
+function InfoRow({ icon, children }: { icon: string; children: React.ReactNode }) {
+  return (
+    // «Frame 1437254872» 511:17776 — строка 20px с 768 и 16px ниже, зазор 8
+    <div className="flex h-4 items-center gap-2 md:h-5">
+      <Icon name={icon} size={20} className="shrink-0 text-base! text-text-default md:text-xl!" />
+      {children}
+    </div>
+  );
+}
+
+/** Точка-разделитель «Ellipse 7» 4×4 между частями строки. */
+const Dot = () => <span aria-hidden className="h-1 w-1 shrink-0 rounded-full bg-text-default" />;
+
+/** Текст строки: 14/15.4 ниже 768, 16/21 SemiBold с трекингом −0.31 с 768. */
+const rowText =
+  'text-sm leading-[15.4px] md:text-base md:font-semibold md:leading-[21px] md:tracking-[-0.31px]';
+
+/** «Открыто» считаем по графику отделения: HH:MM сравниваем с текущим временем. */
+function isOpenNow(timetable: { openTime: string; closeTime: string }) {
+  const toMin = (s: string) => {
+    const [h, m] = s.split(':').map(Number);
+    return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : null;
+  };
+  const open = toMin(timetable.openTime);
+  const close = toMin(timetable.closeTime);
+  if (open === null || close === null) return false;
+  const now = new Date();
+  const cur = now.getHours() * 60 + now.getMinutes();
+  // график через полночь (22:00 — 06:00) — интервал разрывный
+  return close >= open ? cur >= open && cur < close : cur >= open || cur < close;
+}
+
 /** Адрес выбранного отделения + бейдж и плашка «в другом отделении выгоднее». */
 export function BranchAddress({
   department,
   nearest,
+  distanceKm,
   betterOffer,
   onPickBetter,
 }: {
   department: DepartmentInfo | null;
   nearest?: boolean;
+  /** расстояние до отделения, км — рисуется после точки-разделителя */
+  distanceKm?: number | null;
   /** {depId, address, rate} из best-rate, если выгоднее текущего */
   betterOffer?: { depId: number; address: string; rate: number } | null;
   onPickBetter?: (depId: number) => void;
 }) {
   const t = useTranslations('flows.address');
   const tb = useTranslations('branches');
+  const openNow = department?.timetable ? isOpenNow(department.timetable) : false;
 
   return (
     <div>
       <h2 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
         {t('title')}
       </h2>
-      <div className="mt-5">
+      {/* «Frame 1437255099» 511:17768 — бейдж и строки колонкой с зазором 8 */}
+      <div className="mt-5 flex flex-col gap-2">
         {nearest && (
-          <span className="inline-flex h-[18px] items-center rounded-lg bg-additional-3 px-2 text-xs font-bold leading-[18px] text-text-always-white">
+          <span className="inline-flex h-[18px] w-fit items-center rounded-lg bg-additional-3 px-2 text-xs font-bold leading-[18px] text-text-always-white">
             {t('nearest')}
           </span>
         )}
-        <div className="mt-2 flex items-center gap-2 text-base text-text-default">
-          <Icon name="account_balance" size={20} className="shrink-0 text-text-disabled" />
-          <span className="min-w-0 truncate">{department?.address ?? '—'}</span>
-        </div>
+        <InfoRow icon="account_balance">
+          <span className={clsx('min-w-0 truncate text-text-default', rowText)}>
+            {department?.address ?? '—'}
+          </span>
+          {distanceKm != null && (
+            <>
+              <Dot />
+              <span className={clsx('shrink-0 text-text-default', rowText)}>
+                {distanceKm.toFixed(1)} {t('km')}
+              </span>
+            </>
+          )}
+        </InfoRow>
         {department?.timetable && (
-          <div className="mt-2 flex items-center gap-2 text-base">
-            <Icon name="schedule" size={20} className="shrink-0 text-text-disabled" />
-            <span className="text-text-default">
+          <InfoRow icon="schedule">
+            <span className={clsx('text-text-default', rowText)}>
               {department.timetable.openTime} - {department.timetable.closeTime}
             </span>
-          </div>
+            {openNow && (
+              <>
+                <Dot />
+                <span className={clsx('shrink-0 text-text-positive', rowText)}>{t('open')}</span>
+              </>
+            )}
+          </InfoRow>
         )}
       </div>
 
@@ -241,18 +307,22 @@ export function BranchAddress({
         <button
           type="button"
           onClick={() => onPickBetter?.(betterOffer.depId)}
-          className="mt-6 flex cursor-pointer items-center gap-3 rounded-2xl bg-surface-page-surf2 p-3 text-left text-base font-medium leading-5 text-text-default shadow-[0_1px_4px_rgba(12,12,13,0.1)] transition-colors hover:bg-comp-surface2-hover md:mt-7 md:p-4"
+          /* «alert» 1000:38497 — зазор 24 до стрелки и две тени; внутри группы
+             «Frame 1437254862» зазор 12. Ниже 768 плашка растянута (alignSelf=STRETCH) */
+          className="mt-6 flex w-full cursor-pointer items-center gap-6 rounded-2xl bg-surface-page-surf2 p-3 text-left text-base font-medium leading-5 text-text-default shadow-[0_1px_4px_rgb(12_12_13/0.05),0_1px_4px_rgb(12_12_13/0.1)] transition-colors hover:bg-comp-surface2-hover md:mt-7 md:w-auto md:p-4"
         >
-          <Icon name="directions_run" size={32} className="shrink-0 text-brand" />
-          <span>
-            {t('betterAt')} <span className="text-text-brand">{betterOffer.address}</span>,
-            <br />
-            {t('betterRate')} ={' '}
-            <span className="text-text-positive">
-              {betterOffer.rate.toLocaleString('ru-RU')} ₸
+          <span className="flex min-w-0 items-center gap-3">
+            <Icon name="directions_run" size={32} className="shrink-0 text-brand" />
+            <span>
+              {t('betterAt')} <span className="text-text-brand">{betterOffer.address}</span>,
+              <br />
+              {t('betterRate')} ={' '}
+              <span className="text-text-positive">
+                {betterOffer.rate.toLocaleString('ru-RU')} ₸
+              </span>
             </span>
           </span>
-          <Icon name="chevron_right" size={24} className="ml-3 shrink-0 text-text-disabled" />
+          <Icon name="chevron_right" size={24} className="ml-auto shrink-0 text-text-disabled" />
         </button>
       )}
       <span className="sr-only">{tb('onMap')}</span>
@@ -285,10 +355,14 @@ export function BanknotesPicker({
           onClick={() => setExpanded(true)}
           aria-expanded={false}
           aria-controls={listId}
-          className="flex cursor-pointer items-center gap-3 text-sm text-text-default transition-opacity hover:opacity-80"
+          className="flex cursor-pointer items-center gap-3 text-sm leading-[15.4px] text-text-default transition-opacity hover:opacity-80"
         >
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-text-always-white">
-            <Icon name="add" size={16} />
+          {/* «Frame 1437255222» 758:23483 — 32×24 с полями 4 по бокам круга,
+              за счёт этого подпись начинается на 44px от края блока */}
+          <span className="flex h-6 shrink-0 items-center px-1">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand text-text-always-white">
+              <Icon name="add" size={16} />
+            </span>
           </span>
           {t('choose')}
         </button>
@@ -307,7 +381,12 @@ export function BanknotesPicker({
             <Icon name="cancel" size={24} className="shrink-0" />
             {t('label')}
           </button>
-          <div id={listId} role="radiogroup" aria-label={t('label')} className="mt-7 flex flex-col gap-4">
+          <div
+            id={listId}
+            role="radiogroup"
+            aria-label={t('label')}
+            className="mt-7 flex flex-col gap-4"
+          >
             {(['small', 'large'] as const).map((opt) => (
               <label
                 key={opt}

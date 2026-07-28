@@ -7,11 +7,7 @@ import { isAuthenticated } from '@/server/session';
  * Гостя отправляем на вход — проверка на сервере, до отрисовки,
  * поэтому защищённый контент не мелькает.
  */
-export default async function CabinetLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function CabinetLayout({ children }: { children: React.ReactNode }) {
   if (!(await isAuthenticated())) {
     const locale = await getLocale();
     redirect({ href: '/login', locale });

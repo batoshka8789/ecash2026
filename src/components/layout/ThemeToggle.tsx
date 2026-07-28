@@ -44,15 +44,16 @@ export function ThemeToggle() {
       // pressed = включена светлая тема (тёмная — состояние по умолчанию)
       aria-pressed={light}
       suppressHydrationWarning
-      className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl bg-btn-1 text-text-default transition-colors hover:bg-comp-surface2-hover md:h-[50px] md:w-[50px]"
+      className="inline-flex h-[38px] w-[38px] cursor-pointer items-center justify-center rounded-2xl border border-btn-1 bg-btn-1 text-text-default transition-colors hover:border-comp-surface2-hover hover:bg-comp-surface2-hover md:h-[50px] md:w-[50px]"
     >
-      {/* тёмная тема (нет data-theme) → предлагаем светлую */}
+      {/* тёмная тема (нет data-theme) → предлагаем светлую.
+          Солнце и луна в макете контурные («sun» 337:20892, «moon» 337:20888) */}
       <span className="inline-flex [html[data-theme=light]_&]:hidden">
-        <Icon name="light_mode" size={20} filled />
+        <Icon name="light_mode" size={20} />
       </span>
       {/* светлая тема → предлагаем тёмную */}
       <span className="hidden [html[data-theme=light]_&]:inline-flex">
-        <Icon name="dark_mode" size={20} filled />
+        <Icon name="dark_mode" size={20} />
       </span>
     </button>
   );
