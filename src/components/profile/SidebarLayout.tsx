@@ -58,6 +58,9 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
                     key={item.key}
                     href={item.href}
                     aria-current={active ? 'page' : undefined}
+                    // сайдбар из 5 ссылок виден на каждой странице кабинета —
+                    // дефолтный prefetch тянет их все разом
+                    prefetch={false}
                     className={clsx(
                       'flex snap-start items-center gap-3 whitespace-nowrap rounded-xl px-4 py-3 text-sm font-medium transition-colors',
                       active
@@ -72,6 +75,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
               })}
               <Link
                 href="/franchise"
+                prefetch={false}
                 className="flex snap-start items-center gap-3 whitespace-nowrap rounded-xl px-4 py-3 text-sm font-medium text-text-default transition-colors hover:bg-comp-surface1-hover"
               >
                 <Icon name="diversity_3" size={20} />

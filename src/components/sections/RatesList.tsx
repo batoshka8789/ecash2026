@@ -281,6 +281,13 @@ function RateRow({
               открыться с валютой ЭТОЙ строки, а не с USD по умолчанию. */}
           <Link
             href={`/locations?currency=${code}`}
+            // за раз показывается 5-20+ строк курсов — с дефолтным
+            // prefetch каждая тянет RSC-пейлоад /locations в фоне
+            // одновременно; реально кликают одну от силы. На слабой
+            // сети это создавало затор, из-за которого навигация
+            // (в т.ч. переключение языка, ре-рендерящее всю страницу)
+            // ощущалась зависшей.
+            prefetch={false}
             aria-label={t('showOnMap')}
             title={t('showOnMap')}
             className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-divider-additional text-text-default transition-colors hover:bg-comp-surface1-hover sm:h-[46px] sm:w-[46px]"
