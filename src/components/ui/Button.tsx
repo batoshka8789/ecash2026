@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import type { ButtonHTMLAttributes } from 'react';
 
 type Variant = 'brand' | 'brand-outline' | 'surf1' | 'surf2' | 'ghost';
-type Size = 'md' | 'lg' | 'icon' | 'icon-lg';
+type Size = 'md' | 'lg' | 'auth' | 'icon' | 'icon-lg';
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant;
@@ -26,6 +26,12 @@ const variants: Record<Variant, string> = {
 const sizes: Record<Size, string> = {
   md: 'h-10 px-5 text-sm rounded-full',
   lg: 'h-12 px-6 text-base rounded-full',
+  /**
+   * «a-button-main» L из ecash-beta: 54px, r20, подпись 14/20.
+   * Отдельный размер, а не замена lg, — пилюли lg стоят по всему кабинету
+   * и лендингу, форма авторизации единственная, кто перешёл на новый рисунок.
+   */
+  auth: 'h-[54px] px-6 text-sm leading-5 rounded-[20px]',
   icon: 'h-10 w-10 rounded-xl',
   'icon-lg': 'h-12 w-12 rounded-2xl',
 };

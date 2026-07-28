@@ -111,6 +111,7 @@
     "continue": "Продолжить",
     "withTelegram": "Продолжить с Telegram",
     "withGoogle": "Продолжить с Google",
+    "socialUnavailable": "Вход через Telegram и Google пока недоступен — войдите по номеру телефона",
     "close": "Закрыть",
     "errors": {
       "emailInvalid": "Такой эл. почты не существует",

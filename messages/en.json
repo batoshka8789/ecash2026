@@ -111,6 +111,7 @@
     "continue": "Continue",
     "withTelegram": "Continue with Telegram",
     "withGoogle": "Continue with Google",
+    "socialUnavailable": "Telegram and Google sign-in is not available yet — use your phone number",
     "close": "Close",
     "errors": {
       "emailInvalid": "This email does not exist",

@@ -55,3 +55,6 @@ tsconfig.tsbuildinfo
 
 # изолированные git worktree фоновых агентов
 /.claude/worktrees
+
+# спецификация Ecash Mobile Api (справочник, в репозиторий не кладём)
+/api-spec

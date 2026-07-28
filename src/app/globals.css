@@ -69,6 +69,22 @@
   padding: 3px;
 }
 
+/**
+ * Кант, который перекрашивается вместе с плашкой при наведении на карточку
+ * (.group): у номера этапа фон уходит в бренд, и градиентная обводка не должна
+ * оставаться сиренево-оранжевой. Ставится вместе с .grad-border — сам по себе
+ * псевдоэлемент не рисует.
+ */
+@utility grad-border-brand-hover {
+  position: relative;
+}
+.grad-border-brand-hover::before {
+  transition: background 0.3s ease;
+}
+.group:hover .grad-border-brand-hover::before {
+  background: var(--color-brand);
+}
+
 /* Шумовая текстура секции «Свяжитесь…» (эффект NOISE в макете). */
 @utility noise {
   position: relative;
@@ -248,6 +264,34 @@ body {
     0 32px 80px -24px rgb(0 0 0 / 0.8);
 }
 
+/**
+ * Матовое стекло карточек: скруглённая подложка со своим стекинг-контекстом.
+ *
+ * БЕЗ backdrop-filter — и это осознанно.
+ *
+ * Раньше здесь на ::after висел `backdrop-filter: blur(46px)`: так фильтр
+ * обрезался overflow:hidden хоста и повторял радиус, чего не даёт фильтр на
+ * самом элементе (Chromium рисует его область прямоугольником по border-box,
+ * когда карточка лежит в контейнере со скроллом — за скруглением был виден
+ * чёткий квадрат).
+ *
+ * Но backdrop-filter — композиторный эффект: слой под него Chromium создаёт
+ * не к первому кадру. Пока слоя нет, видна только собственная полупрозрачная
+ * заливка карточки — у glass-veil это белый 8 % поверх цветных пятен Glows,
+ * то есть заметно СВЕТЛЕЕ конечного вида. Карточка вспыхивала светлым и через
+ * пару кадров темнела. Ровно на это жаловались: блоки «сперва светлые».
+ *
+ * Отказ от фильтра почти не меняет картинку: и здесь, и у Spotlight хост
+ * помечен `isolation: isolate`, а изолированный предок по спецификации
+ * становится Backdrop Root — размывать под собой фильтру было практически
+ * нечего. Зато вспышки больше нет by construction, а не «обычно».
+ */
+@utility glass-blur {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
 /** Текст с фирменным градиентом — для акцентных слов в заголовках. */
 @utility text-gradient {
   background: linear-gradient(100deg, #f6844b, #bf5af5 60%, #f6844b);
@@ -287,6 +331,27 @@ body {
   transition:
     box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/**
+ * Светлая вуаль — вторая заливка карточек в рядах (макет чередует её с
+ * плотной): белый слой 8 % и тонкий внутренний кант вместо тёмного #262626.
+ * Кант внутренней тенью, а не ::before, чтобы псевдоэлемент остался свободен
+ * под градиентную обводку glass-accent.
+ */
+@utility glass-veil {
+  position: relative;
+  background: rgb(255 255 255 / 0.08);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
+  transition:
+    background 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.glass-veil:hover {
+  background: rgb(255 255 255 / 0.11);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.2);
 }
 
 @utility glass-dense {

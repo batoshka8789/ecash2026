@@ -8,6 +8,7 @@ import { body, fail, fromError, ok } from '@/server/api/respond';
 import { createSession, sessionFromTokens } from '@/server/session';
 import { registerBody } from '@/shared/schemas';
 import { DEMO_OTP, DEMO_TOKEN, demoAccount } from '@/server/demo/store';
+import { logAuthTokens, logDemoTokens } from '@/server/ecash/token-log';
 
 /** Регистрация: телефон подтверждён OTP (purpose 0) → пароль → сессия. */
 export async function POST(req: Request) {
@@ -21,6 +22,7 @@ export async function POST(req: Request) {
   if (env.ECASH_OTP_MOCK) {
     if (parsed.otp !== DEMO_OTP) return fail('errors.INVALID_OTP', 401, { field: 'otp' });
     const account = demoAccount(parsed.phoneNumber);
+    logDemoTokens('register', DEMO_TOKEN);
     await createSession({
       accessToken: DEMO_TOKEN,
       refreshToken: DEMO_TOKEN,
@@ -36,6 +38,9 @@ export async function POST(req: Request) {
     if (!confirm.isConfirmed) return fail('errors.INVALID_OTP', 401, { field: 'otp' });
 
     const tokens = await register(parsed.phoneNumber, parsed.password, parsed.iin);
+    // Печать в консоль сервера: до браузера токен не доходит, он уезжает
+    // в зашифрованную httpOnly-куку. Только dev — см. token-log.ts.
+    logAuthTokens('register', tokens);
     const account = await accountMe(tokens.accessToken);
     await createSession(sessionFromTokens(tokens, account.accountId));
     return ok({ account }, { status: 201 });

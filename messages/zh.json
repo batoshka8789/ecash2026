@@ -111,6 +111,7 @@
     "continue": "继续",
     "withTelegram": "使用 Telegram 继续",
     "withGoogle": "使用 Google 继续",
+    "socialUnavailable": "暂不支持通过 Telegram 和 Google 登录，请使用手机号登录",
     "close": "关闭",
     "errors": {
       "emailInvalid": "该电子邮箱不存在",

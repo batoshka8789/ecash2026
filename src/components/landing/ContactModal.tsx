@@ -281,23 +281,35 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
               {/* Тег-инпут «Кто вы?»: выбранные роли — снимаемые пилюли, плюс
                   свободный ввод своего варианта (Enter/запятая добавляет тег). */}
               <div>
-                <div className="flex min-h-[54px] flex-wrap items-center gap-2 rounded-[20px] border border-transparent bg-surface-page-surf2 px-3 py-2 transition-colors focus-within:border-stroke-brand">
-                  {tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-surface-page-surf3 px-3 py-1.5 text-sm text-text-default"
-                    >
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => removeTag(tag)}
-                        aria-label={tag}
-                        className="cursor-pointer text-text-disabled transition-colors hover:text-text-default"
-                      >
-                        <Icon name="close" size={14} />
-                      </button>
-                    </span>
-                  ))}
+                {/* Колонка, а не общий flex-wrap: выбранные пилюли уходят
+                    отдельной строкой наверх, поле ввода — под ними, а не
+                    вплотную сбоку. justify-center держит одинокий инпут по
+                    центру плашки, пока теги не выбраны. */}
+                <div className="flex min-h-[54px] flex-col justify-center gap-2 rounded-[20px] border border-transparent bg-surface-page-surf2 px-3 py-2 transition-colors focus-within:border-stroke-brand">
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="inline-flex items-center gap-1 rounded-full bg-surface-page-surf3 px-2 py-0.5 text-xs text-text-default"
+                        >
+                          {tag}
+                          {/* Крестик центрируем флексом в своей коробке:
+                              material-symbols — инлайновый шрифт, и глиф
+                              выравнивался по базовой линии текста, из-за чего
+                              сидел выше середины пилюли. */}
+                          <button
+                            type="button"
+                            onClick={() => removeTag(tag)}
+                            aria-label={tag}
+                            className="inline-flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center text-text-disabled transition-colors hover:text-text-default"
+                          >
+                            <Icon name="close" size={14} className="block" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <input
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
@@ -309,7 +321,7 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
                       }
                     }}
                     placeholder={tags.length === 0 ? t('tagsLabel') : t('tagsPlaceholder')}
-                    className="min-w-[140px] flex-1 bg-transparent px-1 py-1.5 text-base text-text-default outline-none placeholder:text-text-disabled"
+                    className="w-full bg-transparent px-1 text-base text-text-default outline-none placeholder:text-text-disabled"
                   />
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -320,7 +332,7 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
                         key={preset}
                         type="button"
                         onClick={() => addTag(preset)}
-                        className="cursor-pointer rounded-full border border-stroke-surface3 px-3 py-1.5 text-sm text-text-disabled transition-colors hover:border-stroke-brand hover:text-text-default"
+                        className="cursor-pointer rounded-full border border-stroke-surface3 px-2 py-0.5 text-xs text-text-disabled transition-colors hover:border-stroke-brand hover:text-text-default"
                       >
                         {preset}
                       </button>

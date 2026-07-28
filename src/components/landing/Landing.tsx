@@ -98,8 +98,8 @@ export function Landing() {
               onCta={() => setContactOpen(true)}
             />
 
-            <div className="mt-20 flex flex-col gap-5 md:mt-24 lg:mt-[120px] lg:gap-10 xl:mt-[140px]">
-              <div className="grid gap-5 lg:grid-cols-[456fr_704fr] lg:gap-10">
+            <div className="mt-20 flex flex-col gap-5 md:mt-[120px] lg:mt-40 lg:gap-10">
+              <div className="grid gap-5 md:grid-cols-2 lg:gap-10 xl:grid-cols-[456fr_704fr]">
                 <GlassCard
                   card={advantages[0]}
                   icons={advantageIcons[0]}
@@ -111,7 +111,7 @@ export function Landing() {
                   index={1}
                 />
               </div>
-              <div className="grid gap-5 lg:grid-cols-[704fr_456fr] lg:gap-10">
+              <div className="grid gap-5 md:grid-cols-2 lg:gap-10 xl:grid-cols-[704fr_456fr]">
                 <GlassCard
                   card={advantages[2]}
                   icons={advantageIcons[2]}
@@ -128,14 +128,13 @@ export function Landing() {
               reverse
               image="/img/landing/package.webp"
               tone="#FF0051"
+              titleClassName="flex flex-wrap items-center justify-center gap-3 md:justify-start"
               titleNode={
                 <>
-                  {t("package.titleLine1")}
-                  <br />
-                  {t("package.titleLine2")}{" "}
-                  <span className="text-gradient">
-                    {t("package.titleAccent")}
-                  </span>
+                  <span>{t("package.titleLine1")}</span>
+                  <OutlinePill>{t("package.titleLine2")}</OutlinePill>
+                  <span>{t("package.titleAccent")}</span>
+                  <LogoDot />
                 </>
               }
               text={t("package.text")}
@@ -143,7 +142,7 @@ export function Landing() {
             <CardRails
               items={pkg}
               perRail={3}
-              className="mt-20 md:mt-24 lg:mt-[120px] xl:mt-[140px]"
+              className="mt-20 md:mt-[120px] lg:mt-40"
             />
           </Section>
 
@@ -157,17 +156,23 @@ export function Landing() {
             <SplitBlock
               image="/img/landing/steps.webp"
               tone="#F15A25"
+              titleClassName="flex flex-wrap items-center justify-center gap-3 md:justify-start"
               titleNode={
                 <>
-                  {t("steps.titleLine1")}
-                  <br />
-                  {t("steps.titleLine2")}
+                  <span>{t("steps.titleLine1")}</span>
+                  <OutlinePill>{t("steps.titleLine2")}</OutlinePill>
                 </>
               }
               text={t("steps.text")}
+              leadClassName="min-[480px]:text-left"
             />
 
-            <div className="mt-12 grid gap-5 md:mt-16 lg:mt-[120px] lg:grid-cols-2 lg:gap-10">
+            {/*
+              1920: ряды 704 + 456 и 456 + 704 попеременно. Сетка 456/208/456
+              с гэпом 40 даёт ровно 1200, а карточка на две колонки — 704.
+              До 1280 макет ставит две равные колонки.
+            */}
+            <div className="mt-20 grid gap-5 md:mt-[120px] md:grid-cols-2 lg:mt-40 lg:gap-10 xl:grid-cols-[456fr_208fr_456fr]">
               {steps.map((s, i) => (
                 <StepCard key={s.title} step={s} index={i} />
               ))}
@@ -178,7 +183,7 @@ export function Landing() {
         {/* ——— content 5 · баннер «Свяжитесь…» ——— */}
         <section
           id="lead"
-          className="noise relative mt-28 overflow-hidden border-y border-white/10 bg-white/8 py-20 md:mt-36 md:py-24 lg:mt-[180px] lg:py-[120px] xl:mt-[220px]"
+          className="noise relative mt-40 overflow-hidden border-y border-white/10 bg-white/8 py-[100px] md:mt-[300px] lg:mt-[400px] lg:py-32 xl:py-[100px]"
         >
           {/*
             Фрейм 360 (2153:196380): col gap40, p100/20, cross:center —
@@ -193,22 +198,39 @@ export function Landing() {
                 className="w-[160px] sm:w-[200px] lg:w-[354px] xl:w-[456px]"
               />
             </Appear>
-            <Appear className="flex w-full min-w-0 flex-1 flex-col items-center text-center lg:items-start lg:text-left">
-              <SectionTitle>
-                {t("contact.titleLine1")}{" "}
-                <span className="inline-flex items-center gap-2 align-middle">
-                  <HighlightPill>{t("contact.titleLine2")}</HighlightPill>
-                  <ToggleAccent />
-                </span>
-                {t("contact.titleLine3")}
+            <Appear className="flex w-full min-w-0 flex-1 flex-col items-center text-center md:items-start md:text-left">
+              <SectionTitle className="flex flex-wrap items-center justify-center gap-3 md:justify-start">
+                <span>{t("contact.titleLine1")}</span>
+                <OutlinePill>{t("contact.titleLine2")}</OutlinePill>
+                <span>{t("contact.titleLine3")}</span>
+                <ToggleMark />
               </SectionTitle>
-              <Lead className="max-w-[704px]">{t("contact.text")}</Lead>
-              <CtaButton
-                className="mt-8 md:mt-10 lg:mt-14"
-                onClick={() => setContactOpen(true)}
-              >
-                {t("contact.cta")}
-              </CtaButton>
+              <Lead className="lg:max-w-[704px]">{t("contact.text")}</Lead>
+              {/*
+                Кнопка из макета — 254×80, r102, p24/40, gap24, одинаковая на
+                всех брейкпоинтах (мобильного варианта 66/r40 у неё нет).
+                Заявку собирает ContactModal, поэтому полей здесь нет.
+              */}
+              <div className="mt-20 w-full text-left">
+                <button
+                  type="button"
+                  onClick={() => setContactOpen(true)}
+                  aria-haspopup="dialog"
+                  className="group relative mx-auto flex h-20 w-[254px] cursor-pointer items-center justify-center gap-6 overflow-hidden rounded-[102px] bg-brand px-10 text-2xl leading-8 text-text-default shadow-[0_12px_40px_rgb(241_90_37/0.45)] transition-[box-shadow,filter] hover:shadow-[0_20px_64px_rgb(241_90_37/0.65)] hover:brightness-110 md:mx-0"
+                >
+                  {/* блик, пробегающий по кнопке при наведении */}
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-y-0 -left-full w-1/2 skew-x-[-20deg] bg-white/25 blur-md transition-[left] duration-700 ease-out group-hover:left-[150%]"
+                  />
+                  {t("contact.cta")}
+                  <Icon
+                    name="arrow_forward"
+                    size={32}
+                    className="transition-transform duration-300 group-hover:translate-x-1"
+                  />
+                </button>
+              </div>
             </Appear>
           </Container>
         </section>
@@ -225,7 +247,8 @@ export function Landing() {
             <CardRails
               items={support}
               perRail={6}
-              className="mt-20 xl:mt-[160px]"
+              variant="support"
+              className="mt-20 md:mt-[120px] lg:mt-40"
             />
           </Section>
 
@@ -313,34 +336,63 @@ function Container({
   );
 }
 
-/** Межсекционный отступ 80 → 160. */
+/** Межсекционный отступ 160 → 300 → 400 (как в ecash-beta). */
 function Section({ children }: { children: React.ReactNode }) {
   return (
-    <section className="relative pt-28 md:pt-36 lg:pt-[180px] xl:pt-[220px]">
+    <section className="relative pt-40 md:pt-[300px] lg:pt-[400px]">
       {children}
     </section>
   );
 }
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+function SectionTitle({
+  children,
+  className,
+  alwaysLarge,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  alwaysLarge?: boolean;
+}) {
   return (
-    <h2 className="text-2xl font-medium leading-tight text-text-default lg:text-[40px] lg:leading-[44px]">
+    <h2
+      className={clsx(
+        "font-medium text-text-default",
+        alwaysLarge
+          ? "text-[40px] leading-[44px]"
+          : "text-[32px] leading-[1.2] md:text-[40px] md:leading-[44px]",
+        className,
+      )}
+    >
       {children}
     </h2>
   );
 }
 
+/**
+ * Лид секции: 18/20 на 360, 24/32 с 480 (у сплит-блока «Ecash — это сеть…»
+ * макет держит 18/20 до 768 — там upFrom=768).
+ * tight — зазор заголовок→лид 20 вместо 32.
+ */
 function Lead({
   children,
   className,
+  upFrom = 480,
+  tight,
 }: {
   children: React.ReactNode;
   className?: string;
+  upFrom?: 480 | 768;
+  tight?: boolean;
 }) {
   return (
     <p
       className={clsx(
-        "mt-5 text-base leading-8 text-text-default lg:mt-8 lg:text-2xl",
+        "text-lg leading-5 text-text-default",
+        tight ? "mt-5 md:mt-8" : "mt-8",
+        upFrom === 480
+          ? "min-[480px]:text-2xl min-[480px]:leading-8"
+          : "md:text-2xl md:leading-8",
         className,
       )}
     >
@@ -387,6 +439,18 @@ function HeroTitle({
 }) {
   const reduced = useReducedMotion();
 
+  /**
+   * Маска строки нужна только на время выезда снизу. Дальше её снимаем:
+   * свечение под монеткой (shadow 44px) выходит за строку и упиралось
+   * в overflow-hidden — сверху и снизу ореол срезало по прямой.
+   *
+   * useReducedMotion на первом рендере отдаёт null, поэтому reduced учитываем
+   * отдельным слагаемым: без анимации onAnimationComplete не сработает и
+   * маска осталась бы навсегда.
+   */
+  const [revealed, setRevealed] = useState(false);
+  const unclipped = revealed || !!reduced;
+
   // С 768 монетка стоит справа от второй строки, плашка — от третьей.
   // До 768 макет даёт только центрированный заголовок, плашка уходит под него.
   const trailing = [null, coin, badge];
@@ -395,7 +459,10 @@ function HeroTitle({
     <>
       <h1 className="text-[32px] font-medium leading-[1.2] text-text-default md:text-5xl md:font-bold md:leading-none md:tracking-tight xl:text-[96px]">
         {lines.map((line, i) => (
-          <span key={line} className="block overflow-hidden pb-1">
+          <span
+            key={line}
+            className={clsx("block pb-1", !unclipped && "overflow-hidden")}
+          >
             <motion.span
               className="flex flex-wrap items-center justify-center gap-3 md:justify-start xl:gap-6"
               initial={reduced ? undefined : { y: "110%" }}
@@ -405,6 +472,9 @@ function HeroTitle({
                 delay: 0.1 + i * 0.12,
                 ease: [0.22, 1, 0.36, 1],
               }}
+              onAnimationComplete={
+                i === lines.length - 1 ? () => setRevealed(true) : undefined
+              }
             >
               {line}
               <span className="hidden md:contents">{trailing[i]}</span>
@@ -445,28 +515,71 @@ function GradientPill({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Пилюля-выделение внутри заголовка (баннер «Свяжитесь…») — то же кольцо
- * из двух слоёв, что и у GradientPill, но без своих text-* классов: размер
- * шрифта наследуется от окружающего h2, а не фиксирован под бейдж в героe.
+ * Кант 2 px градиентом #F6844B → #BF5AF5 поверх прозрачного фона.
+ * Обычный border-image сломал бы фон секции под плашкой, поэтому рамка
+ * рисуется псевдоэлементом с маской — как у карточек (.glass-accent).
  */
-function HighlightPill({ children }: { children: React.ReactNode }) {
+const RING_2PX = [
+  "relative before:pointer-events-none before:absolute before:inset-0",
+  "before:rounded-[inherit] before:p-[2px] before:content-['']",
+  "before:[background:var(--gradient-accent)]",
+  // только длинные свойства: сокращение mask сбрасывает mask-composite,
+  // а порядок утилит в собранном CSS не гарантирован
+  "before:[-webkit-mask-image:linear-gradient(#000_0_0),linear-gradient(#000_0_0)]",
+  "before:[mask-image:linear-gradient(#000_0_0),linear-gradient(#000_0_0)]",
+  "before:[-webkit-mask-clip:content-box,border-box]",
+  "before:[mask-clip:content-box,border-box]",
+  "before:[-webkit-mask-composite:xor] before:[mask-composite:exclude]",
+].join(" ");
+
+/**
+ * Плашка-пилюля вокруг акцентного слова заголовка: r30, p2/20/8/20,
+ * обводка 2px градиентом. Текст внутри — обычный #EEEEEE.
+ */
+function OutlinePill({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex rounded-[50px] bg-[linear-gradient(135deg,#F6844B,#BF5AF5)] p-[2px] align-middle shadow-[0_0_28px_rgb(191_90_245/0.3)]">
-      <span className="inline-flex items-center rounded-[48px] bg-surface-page-bg px-4 py-0.5 lg:px-6 lg:py-1">
-        {children}
-      </span>
+    <span
+      className={clsx(
+        // с 768 в макете плашка 58 при строке 44 — высоту задаём явно,
+        // иначе паддинги 2/8 дают 54 и заголовок садится на 4 px выше
+        "inline-flex items-center rounded-[30px] px-5 pb-2 pt-0.5 md:min-h-[58px]",
+        // strokeAlign=INSIDE: с 768 макет считает кант 2 px частью габарита,
+        // а до 480 — нет, поэтому +2 только с md
+        "md:px-[22px]",
+        RING_2PX,
+      )}
+    >
+      {children}
     </span>
   );
 }
 
-/** Декоративный тумблер рядом с HighlightPill — брендовый градиент на кружке. */
-function ToggleAccent() {
+/**
+ * Фирменный кружок после слова «Ecash» в заголовке «Что входит в пакет»:
+ * 54×54, r43.2, #F15A25 с белым знаком 22.63×32.4.
+ */
+function LogoDot() {
   return (
-    <span
-      aria-hidden
-      className="inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-white/25 bg-white/5 p-1 align-middle lg:h-7 lg:w-[52px]"
-    >
-      <span className="ml-auto h-4 w-4 rounded-full bg-[linear-gradient(135deg,#F6844B,#BF5AF5)] lg:h-5 lg:w-5" />
+    <span className="inline-flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-[43.2px] bg-brand">
+      <img
+        src="/img/mark-white.png"
+        alt=""
+        width={111}
+        height={159}
+        className="h-[32.4px] w-auto"
+      />
+    </span>
+  );
+}
+
+/**
+ * Декоративный «переключатель» в конце заголовка секции контактов:
+ * 84×44, r28, обводка 2 #EEEEEE, кружок 28×28 #F15A25 у правого края.
+ */
+function ToggleMark() {
+  return (
+    <span className="inline-flex h-11 w-[84px] shrink-0 items-center justify-end rounded-[28px] border-2 border-text-default pr-1.5">
+      <span className="block h-7 w-7 rounded-full bg-brand" />
     </span>
   );
 }
@@ -503,7 +616,9 @@ function SplitBlock({
   tone,
   title,
   titleNode,
+  titleClassName,
   text,
+  leadClassName,
   cta,
   onCta,
   reverse,
@@ -513,7 +628,10 @@ function SplitBlock({
   tone: string;
   title?: string;
   titleNode?: React.ReactNode;
+  /** раскладка заголовка, когда он собран из плашек, а не из одной строки */
+  titleClassName?: string;
   text: string;
+  leadClassName?: string;
   cta?: string;
   /** есть только у секции с кнопкой «Связаться» — открывает ContactModal */
   onCta?: () => void;
@@ -533,9 +651,11 @@ function SplitBlock({
           className="w-[184px] lg:w-[354px] xl:w-[456px]"
         />
       </Appear>
-      <Appear delay={0.08} className="min-w-0 flex-1 text-center lg:text-left">
-        <SectionTitle>{titleNode ?? title}</SectionTitle>
-        <Lead>{text}</Lead>
+      <Appear delay={0.08} className="min-w-0 flex-1 text-center md:text-left">
+        <SectionTitle className={titleClassName}>
+          {titleNode ?? title}
+        </SectionTitle>
+        <Lead className={leadClassName}>{text}</Lead>
         {cta && (
           <CtaButton className="mt-8 md:mt-10 lg:mt-14" onClick={onCta}>
             {cta}
@@ -577,62 +697,74 @@ function LandingFooter() {
   const t = useTranslations("footer");
 
   return (
-    <footer className="relative mt-28 border-t border-[#303030] bg-surface-modal-bg md:mt-36 lg:mt-[180px] xl:mt-[220px]">
-      <Container className="py-8 lg:py-[60px] xl:pt-[100px]">
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-3 xl:gap-[263px]">
-          <div className="flex flex-col gap-6">
-            <div className="flex gap-2">
+    <footer className="relative mt-40 border-t border-[#303030] bg-surface-modal-bg md:mt-[300px] lg:mt-[400px]">
+      {/*
+        Своя обёртка, а не Container: у футера колонка макета шире страничной
+        (1448/124 против 1324/0) и свои паддинги по брейкпоинтам.
+      */}
+      <div className="relative mx-auto w-full max-w-[1448px] px-6 py-6 md:px-5 md:py-[60px] lg:px-10 xl:px-[124px] xl:pt-[100px]">
+        {/* 768: одна центрированная колонка, gap 60; с 1024 — ряд */}
+        <div className="flex flex-col gap-6 md:items-center md:gap-[60px] lg:flex-row lg:items-center lg:justify-between lg:gap-10">
+          <div className="flex flex-col gap-2 md:items-center md:gap-6 lg:items-start">
+            <div className="flex gap-2 md:gap-4">
               <SocialLink href="https://wa.me/77059089073" label="WhatsApp">
                 <svg
-                  width="18"
-                  height="18"
                   viewBox="0 0 24 24"
                   fill="currentColor"
                   aria-hidden
+                  className="h-5 w-5 md:h-8 md:w-8"
                 >
                   <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 1.8a8.2 8.2 0 1 1-4.2 15.3l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 0 1 12 3.8Zm-3.1 4c-.2 0-.5 0-.7.3-.2.3-.9.9-.9 2.1s.9 2.4 1 2.6c.1.2 1.8 2.9 4.4 3.9 2.2.9 2.6.7 3.1.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2l-.4-.2-1.5-.7c-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.1-.2 0-.4.1-.5l.5-.6c.1-.2.1-.3.2-.5v-.4L10.3 8c-.1-.3-.3-.3-.5-.3h-.4l-.5.1Z" />
                 </svg>
               </SocialLink>
               <SocialLink href="https://t.me/ecash" label="Telegram">
-                <Icon name="send" size={18} filled />
+                {/* `!` — material-symbols/rounded.css подключён вне слоёв
+                    каскада и своим font-size:24px перебивает утилиты */}
+                <ScalableIcon
+                  name="send"
+                  filled
+                  className="text-[20px]! md:text-[32px]!"
+                />
               </SocialLink>
             </div>
             <a
               href="tel:+77059089073"
-              className="text-xl leading-8 text-text-default transition-colors hover:text-text-brand"
+              className="text-base leading-5 text-text-default transition-colors hover:text-text-brand md:text-[28px] md:font-semibold md:leading-8 md:tracking-[-0.45px]"
             >
               +7 (705) 908 90 73
             </a>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <div className="text-xl leading-8 text-text-disabled">
+          <div className="flex flex-col gap-2 md:items-center md:gap-6 lg:items-start lg:gap-10">
+            <div className="text-sm leading-[1.1] text-text-disabled md:text-xl md:leading-8 md:text-text-default">
               {t("schedule")}
             </div>
-            <div className="text-xl leading-8 text-text-default">
+            <div className="text-base leading-5 text-text-default md:text-[28px] md:font-semibold md:leading-8 md:tracking-[-0.45px]">
               {t("scheduleValue")}
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <div className="text-xl leading-8 text-text-disabled">
+          <div className="flex flex-col gap-2 md:items-center md:gap-6 lg:items-start lg:gap-10">
+            <div className="text-sm leading-[1.1] text-text-disabled md:text-xl md:leading-8 md:text-text-default">
               {t("additional")}
             </div>
-            <span className="inline-flex items-center gap-2 text-xl leading-8 text-text-default">
+            <span className="inline-flex items-center gap-2.5 text-base leading-5 text-text-default md:text-[28px] md:font-semibold md:leading-8 md:tracking-[-0.45px]">
               {t("documents")}
               <Icon name="arrow_outward" size={20} />
             </span>
           </div>
         </div>
 
-        <div className="mt-12 text-base leading-8 text-text-default lg:mt-20 lg:text-xl">
+        {/* 480: копирайт у левого края, 768 — по центру */}
+        <div className="mt-12 text-left text-sm leading-[1.1] text-text-disabled md:mt-20 md:text-center md:text-xl md:leading-8 md:text-text-default lg:text-left">
           © {new Date().getFullYear()}. {t("rights")}
         </div>
-      </Container>
+      </div>
     </footer>
   );
 }
 
+/** Плитка соцсети: 42×42 r16 #262626 до 768, 72×72 r28 #272626 с 768. */
 function SocialLink({
   href,
   label,
@@ -650,10 +782,42 @@ function SocialLink({
       aria-label={label}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.94 }}
-      className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-btn-2 text-text-default transition-colors hover:bg-comp-surface2-hover"
+      className="inline-flex h-[42px] w-[42px] items-center justify-center rounded-2xl bg-surface-page-surf1 text-text-default transition-colors hover:bg-comp-surface2-hover md:h-[72px] md:w-[72px] md:rounded-[28px] md:bg-[#272626]"
     >
       {children}
     </motion.a>
+  );
+}
+
+/**
+ * Material-иконка с размером из класса.
+ *
+ * Icon задаёт fontSize инлайновым стилем, поэтому адаптивные классы на нём
+ * не срабатывают, а в макете размер иконки меняется по брейкпоинтам
+ * (21.33 → 48 у карточек преимуществ).
+ */
+function ScalableIcon({
+  name,
+  className,
+  filled = false,
+}: {
+  name: string;
+  className?: string;
+  filled?: boolean;
+}) {
+  return (
+    <span
+      aria-hidden
+      className={clsx(
+        "material-symbols-rounded select-none leading-none",
+        className,
+      )}
+      style={{
+        fontVariationSettings: `'FILL' ${filled ? 1 : 0}, 'wght' 400, 'GRAD' 0, 'opsz' 24`,
+      }}
+    >
+      {name}
+    </span>
   );
 }
 
@@ -688,9 +852,9 @@ function GlassCard({
       <Spotlight
         tone={accent ? "#BF5AF5" : "#F6844B"}
         className={clsx(
-          "group flex h-full flex-col gap-5 rounded-[40px] p-6 backdrop-blur-[46px] lg:gap-10 lg:rounded-[64px] lg:p-11",
-          "glass-card-solid",
-          accent && "glass-accent",
+          "group flex h-full flex-col gap-5 rounded-[40px] bg-[#262626]/40 p-6 glass-blur md:p-9 lg:gap-10 lg:rounded-[64px] lg:p-11",
+          // 2153:195603 — у акцентной карточки кант градиентный, у остальных #303030
+          accent ? "glass-accent" : "border border-[#303030]",
         )}
       >
         {logo ? (
@@ -705,27 +869,30 @@ function GlassCard({
           </span>
         ) : (
           icons && (
-            <span className="flex h-[84px] w-[84px] items-center justify-center rounded-[24px] border-2 border-[#616161] transition-colors duration-300 group-hover:border-brand lg:h-[110px] lg:w-[110px] lg:rounded-[32px]">
-              <span className="relative h-[60px] w-[60px] lg:h-[80px] lg:w-[80px]">
-                <Icon
+            <span className="flex h-[60px] w-[60px] items-center justify-center rounded-[24px] border-2 border-[#616161] transition-colors duration-300 group-hover:border-brand md:h-[100px] md:w-[100px] md:rounded-[32px]">
+              {/* 2153:195575 — пара иконок 48×48 в блоке 72×72; на 480/360 — 21.33 в 32.
+                  `!` обязателен: material-symbols/rounded.css подключён из layout.tsx
+                  вне слоёв каскада и своим font-size:24px перебивает утилиты. */}
+              <span className="relative h-8 w-8 md:h-[72px] md:w-[72px]">
+                <ScalableIcon
                   name={icons[0]}
                   filled
-                  className="absolute left-0 top-0 text-[40px] text-brand drop-shadow-[0_0_12px_rgb(241_90_37/0.6)] transition-transform duration-300 group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 lg:text-[56px]"
+                  className="absolute left-0 top-0 text-[21.33px]! text-brand drop-shadow-[0_0_12px_rgb(241_90_37/0.6)] transition-transform duration-300 group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 md:text-[48px]!"
                 />
-                <Icon
+                <ScalableIcon
                   name={icons[1]}
                   filled
-                  className="absolute bottom-0 right-0 text-[40px] text-text-default transition-transform duration-300 group-hover:translate-x-0.5 group-hover:translate-y-0.5 lg:text-[56px]"
+                  className="absolute bottom-0 right-0 text-[21.33px]! text-text-default transition-transform duration-300 group-hover:translate-x-0.5 group-hover:translate-y-0.5 md:text-[48px]!"
                 />
               </span>
             </span>
           )
         )}
 
-        <div className="flex flex-col gap-5 lg:gap-6">
+        <div className="flex flex-col gap-6">
           <h3
             className={clsx(
-              "text-lg font-semibold leading-8 tracking-[-0.45px] lg:text-[28px]",
+              "text-xl font-medium leading-7 md:text-[28px] md:font-semibold md:leading-8 md:tracking-[-0.45px]",
               accent ? "text-text-brand" : "text-text-default",
             )}
           >
@@ -733,7 +900,7 @@ function GlassCard({
           </h3>
           <p
             className={clsx(
-              "text-base leading-8 lg:text-xl",
+              "text-base leading-[1.24] md:text-xl md:leading-8",
               accent ? "text-text-brand" : "text-text-default",
             )}
           >
@@ -745,9 +912,15 @@ function GlassCard({
   );
 }
 
-/** Карточка этапа с номером в кружке. */
+/**
+ * Карточка этапа: номер 50×50 r16 на #303030 с градиентным кантом.
+ * На 1920 ряды идут 704 + 456 и 456 + 704 — это span 2 у элементов 0, 3, 4, …
+ * Кант номера при наведении на карточку заливается брендовым оранжевым
+ * вместе с плашкой (grad-border-brand-hover).
+ */
 function StepCard({ step, index }: { step: Card; index: number }) {
   const reduced = useReducedMotion();
+  const wide = index % 4 === 0 || index % 4 === 3;
 
   return (
     <motion.article
@@ -756,15 +929,18 @@ function StepCard({ step, index }: { step: Card; index: number }) {
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.5, delay: (index % 2) * 0.08 }}
       whileHover={reduced ? undefined : { y: -6 }}
-      className="glass group h-full rounded-[40px] p-6 backdrop-blur-[46px] lg:rounded-[64px] lg:p-11"
+      className={clsx(
+        "glass-veil group h-full rounded-[64px] p-9 glass-blur lg:p-11",
+        wide && "xl:col-span-2",
+      )}
     >
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand-hardsoft text-lg font-medium text-text-brand transition-all duration-300 group-hover:bg-brand group-hover:text-text-always-white">
+      <span className="grad-border grad-border-brand-hover inline-flex h-[50px] w-[50px] items-center justify-center rounded-2xl bg-[#303030] text-lg font-medium leading-6 text-text-brand transition-all duration-300 group-hover:bg-brand group-hover:text-text-always-white">
         {index + 1}
       </span>
-      <h3 className="mt-5 text-lg font-semibold leading-8 tracking-[-0.45px] text-text-default lg:mt-10 lg:text-[28px]">
+      <h3 className="mt-6 text-xl font-medium leading-7 text-text-default min-[480px]:text-[28px] min-[480px]:font-semibold min-[480px]:leading-8 min-[480px]:tracking-[-0.45px] lg:mt-11">
         {step.title}
       </h3>
-      <p className="mt-5 text-base leading-8 text-text-default lg:mt-6 lg:text-xl">
+      <p className="mt-6 text-base leading-[1.24] text-text-default min-[480px]:text-xl min-[480px]:leading-8">
         {step.text}
       </p>
     </motion.article>
@@ -818,64 +994,204 @@ function CtaButton({
 }
 
 /**
+ * Стартовые смещения рядов (scrollLeft, px) по ступеням макета.
+ *
+ * Пороги записаны в rem, как у самого Tailwind (md 48rem, lg 64rem, xl 80rem),
+ * а не в пикселях. В медиазапросе rem считается от базового кегля браузера, и
+ * если пользователь его увеличил, md наступает не на 768. Порог в px разошёлся
+ * бы с шириной карточки: ряд открывался бы на обрезанной половине второй.
+ *
+ * Ниже md смещения нет — и оно там не нужно: карточка уже колонки на 40px, так
+ * что кромка следующей видна и без сдвига, а первая остаётся целой. Сдвиг здесь
+ * обрезал бы её слева, то есть спрятал бы начало ряда.
+ *
+ * Отрицательные margin ряда (-mx-8) и равный им padding (px-8) друг друга
+ * гасят, поэтому scrollLeft отсчитывается от той же точки, что x трека в макете.
+ *
+ * У «поддержки» ряд 1 на xl — 1550 вместо макетных 1240: шаг карточки здесь 620
+ * (580 + 40), а 1240 = ровно два шага, из-за чего третья карточка встаёт
+ * вплотную к левому краю и ряд снова читается «по линейке». 1550 шагу не кратно
+ * и даёт картину «обрезана — целиком — обрезана».
+ */
+const RAIL_SCROLL: Record<
+  "package" | "support",
+  { mq: string; rails: number[] }[]
+> = {
+  package: [
+    { mq: "(min-width: 80rem)", rails: [992, 0] },
+    { mq: "(min-width: 64rem)", rails: [1248, 0] },
+    { mq: "(min-width: 48rem)", rails: [599, 0] },
+  ],
+  support: [
+    { mq: "(min-width: 80rem)", rails: [1550, 744] },
+    { mq: "(min-width: 64rem)", rails: [1120, 620] },
+    { mq: "(min-width: 48rem)", rails: [748, 599] },
+  ],
+};
+
+/**
  * Ряды карточек («complex slider»): по 3 (пакет) или 6 (поддержка) в ряд.
- * Карточка 704×334, p64, gap44, r64. Ряды сдвинуты в разные стороны при
- * скролле — так они «живут», как в прототипе.
+ * Ряд горизонтальный на всех ширинах — в макете это scroll container колонки.
+ * Ширина карточки равна колонке до 768, 429 на 768, 704 (пакет) / 580
+ * (поддержка) с 1024. Зазор 12 → 20 → 40.
  */
 function CardRails({
   items,
   perRail,
+  variant = "package",
   className,
 }: {
   items: Card[];
   perRail: number;
+  /** «package» — карточки 704 (content 3); «support» — 580 (content 6).
+   *  Оформление одинаковое: чередование стекла и плотной заливки с кантом. */
+  variant?: "package" | "support";
   className?: string;
 }) {
   const rails: Card[][] = [];
   for (let i = 0; i < items.length; i += perRail)
     rails.push(items.slice(i, i + perRail));
 
+  const railEls = useRef<(HTMLDivElement | null)[]>([]);
+  const reduced = useReducedMotion();
+
+  /**
+   * Стартовое смещение выставляем после монтирования, а не в разметке: ширины
+   * окна на сервере нет, и любое смещение в SSR-разметке разошлось бы с
+   * клиентом. Ступень выбираем через matchMedia, ровно теми же порогами, что и
+   * Tailwind, чтобы смещение и ширина карточки переключались одновременно.
+   *
+   * Пересчитываем на каждой смене ширины окна, а не только на смене ступени:
+   * ширина ряда внутри одной ступени плавающая, и максимум прокрутки вместе с
+   * ней — иначе зажатое браузером значение так и остаётся. Сравниваем именно
+   * ширину: ресайз по одной высоте (адресная строка на мобильном) ряд не трогает.
+   */
+  useEffect(() => {
+    const steps = RAIL_SCROLL[variant];
+    let appliedWidth = -1;
+
+    const apply = () => {
+      if (window.innerWidth === appliedWidth) return;
+      appliedWidth = window.innerWidth;
+      const step = steps.find((s) => window.matchMedia(s.mq).matches);
+
+      railEls.current.forEach((el, i) => {
+        // Мгновенно и без behavior: 'smooth' — это стартовое состояние ряда,
+        // а не анимация. Браузер сам зажмёт значение по максимуму прокрутки.
+        if (el) el.scrollLeft = step ? (step.rails[i] ?? 0) : 0;
+      });
+    };
+
+    apply();
+    window.addEventListener("resize", apply);
+    return () => window.removeEventListener("resize", apply);
+  }, [variant]);
+
   return (
     <div className={clsx("flex flex-col gap-5 lg:gap-10", className)}>
       {rails.map((rail, railIndex) => (
-        <div
+        /*
+          Появление — на РЯДЕ, а не на карточках. Раньше каждая карточка гасла
+          до opacity 0 и оживала по своему пересечению с вьюпортом, но у соседа
+          в кадре всего ~22px кромки, а порог был margin: -40px — сосед не
+          пересекался и оставался невидимым. Пользователь видел одну карточку и
+          не понимал, что ряд скроллится. Заодно уходит вторая беда того же
+          подхода: карточки вглубь ряда висели прозрачными, пока их не
+          доскроллишь, и всплывали прямо под курсором.
+        */
+        <motion.div
           key={railIndex}
-          className="flex flex-col gap-5 lg:-mx-10 lg:snap-x lg:snap-mandatory lg:flex-row lg:gap-10 lg:overflow-x-auto lg:px-10 lg:pb-2 lg:[scrollbar-width:none] xl:mx-0 xl:px-0 lg:[&::-webkit-scrollbar]:hidden"
+          ref={(el: HTMLDivElement | null) => {
+            railEls.current[railIndex] = el;
+          }}
+          initial={reduced ? undefined : { opacity: 0, y: 20 }}
+          whileInView={reduced ? undefined : { opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.45 }}
+          /*
+           * overflow-x:auto по спецификации делает и overflow-y:auto, поэтому
+           * ряд обрезает всё, что выходит за его границы: подъём карточки на
+           * ховере и, главное, её тень — на срезе видны резкие углы. Тень на
+           * ховере выходит за карточку на 12px по бокам и на 44px вниз, поэтому
+           * берём двойной запас (32 по бокам и сверху, 96 снизу), а
+           * отрицательные margin ровно на ту же величину возвращают исходную
+           * геометрию. Боковой вылет за край экрана безопасен: у обёртки
+           * лендинга overflow-x: hidden.
+           *
+           * scroll-pl-8 — чтобы snap-start приклеивал карточку туда же, где
+           * стоит первая: снаппорт по умолчанию считается от padding-бокса.
+           *
+           * md:snap-none — с 768 снап выключен совсем. Смещения макета не
+           * выровнены по карточкам, а снап притягивает прокрутку к ближайшей
+           * точке привязки и при программной установке scrollLeft тоже. Ниже md
+           * снап остаётся mandatory и полезен: помещается ровно одна карточка.
+           */
+          className="-mx-8 -mb-24 -mt-8 flex snap-x snap-mandatory scroll-pl-8 flex-row gap-3 overflow-x-auto px-8 pb-24 pt-8 [scrollbar-width:none] md:snap-none md:gap-5 lg:gap-10 [&::-webkit-scrollbar]:hidden"
         >
           {rail.map((item, i) => (
-            <RailCard key={item.title} item={item} index={i} />
+            <RailCard
+              key={item.title}
+              item={item}
+              index={i}
+              variant={variant}
+            />
           ))}
-        </div>
+        </motion.div>
       ))}
     </div>
   );
 }
 
-function RailCard({ item, index }: { item: Card; index: number }) {
+function RailCard({
+  item,
+  index,
+  variant = "package",
+}: {
+  item: Card;
+  index: number;
+  variant?: "package" | "support";
+}) {
   const reduced = useReducedMotion();
-  const gradient = index % 3 !== 1;
+  const support = variant === "support";
+
+  /**
+   * Заливки из макета.
+   * Пакет: 0 — плотная #262626 60 % с градиентным кантом, 1 — стекло с белым
+   * кантом, 2 — стекло с градиентным кантом.
+   * Поддержка: чётные — стекло, нечётные — плотная заливка с градиентным кантом.
+   */
+  const dense = support ? index % 2 === 1 : index % 3 === 0;
+  const gradient = support ? index % 2 === 1 : index % 3 !== 1;
 
   return (
     <motion.div
-      initial={reduced ? undefined : { opacity: 0, y: 20 }}
-      whileInView={reduced ? undefined : { opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.45, delay: Math.min(index, 3) * 0.07 }}
       whileHover={reduced ? undefined : { y: -6 }}
-      className="lg:w-[704px] lg:shrink-0 lg:snap-start"
+      className={clsx(
+        /*
+          До 768 карточка НЕ во всю колонку — иначе ряд не читается как
+          карусель и его не пробуют скроллить.
+          Ряд выходит за колонку вправо на 32px (-mx-8 + px-8), поэтому кромка
+          следующей карточки на экране = урезание + 4: при 18px видно ~22px,
+          и одинаково на любой ширине (360, 480, 767 — проверено замером).
+          Смещения scrollLeft на мобильном нет: первая карточка стоит вплотную
+          к левому краю, обрезана только последующая.
+        */
+        "w-[calc(100%-18px)] shrink-0 snap-start md:w-[429px]",
+        support ? "lg:w-[580px]" : "lg:w-[704px]",
+      )}
     >
       <Spotlight
         tone={gradient ? "#BF5AF5" : "#F6844B"}
         className={clsx(
-          "flex h-full flex-col gap-5 rounded-[40px] p-6 backdrop-blur-[46px] lg:gap-11 lg:rounded-[64px] lg:p-16",
-          index % 3 === 0 ? "glass-dense" : "glass",
+          "flex h-full flex-col gap-6 rounded-[64px] p-9 glass-blur lg:gap-11 lg:p-16",
+          dense ? "glass-dense" : "glass-veil",
           gradient && "glass-accent",
         )}
       >
-        <h3 className="text-lg font-semibold leading-8 tracking-[-0.45px] text-text-default lg:text-[28px]">
+        <h3 className="text-xl font-medium leading-7 text-text-default md:text-[28px] md:font-semibold md:leading-8 md:tracking-[-0.45px]">
           {item.title}
         </h3>
-        <p className="text-base leading-8 text-text-default lg:text-xl">
+        <p className="text-base leading-[1.24] text-text-default md:text-xl md:leading-8">
           {item.text}
         </p>
       </Spotlight>

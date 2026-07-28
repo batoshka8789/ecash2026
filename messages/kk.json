@@ -111,6 +111,7 @@
     "continue": "Жалғастыру",
     "withTelegram": "Telegram арқылы жалғастыру",
     "withGoogle": "Google арқылы жалғастыру",
+    "socialUnavailable": "Telegram және Google арқылы кіру әзірге қолжетімсіз — телефон нөмірімен кіріңіз",
     "close": "Жабу",
     "errors": {
       "emailInvalid": "Мұндай эл. пошта жоқ",

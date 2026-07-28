@@ -229,29 +229,20 @@ export function Magnetic({
 /* -------------------------------------------------------------- зерно */
 
 /**
- * Плёночное зерно и виньетка поверх всей страницы — дают глубину
- * и «прижимают» края, за счёт чего цветные свечения читаются контрастнее.
+ * Плёночное зерно поверх всей страницы — даёт глубину, за счёт чего цветные
+ * свечения читаются контрастнее. Виньетки (радиального затемнения к краям)
+ * здесь нет: серый градиент лежал поверх всех блоков и глушил их.
  */
 export function GrainOverlay() {
   return (
-    <>
-      <span
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-30 opacity-[0.055] mix-blend-overlay"
-        style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)'/%3E%3C/svg%3E\")",
-        }}
-      />
-      <span
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-20"
-        style={{
-          background:
-            "radial-gradient(120% 80% at 50% 0%, transparent 45%, rgb(0 0 0 / 0.45) 100%)",
-        }}
-      />
-    </>
+    <span
+      aria-hidden
+      className="pointer-events-none fixed inset-0 z-30 opacity-[0.055] mix-blend-overlay"
+      style={{
+        backgroundImage:
+          "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)'/%3E%3C/svg%3E\")",
+      }}
+    />
   );
 }
 
