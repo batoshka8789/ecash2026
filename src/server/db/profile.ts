@@ -6,6 +6,9 @@ import type { profiles } from './schema';
 export const emptyProfile: Profile = {
   avatar: null,
   displayName: '',
+  firstName: '',
+  lastName: '',
+  middleName: '',
   about: '',
   occupation: '',
   tags: [],
@@ -28,6 +31,9 @@ export function profileFromRow(row: ProfileRow | undefined): Profile {
   return {
     avatar: row.avatar,
     displayName: row.displayName,
+    firstName: row.firstName,
+    lastName: row.lastName,
+    middleName: row.middleName,
     about: row.about,
     occupation: row.occupation,
     tags: normalizeTags(row.tags),

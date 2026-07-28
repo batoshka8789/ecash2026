@@ -82,6 +82,10 @@ export type Profile = {
   avatar: string | null;
   /** имя, указанное самим человеком — используется, пока ФИО из ядра пустое */
   displayName: string;
+  /** ФИО из нашего слоя: человек правит его сам в «Мои данные» */
+  firstName: string;
+  lastName: string;
+  middleName: string;
   about: string;
   occupation: string;
   tags: string[];
@@ -97,6 +101,11 @@ export type AccountWithProfile = Account & { profile: Profile };
  * сам при регистрации/в анкете.
  */
 export function accountDisplayName(account: AccountWithProfile): string {
+  const own = [account.profile.firstName, account.profile.lastName]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+  if (own) return own;
   const upstream = [account.firstName, account.lastName].filter(Boolean).join(' ').trim();
   return upstream || account.profile.displayName;
 }

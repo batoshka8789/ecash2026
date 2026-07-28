@@ -159,6 +159,9 @@ export const api = {
     save: (patch: {
       avatar?: string | null;
       displayName?: string;
+      firstName?: string;
+      lastName?: string;
+      middleName?: string;
       about?: string;
       occupation?: string;
       tags?: string[];

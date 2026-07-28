@@ -79,9 +79,10 @@ function Field({
 const tagKeys = ['entrepreneur', 'investor', 'director'] as const;
 
 /**
- * Анкета «Мои данные». ФИО, ИИН и телефон приходят из ядрового клиента Ecash
- * (привязка происходит у кассира) — здесь они только для чтения. Наш слой
- * (о себе, занятость, теги) редактируется и сохраняется в профиль.
+ * Анкета «Мои данные». ФИО, «о себе», занятость и теги человек правит сам —
+ * всё это живёт в нашем слое профиля. Только для чтения остаются ИИН и
+ * телефон: ИИН — проверяемый идентификатор из ядра Ecash, телефон — логин
+ * аккаунта, и менять их можно лишь через отделение/смену номера.
  */
 export function ProfileForm() {
   const t = useTranslations('profile.form');
@@ -93,7 +94,13 @@ export function ProfileForm() {
   const errId = `${uid}-error`;
 
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ displayName: '', about: '', occupation: '' });
+  const [form, setForm] = useState({
+    firstName: '',
+    lastName: '',
+    middleName: '',
+    about: '',
+    occupation: '',
+  });
   const [tags, setTags] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -105,7 +112,11 @@ export function ProfileForm() {
    */
   const fillFrom = (a: NonNullable<typeof account>) => {
     setForm({
-      displayName: a.profile.displayName,
+      // наш слой в приоритете; пока он пуст — подставляем ФИО из ядра Ecash,
+      // чтобы у привязанного клиента поля не выглядели пустыми
+      firstName: a.profile.firstName || a.firstName,
+      lastName: a.profile.lastName || a.lastName,
+      middleName: a.profile.middleName || a.middleName,
       about: a.profile.about,
       occupation: a.profile.occupation,
     });
@@ -121,8 +132,14 @@ export function ProfileForm() {
   }
 
   const save = useMutation({
-    mutationFn: (patch: { displayName: string; about: string; occupation: string; tags: string[] }) =>
-      api.profile.save(patch),
+    mutationFn: (patch: {
+      firstName: string;
+      lastName: string;
+      middleName: string;
+      about: string;
+      occupation: string;
+      tags: string[];
+    }) => api.profile.save(patch),
     onSuccess: async () => {
       await invalidate();
       setEditing(false);
@@ -216,45 +233,37 @@ export function ProfileForm() {
         </button>
       </div>
 
-      {/* ФИО из ядра Ecash появляется только после привязки к клиенту в
-          отделении — до этого момента (весь демо-режим стенда — тоже) имя
-          указывает сам человек, сохраняется в наш профиль и весь сайт
-          показывает именно его (accountDisplayName). */}
-      {!(account?.firstName || account?.lastName) && (
-        <div className="mt-4">
-          <Field
-            id={`${uid}-displayName`}
-            label={t('displayName')}
-            value={form.displayName}
-            editing={editing}
-            onChange={set('displayName')}
-            invalid={errField === 'displayName'}
-            describedBy={errId}
-          />
-        </div>
-      )}
-
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {/* ФИО правится человеком и живёт в нашем слое профиля. Раньше эти
+            поля были намертво disabled «данные из ядра Ecash»: у непривязанного
+            клиента (и во всём демо-режиме) ядро отдаёт пустоту, поэтому профиль
+            было физически нечем заполнить — правка выглядела нерабочей. */}
         <Field
           id={`${uid}-firstName`}
           label={t('firstName')}
-          value={account?.firstName ?? ''}
-          disabled
-          title={t('readonlyHint')}
+          value={form.firstName}
+          editing={editing}
+          onChange={set('firstName')}
+          invalid={errField === 'firstName'}
+          describedBy={errId}
         />
         <Field
           id={`${uid}-lastName`}
           label={t('lastName')}
-          value={account?.lastName ?? ''}
-          disabled
-          title={t('readonlyHint')}
+          value={form.lastName}
+          editing={editing}
+          onChange={set('lastName')}
+          invalid={errField === 'lastName'}
+          describedBy={errId}
         />
         <Field
           id={`${uid}-middleName`}
           label={t('middleName')}
-          value={account?.middleName ?? ''}
-          disabled
-          title={t('readonlyHint')}
+          value={form.middleName}
+          editing={editing}
+          onChange={set('middleName')}
+          invalid={errField === 'middleName'}
+          describedBy={errId}
         />
       </div>
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">

@@ -22,6 +22,13 @@
       "when": 1785192653982,
       "tag": "0002_silky_typhoid_mary",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785222627747,
+      "tag": "0003_new_purifiers",
+      "breakpoints": true
     }
   ]
 }

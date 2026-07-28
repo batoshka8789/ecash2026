@@ -183,7 +183,7 @@
       "middleName": "Middle name",
       "iin": "IIN",
       "contact": "Phone number / Email",
-      "readonlyHint": "This data is linked to your Ecash account and can only be changed at a branch",
+      "readonlyHint": "Your IIN and phone number are linked to your Ecash account — they can only be changed at a branch",
       "about": "Tell us about your experience",
       "occupation": "What do you do at the moment?",
       "removeTag": "Remove",

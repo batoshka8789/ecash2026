@@ -22,6 +22,12 @@ export const profiles = pgTable('profiles', {
   accountId: text('account_id').primaryKey(),
   avatar: text('avatar'),
   displayName: text('display_name').notNull().default(''),
+  /** ФИО, введённое самим человеком. Ядро Ecash отдаёт своё только после
+   *  привязки клиента в отделении — до этого поля пустые, и без нашего слоя
+   *  профиль было физически нечем заполнить. */
+  firstName: text('first_name').notNull().default(''),
+  lastName: text('last_name').notNull().default(''),
+  middleName: text('middle_name').notNull().default(''),
   about: text('about').notNull().default(''),
   occupation: text('occupation').notNull().default(''),
   tags: jsonb('tags').$type<string[]>().notNull().default([]),

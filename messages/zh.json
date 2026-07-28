@@ -183,7 +183,7 @@
       "middleName": "父称",
       "iin": "个人识别号",
       "contact": "手机号码 / 电子邮箱",
-      "readonlyHint": "该资料与您的 Ecash 账户绑定，仅可在网点修改",
+      "readonlyHint": "个人识别号与手机号码已绑定您的 Ecash 账户，仅可在网点修改",
       "about": "介绍一下您的经历",
       "occupation": "您目前从事什么工作？",
       "removeTag": "移除",
