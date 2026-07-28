@@ -17,8 +17,12 @@ const csp = [
   `img-src 'self' data: blob: https://ecash.kz https://tile.openstreetmap.org`,
   `font-src 'self'`,
   `connect-src 'self' https://tile.openstreetmap.org${isProd ? '' : ' ws:'}`,
-  // MapLibre поднимает воркеры из blob-URL
+  // MapLibre поднимает воркеры из blob-URL.
+  // child-src обязателен рядом с worker-src: Safari worker-src не понимает
+  // и откатывается по цепочке child-src → default-src ('self'), из-за чего
+  // blob-воркер карты блокировался и карта отделений в Safari не работала.
   `worker-src 'self' blob:`,
+  `child-src 'self' blob:`,
   `frame-ancestors 'none'`,
   `base-uri 'self'`,
   `form-action 'self'`,
