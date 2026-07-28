@@ -75,7 +75,7 @@ export function Landing() {
               }}
               className="w-[180px] shrink-0 md:order-2 md:mx-0 md:w-[300px] lg:w-[354px] xl:w-[580px]"
             >
-              <FloatImage src="/img/landing/hero.png" tone="#F15A25" />
+              <FloatImage src="/img/landing/hero.webp" tone="#F15A25" priority />
             </motion.div>
 
             <div className="min-w-0 flex-1 md:order-1">
@@ -90,7 +90,7 @@ export function Landing() {
           {/* ——— content 2 · «Ecash — это сеть…» → карточки преимуществ ——— */}
           <Section>
             <SplitBlock
-              image="/img/landing/tech.png"
+              image="/img/landing/tech.webp"
               tone="#5500FF"
               title={t("intro.title")}
               text={t("intro.text")}
@@ -126,7 +126,7 @@ export function Landing() {
           <Section>
             <SplitBlock
               reverse
-              image="/img/landing/package.png"
+              image="/img/landing/package.webp"
               tone="#FF0051"
               titleNode={
                 <>
@@ -155,7 +155,7 @@ export function Landing() {
           */}
           <Section>
             <SplitBlock
-              image="/img/landing/steps.png"
+              image="/img/landing/steps.webp"
               tone="#F15A25"
               titleNode={
                 <>
@@ -187,7 +187,7 @@ export function Landing() {
           <Container className="flex flex-col items-center gap-10 lg:flex-row lg:items-center lg:gap-10 xl:gap-[164px]">
             <Appear className="shrink-0">
               <FloatImage
-                src="/img/landing/contact.png"
+                src="/img/landing/contact.webp"
                 tone="#9D00FF"
                 delay={0.5}
                 className="w-[160px] sm:w-[200px] lg:w-[354px] xl:w-[456px]"
@@ -217,7 +217,7 @@ export function Landing() {
           {/* ——— content 6 · поддержка партнёров ——— */}
           <Section>
             <SplitBlock
-              image="/img/landing/support.png"
+              image="/img/landing/support.webp"
               tone="#FF4200"
               title={t("support.title")}
               text={t("support.text")}
@@ -484,7 +484,7 @@ function CoinPill() {
       className="inline-flex h-10 w-[68px] shrink-0 items-center justify-center rounded-[51px] bg-white shadow-[0_0_44px_rgb(241_90_37/0.35)] md:h-[52px] md:w-[96px] xl:h-16 xl:w-[124px]"
     >
       <img
-        src="/img/mark-orange.png"
+        src="/img/mark-orange.webp"
         alt=""
         width={113}
         height={160}
@@ -696,7 +696,7 @@ function GlassCard({
         {logo ? (
           <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-[0_0_40px_rgb(241_90_37/0.35)] transition-transform duration-300 group-hover:scale-110 lg:h-[72px] lg:w-[72px]">
             <img
-              src="/img/mark-orange.png"
+              src="/img/mark-orange.webp"
               alt=""
               width={113}
               height={160}

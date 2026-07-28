@@ -162,11 +162,15 @@ export function ProfileForm() {
     setEditing(false);
   };
 
+  const commit = () => {
+    if (!editing || save.isPending) return;
+    save.mutate({ ...form, tags });
+  };
+
   /** Submit формы: Enter в любом поле в режиме редактирования сохраняет анкету. */
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editing || save.isPending) return;
-    save.mutate({ ...form, tags });
+    commit();
   };
 
   return (
@@ -186,9 +190,17 @@ export function ProfileForm() {
             {tCommon('cancel')}
           </button>
         )}
+        {/* type ВСЕГДА "button", даже в режиме правки, и сохранение вызывается
+            обработчиком вручную. Если менять type на "submit" внутри собственного
+            onClick этой же кнопки, браузер выполнит отправку формы как действие
+            ПО УМОЛЧАНИЮ того же самого клика: обработчики отрабатывают раньше,
+            и к моменту действия по умолчанию кнопка уже submit. Правка
+            включалась и в ту же миллисекунду сохранялась и закрывалась —
+            снаружи это выглядело как «кнопка нажимается и сразу пропадает».
+            Enter в поле по-прежнему сохраняет — через onSubmit формы. */}
         <button
-          type={editing ? 'submit' : 'button'}
-          onClick={editing ? undefined : startEdit}
+          type="button"
+          onClick={editing ? commit : startEdit}
           disabled={save.isPending}
           aria-label={editing ? t('save') : t('edit')}
           title={editing ? t('save') : t('edit')}

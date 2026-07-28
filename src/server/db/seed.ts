@@ -29,13 +29,13 @@ async function main() {
     .values([
       {
         slug: 'travelers',
-        image: '/img/news-travelers.png',
+        image: '/img/news-travelers.webp',
         key: 'travelers',
         publishedAt: new Date(Date.now() - 2 * day),
       },
       {
         slug: 'city-dwellers',
-        image: '/img/news-city.png',
+        image: '/img/news-city.webp',
         key: 'cityDwellers',
         publishedAt: new Date(Date.now() - 3 * day),
       },

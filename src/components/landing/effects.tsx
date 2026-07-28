@@ -269,12 +269,15 @@ export function FloatImage({
   tone,
   className,
   delay = 0,
+  priority = false,
 }: {
   src: string;
   /** цвет ореола — под цвет свечения секции */
   tone: string;
   className?: string;
   delay?: number;
+  /** первый экран: грузить сразу и с высоким приоритетом, не лениво */
+  priority?: boolean;
 }) {
   const reduced = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
@@ -311,9 +314,31 @@ export function FloatImage({
   };
 
   if (reduced) {
+    // «Уменьшение движения» гасит ДВИЖЕНИЕ, но не цвет: ореол и подсветка —
+    // часть фирменной палитры макета, а не анимация. Раньше эта ветка отдавала
+    // голый <img>, и на любом устройстве с включённой настройкой (на iPhone она
+    // часто включена, а в режиме энергосбережения включается сама) лендинг
+    // становился плоским и терял контраст. Рисуем то же свечение статикой.
     return (
       <div className={clsx("relative", className)}>
-        <img src={src} alt="" className="relative w-full" />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/2 -z-10 aspect-square w-[135%] -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            background: `radial-gradient(closest-side, ${tone}88 0%, ${tone}44 45%, transparent 72%)`,
+            mixBlendMode: "screen",
+            opacity: 0.7,
+          }}
+        />
+        <img
+          src={src}
+          alt=""
+          className="relative w-full"
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : 'auto'}
+          decoding="async"
+          style={{ filter: `drop-shadow(0 26px 60px ${tone}66)` }}
+        />
       </div>
     );
   }
@@ -348,6 +373,9 @@ export function FloatImage({
           src={src}
           alt=""
           className="relative w-full"
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : 'auto'}
+          decoding="async"
           style={{ filter: `drop-shadow(0 26px 60px ${tone}66)` }}
         />
       </motion.div>
