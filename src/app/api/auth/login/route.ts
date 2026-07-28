@@ -7,7 +7,6 @@ import { body, fail, fromError, ok } from '@/server/api/respond';
 import { createSession, sessionFromTokens } from '@/server/session';
 import { loginBody } from '@/shared/schemas';
 import { DEMO_TOKEN, demoAccount } from '@/server/demo/store';
-import { logAuthTokens, logDemoTokens } from '@/server/ecash/token-log';
 
 /** Вход: телефон или ИИН + пароль. */
 export async function POST(req: Request) {
@@ -21,7 +20,6 @@ export async function POST(req: Request) {
   // демо-режим: фиксированный пароль, аккаунт не ходит в upstream
   if (env.ECASH_OTP_MOCK && parsed.password === 'ecash2026') {
     const account = demoAccount(parsed.login);
-    logDemoTokens('login', DEMO_TOKEN);
     await createSession({
       accessToken: DEMO_TOKEN,
       refreshToken: DEMO_TOKEN,
@@ -33,7 +31,6 @@ export async function POST(req: Request) {
 
   try {
     const tokens = await login(parsed.login, parsed.password);
-    logAuthTokens('login', tokens);
     const account = await accountMe(tokens.accessToken);
     await createSession(sessionFromTokens(tokens, account.accountId));
     return ok({ account });
