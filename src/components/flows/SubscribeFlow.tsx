@@ -13,7 +13,7 @@ import { AuthModal } from '@/components/auth/AuthModal';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useErrorText } from '@/lib/useErrorText';
-import { currencyName, currencySymbol, formatDateTime, formatNumber } from '@/lib/format';
+import { currencyName, currencySymbol, formatDateTime, formatNumber, intlLocale } from '@/lib/format';
 import type { RateAlert } from '@/lib/domain';
 import { AmountBox } from './PairFields';
 
@@ -51,9 +51,6 @@ function OperationRadio({
     </button>
   );
 }
-
-const intlLocale = (locale: string) =>
-  locale === 'kk' ? 'kk-KZ' : locale === 'en' ? 'en-US' : 'ru-RU';
 
 /**
  * «Уведомить об изменении курса»: подписка хранится в нашей БД

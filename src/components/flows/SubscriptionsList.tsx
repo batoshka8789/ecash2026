@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useErrorText } from '@/lib/useErrorText';
-import { currencySymbol, formatNumber } from '@/lib/format';
+import { currencySymbol, formatNumber, intlLocale } from '@/lib/format';
 
 /**
  * «Мои подписки» на курс: список активных уведомлений с отключением.
@@ -50,10 +50,11 @@ export function SubscriptionsList() {
   const listError =
     q.error instanceof ApiError ? errorText(q.error.message) : q.error ? errorText('errors.unknown') : null;
 
-  const dateFmt = new Intl.DateTimeFormat(
-    locale === 'kk' ? 'kk-KZ' : locale === 'en' ? 'en-US' : 'ru-RU',
-    { day: '2-digit', month: '2-digit', year: 'numeric' },
-  );
+  const dateFmt = new Intl.DateTimeFormat(intlLocale(locale), {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 
   return (
     <div className="container-page pb-6 pt-5">

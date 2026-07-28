@@ -1,8 +1,19 @@
 /** Форматирование чисел/дат по активной локали + названия валют. */
 
-/** Локаль приложения (ru/en/kk) → BCP-47 для Intl. */
+/**
+ * Локаль приложения → BCP-47 для Intl. Единственный источник правды:
+ * маппинг раньше был скопирован в четырёх местах, и добавление языка
+ * означало, что где-то даты/валюты молча остались бы на русском.
+ */
+const INTL_LOCALES: Record<string, string> = {
+  ru: 'ru-RU',
+  en: 'en-US',
+  kk: 'kk-KZ',
+  zh: 'zh-CN',
+};
+
 export function intlLocale(locale: string): string {
-  return locale === 'kk' ? 'kk-KZ' : locale === 'en' ? 'en-US' : 'ru-RU';
+  return INTL_LOCALES[locale] ?? INTL_LOCALES.ru;
 }
 
 const nfCache = new Map<string, Intl.NumberFormat>();
@@ -90,10 +101,7 @@ export function currencyName(
   const gold = GOLD_RE.exec(code);
   if (gold) return goldLabel(gold[1]);
   try {
-    const dn = new Intl.DisplayNames(
-      [locale === 'kk' ? 'kk-KZ' : locale === 'en' ? 'en-US' : 'ru-RU'],
-      { type: 'currency' },
-    );
+    const dn = new Intl.DisplayNames([intlLocale(locale)], { type: 'currency' });
     const name = dn.of(code);
     return name && name !== code ? name : code;
   } catch {

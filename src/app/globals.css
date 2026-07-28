@@ -2,7 +2,14 @@
 @import './tokens.css';
 
 @theme {
-  --font-sans: var(--font-roboto), system-ui, sans-serif;
+  /* Roboto покрывает латиницу и кириллицу, иероглифов в нём нет — для zh
+   * браузер проваливается дальше по стеку. Берём НАТИВНЫЕ CJK-шрифты вместо
+   * веб-шрифта: они уже установлены (нулевая загрузка, нет FOUT) и отхинтованы
+   * под свою ОС, поэтому дают более чёткий рендер иероглифов, чем подгружаемый
+   * Noto; плюс CSP (font-src 'self') внешние шрифты всё равно запрещает. */
+  --font-sans:
+    var(--font-roboto), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    'Noto Sans SC', 'Source Han Sans SC', system-ui, sans-serif;
 
   /* Градиент обводок лендинга (макет: linear #F6844B → #BF5AF5) */
   --gradient-accent: linear-gradient(135deg, #f6844b, #bf5af5);

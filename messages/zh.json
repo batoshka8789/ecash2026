@@ -1,0 +1,832 @@
+{
+  "common": {
+    "brand": "ecash",
+    "login": "登录",
+    "notifications": "通知",
+    "profile": "个人中心",
+    "skipToContent": "跳到主要内容",
+    "showPassword": "显示密码",
+    "hidePassword": "隐藏密码",
+    "cancel": "取消",
+    "nothingFound": "未找到结果"
+  },
+  "home": {
+    "toast": {
+      "link": "选择地址",
+      "rest": "我们会为您找到最近的兑换点",
+      "close": "关闭",
+      "cta": "填写您的地址",
+      "change": "修改"
+    },
+    "actions": {
+      "individualRate": "申请专属汇率",
+      "booking": "锁定汇率",
+      "notify": "汇率变动通知",
+      "franchise": "开设加盟店",
+      "news": "查看资讯"
+    },
+    "calculator": {
+      "title": "货币计算器",
+      "dynamics": "汇率走势",
+      "give": "我支付",
+      "get": "我获得",
+      "swap": "对调",
+      "exchangeRate": "市场汇率",
+      "book": "锁定汇率",
+      "periods": {
+        "year": "年",
+        "month": "月",
+        "week": "周",
+        "day": "日"
+      }
+    },
+    "months": {
+      "0": "1月",
+      "1": "2月",
+      "2": "3月",
+      "3": "4月",
+      "4": "5月",
+      "5": "6月",
+      "6": "7月",
+      "7": "8月",
+      "8": "9月",
+      "9": "10月",
+      "10": "11月",
+      "11": "12月"
+    },
+    "rates": {
+      "title": "货币汇率",
+      "buy": "买入",
+      "sell": "卖出",
+      "book": "锁定汇率",
+      "bookmark": "收藏",
+      "compareIcon": "对比汇率",
+      "exchangeRate": "市场汇率",
+      "compare": "与同行对比",
+      "collapse": "收起",
+      "showAll": "显示全部货币",
+      "hideAll": "收起",
+      "currencies": {
+        "usd": "美元",
+        "eur": "欧元",
+        "rub": "俄罗斯卢布",
+        "cny": "人民币",
+        "gold": "黄金",
+        "gbp": "英镑",
+        "aed": "阿联酋迪拉姆",
+        "try": "土耳其里拉",
+        "uzs": "乌兹别克斯坦苏姆",
+        "kgs": "吉尔吉斯斯坦索姆"
+      },
+      "competitors": {
+        "blue": "蓝色兑换点",
+        "green": "绿色兑换点",
+        "red": "红色兑换点"
+      },
+      "allBranches": "全部网点",
+      "showOnMap": "在地图上显示"
+    }
+  },
+  "footer": {
+    "schedule": "营业时间",
+    "scheduleValue": "周一至周日；9:00 — 22:00",
+    "additional": "更多",
+    "documents": "文件资料",
+    "rights": "版权所有"
+  },
+  "appBanner": {
+    "text": "使用 App 更方便！汇率通知、预订钞票面额、锁定汇率",
+    "close": "关闭",
+    "soon": "敬请期待"
+  },
+  "auth": {
+    "tabs": {
+      "login": "登录",
+      "signup": "注册"
+    },
+    "emailPlaceholder": "手机号码或电子邮箱",
+    "passwordPlaceholder": "密码",
+    "password2Placeholder": "确认密码",
+    "forgot": "忘记密码？",
+    "continue": "继续",
+    "withTelegram": "使用 Telegram 继续",
+    "withGoogle": "使用 Google 继续",
+    "close": "关闭",
+    "errors": {
+      "emailInvalid": "该电子邮箱不存在",
+      "passwordMin": "至少 8 个字符",
+      "passwordDigit": "至少包含一个数字",
+      "passwordMatch": "两次输入的密码不一致"
+    },
+    "confirm": {
+      "title": "验证电子邮箱",
+      "text": "我们已向 {email} 发送验证码。请输入邮件中的验证码以完成注册",
+      "codePlaceholder": "邮件验证码",
+      "submit": "注册",
+      "devCode": "测试验证码：{code}",
+      "phonePlaceholder": "手机号码"
+    },
+    "loginLabel": "手机号码或个人识别号",
+    "phoneLabel": "手机号码",
+    "otpTitle": "验证手机号码",
+    "otpSent": "我们已向 {phone} 发送短信验证码。请输入验证码以继续",
+    "otpPlaceholder": "短信验证码",
+    "resend": "重新发送验证码",
+    "resendIn": "{sec} 秒后可重新发送",
+    "byOtp": "使用短信验证码登录",
+    "byPassword": "使用密码登录",
+    "devCodeHint": "演示模式：验证码 {code}",
+    "iinOptional": "个人识别号（选填）",
+    "register": "注册",
+    "completeTitle": "设置密码",
+    "displayNameLabel": "您的姓名"
+  },
+  "recovery": {
+    "title": "找回密码",
+    "back": "返回",
+    "steps": {
+      "email": "请输入注册时使用的电子邮箱，我们会发送找回密码的验证码",
+      "code": "请输入短信验证码",
+      "password": "请设置新密码"
+    },
+    "emailPlaceholder": "电子邮箱",
+    "codePlaceholder": "短信验证码",
+    "passwordPlaceholder": "新密码",
+    "password2Placeholder": "确认密码",
+    "continue": "继续",
+    "phoneStep": "请输入您的手机号码，我们会发送短信验证码",
+    "newPassword": "新密码",
+    "newPassword2": "确认新密码",
+    "done": "密码已修改。请使用新密码登录",
+    "phonePlaceholder": "手机号码",
+    "resend": "重新发送验证码",
+    "resendIn": "{sec} 秒后可重新发送",
+    "devCode": "演示模式：验证码 {code}",
+    "toLogin": "前往登录"
+  },
+  "sidebar": {
+    "profile": "个人中心",
+    "notifications": "通知",
+    "news": "资讯",
+    "franchise": "开设加盟店"
+  },
+  "profile": {
+    "myData": "我的资料",
+    "myAddress": "我的地址",
+    "logout": "退出登录",
+    "form": {
+      "edit": "编辑",
+      "save": "保存",
+      "displayName": "您的姓名",
+      "firstName": "名字",
+      "lastName": "姓氏",
+      "middleName": "父称",
+      "iin": "个人识别号",
+      "contact": "手机号码 / 电子邮箱",
+      "readonlyHint": "该资料与您的 Ecash 账户绑定，仅可在网点修改",
+      "about": "介绍一下您的经历",
+      "occupation": "您目前从事什么工作？",
+      "removeTag": "移除",
+      "tags": {
+        "entrepreneur": "创业者",
+        "investor": "投资者",
+        "director": "董事 / 高管"
+      }
+    },
+    "address": {
+      "title": "填写您的地址",
+      "subtitle": "我们会显示最近的兑换点",
+      "placeholder": "地址",
+      "save": "保存",
+      "clear": "清除",
+      "mapAlt": "地图",
+      "saved": "已保存",
+      "mapEmpty": "未找到网点",
+      "locate": "我附近",
+      "locating": "正在获取您的位置…",
+      "locateDenied": "无法获取您的位置，请手动填写地址",
+      "locateEmpty": "未找到带坐标的网点",
+      "mapLoading": "正在加载网点…"
+    }
+  },
+  "notifications": {
+    "tabs": {
+      "actual": "进行中",
+      "history": "历史记录"
+    },
+    "badges": {
+      "booking30": "预订 · 30分钟",
+      "number": "您的号码：7 704 *** ** 84",
+      "rateAlert": "汇率通知",
+      "individual": "专属汇率",
+      "numberValue": "您的号码：{value}"
+    },
+    "titles": {
+      "bookedPair": "您已锁定一组货币兑换",
+      "alertsOn": "汇率通知已开启",
+      "alertsOff": "通知已关闭",
+      "rateReached": "汇率已达到您设定的目标",
+      "offerReviewed": "您的申请已审核",
+      "offerSent": "您的申请已提交"
+    },
+    "min": "分",
+    "sec": "秒",
+    "cancelled": "预订已取消",
+    "buy": "买入",
+    "sell": "卖出",
+    "actions": {
+      "resume": "恢复通知",
+      "individual": "申请专属汇率",
+      "book": "锁定汇率",
+      "disable": "关闭通知"
+    },
+    "loading": "加载中…",
+    "needLogin": "登录后可查看通知",
+    "empty": "暂无内容"
+  },
+  "news": {
+    "travelers": {
+      "title": "旅行者",
+      "text": "出行前的准备需要面面俱到，货币兑换也不例外。我们的服务让您快速、省心地换到所需金额，无需抵达后四处寻找兑换点，从而专心享受旅程或处理工作。我们提供优惠的条件和专业的建议，让您在旅途的每一个环节都安心从容。"
+    },
+    "cityDwellers": {
+      "title": "城市居民",
+      "text": "无论是储蓄、稳健投资还是大额消费，每个人都会用到货币兑换。我们让您轻松快捷地完成兑换，并在每一个环节保证优惠的条件与实在的价值。"
+    },
+    "loading": "加载中…",
+    "loadError": "资讯加载失败",
+    "retry": "重试",
+    "empty": "暂无资讯"
+  },
+  "locations": {
+    "title": "Ecash 网点",
+    "asList": "列表显示",
+    "onMap": "地图显示",
+    "breadcrumbHome": "首页",
+    "breadcrumbCalc": "计算器",
+    "badges": {
+      "best": "最优汇率",
+      "happyHours": "优惠时段",
+      "nearest": "距离最近"
+    },
+    "km": "公里",
+    "copy": "复制地址",
+    "showOnMap": "在地图上显示",
+    "book": "锁定汇率",
+    "fullscreen": "全屏显示",
+    "fullscreenExit": "退出全屏",
+    "closeCard": "关闭卡片",
+    "found": "网点数量：{count}",
+    "searchPlaceholder": "按地址或名称搜索",
+    "clearSearch": "清除搜索",
+    "allCities": "全部城市",
+    "nothingFound": "未找到网点",
+    "resetFilters": "重置筛选",
+    "close": "关闭",
+    "route": "规划路线",
+    "myLocation": "我的位置",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "gestureHint": "双指拖动地图，按住 Ctrl 并滚动可缩放",
+    "buyLabel": "买入",
+    "sellLabel": "卖出"
+  },
+  "crumbs": {
+    "home": "首页",
+    "booking": "锁定汇率",
+    "individual": "申请专属汇率",
+    "subscribe": "汇率变动通知",
+    "franchise": "开设加盟店"
+  },
+  "flows": {
+    "fillRequired": "请填写必填项",
+    "close": "关闭",
+    "pair": {
+      "title": "货币兑换",
+      "individualHint": "请输入您希望兑换的金额，我们会审核您的申请并提供专属汇率",
+      "dynamics": "汇率走势",
+      "give": "我支付",
+      "get": "我获得",
+      "underReview": "审核中",
+      "currentRate": "当前 Ecash 汇率",
+      "pickCurrency": "选择货币",
+      "searchCurrency": "搜索货币",
+      "swap": "对调方向",
+      "desiredRate": "期望汇率"
+    },
+    "address": {
+      "title": "地址",
+      "nearest": "距离最近",
+      "km": "公里",
+      "open": "营业中",
+      "betterAt": "位于以下地址的网点",
+      "betterRate": "汇率更优"
+    },
+    "banknotes": {
+      "choose": "选择钞票面额",
+      "label": "钞票面额",
+      "small": "小面额",
+      "large": "大面额"
+    },
+    "data": {
+      "title": "请填写您的信息",
+      "phone": "手机号码*",
+      "name": "姓名",
+      "requestIndividual": "申请专属汇率",
+      "book": "锁定汇率",
+      "requestIndividualCta": "申请专属汇率",
+      "phoneFromAccount": "来自您账户的号码",
+      "loginToBook": "登录后可锁定汇率"
+    },
+    "done": {
+      "booking30": "预订 · 30分钟",
+      "yourNumber": "您的号码：7 704 *** ** 84",
+      "titleBooking": "您已锁定一组货币兑换",
+      "titleIndividual": "您的申请正在审核中",
+      "min": "分",
+      "sec": "秒",
+      "yourRequest": "您的申请",
+      "sentAt": "申请提交时间",
+      "rateAtSubmit": "提交申请时的 Ecash 汇率",
+      "onMap": "在地图上查看",
+      "yourData": "您的信息",
+      "yourNumberValue": "您的号码：{value}"
+    },
+    "openExisting": "查看申请"
+  },
+  "subscribe": {
+    "pairTitle": "货币兑换",
+    "dynamics": "汇率走势",
+    "desiredRate": "请输入期望汇率",
+    "rateLabel": "汇率",
+    "currentRate": "当前 Ecash 汇率",
+    "dateTitle": "日期与时间",
+    "notifyUntil": "通知截止日期",
+    "day": "日",
+    "month": "月",
+    "year": "年",
+    "cta": "发送通知",
+    "fillRequired": "请填写必填项",
+    "doneToast": "通知已开启",
+    "close": "关闭",
+    "months": {
+      "0": "1月",
+      "1": "2月",
+      "2": "3月",
+      "3": "4月",
+      "4": "5月",
+      "5": "6月",
+      "6": "7月",
+      "7": "8月",
+      "8": "9月",
+      "9": "10月",
+      "10": "11月",
+      "11": "12月"
+    },
+    "targetLabel": "达到汇率时通知（₸）",
+    "perOneLabel": "每单位",
+    "untilTitle": "通知截止日期",
+    "loginToSubscribe": "登录后可订阅汇率通知",
+    "successTitle": "汇率通知已开启",
+    "sentAtLabel": "申请提交时间",
+    "ecashRateAtCreation": "提交申请时的 Ecash 汇率：",
+    "disable": "关闭通知",
+    "toHome": "返回首页",
+    "disabledToast": "通知已关闭",
+    "myAlerts": "我的订阅",
+    "noAlerts": "暂无订阅",
+    "untilDate": "至 {date}",
+    "removeAlert": "取消订阅",
+    "confirmRemove": "确定要关闭吗？",
+    "cancelRemove": "保留订阅",
+    "dateError": "请选择日、月和年",
+    "typeTitle": "操作类型",
+    "buying": "我要买入",
+    "selling": "我要卖出"
+  },
+  "landing": {
+    "login": "登录",
+    "hero": {
+      "badge": "携手 Ecash 加盟",
+      "line1": "开启您的",
+      "line2": "成功",
+      "line3": "事业"
+    },
+    "intro": {
+      "title": "Ecash 是现代化货币兑换网点连锁品牌",
+      "text": "我们为您提供一套成熟方案，助您打造盈利的事业，并给予全方位的专业支持",
+      "cta": "联系我们"
+    },
+    "advantages": [
+      {
+        "title": "先进的技术与软件",
+        "text": "您将获得独家软件的使用权限，它覆盖兑换点经营的方方面面：从交易记账到利润分析。"
+      },
+      {
+        "title": "忠实客户快速增长",
+        "text": "客户最看重的服务品质与透明运营，让电子货币成为市场的领先者，并带来稳定的客流。"
+      },
+      {
+        "title": "团队协作",
+        "text": "我们深知创业需要团队的力量。因此我们始终与您并肩：共同挑选最佳店址、搭建业务流程、培训员工。我们将在每一个阶段与您如同一支团队，共同发展与优化业务。"
+      },
+      {
+        "title": "深入人心的品牌",
+        "text": "电子货币是货币兑换行业的新标准。可靠、安全与服务品质，是经过多年验证的准则。",
+        "accent": true
+      }
+    ],
+    "package": {
+      "titleLine1": "加盟套餐",
+      "titleLine2": "包含哪些内容",
+      "titleAccent": "Ecash",
+      "text": "Ecash 加盟套餐包含开设兑换点所需的一切：从分步指导到业务管理自动化方案",
+      "items": [
+        {
+          "title": "品牌使用权",
+          "text": "品牌使用权助您吸引更多客户、提升知名度，并更快实现盈利。"
+        },
+        {
+          "title": "选址支持",
+          "text": "我们帮助您挑选最佳经营位置：客流更大、出入便利、竞争环境更有利。"
+        },
+        {
+          "title": "兑换点设计与品牌形象",
+          "text": "我们为您的业务提供完整的品牌手册：鲜明的视觉识别、招牌、标志以及彰显品牌的室内元素。"
+        },
+        {
+          "title": "业主与员工培训",
+          "text": "我们的专家会对您和您的团队进行培训，涵盖经营的各个关键环节，并安排持续的支持。"
+        },
+        {
+          "title": "全套文件与业务流程",
+          "text": "我们提供成熟的业务组织指南，覆盖每一个阶段：从开立账户到与客户和员工的高效协作。"
+        },
+        {
+          "title": "独家软件使用权限",
+          "text": "您将获得独家软件的使用权限，可处理货币业务、追踪交易并生成完整报表。"
+        }
+      ]
+    },
+    "steps": {
+      "titleLine1": "开设货币兑换点",
+      "titleLine2": "的流程",
+      "text": "与 Ecash 一起创业，流程透明而简单。我们在每个阶段给予支持，让您更快开始盈利。",
+      "items": [
+        {
+          "title": "通过网站表单提交申请",
+          "text": "从简单的第一步开始：在我们的网站上填写表单，留下您的基本信息以及对加盟的兴趣。"
+        },
+        {
+          "title": "面谈并明确细节",
+          "text": "我们会沟通您的计划、条件与期望，您也将获得关于加盟及合作条款的完整信息。"
+        },
+        {
+          "title": "签署合作协议",
+          "text": "所有条款达成一致后，我们将拟定正式合同，确认您以 Ecash 品牌经营的权利。"
+        },
+        {
+          "title": "在我们协助下选址",
+          "text": "我们协助您为兑换点挑选合适的位置，并分析客流、竞争环境与客户便利度。"
+        },
+        {
+          "title": "完成培训并搭建流程",
+          "text": "开业前，您和您的团队将完成完整培训，内容涵盖法律、运营与市场推广等方面。"
+        },
+        {
+          "title": "开始盈利",
+          "text": "准备就绪后，我们与您共同为兑换点开业，配置市场推广并组织首批业务流程。"
+        }
+      ]
+    },
+    "contact": {
+      "titleLine1": "与我们的专家沟通，",
+      "titleLine2": "在您的城市开始盈利",
+      "titleLine3": "。",
+      "text": "与 Ecash 一起创业，流程透明而简单。我们在每个阶段给予支持，让您更快开始盈利。",
+      "cta": "联系我们"
+    },
+    "support": {
+      "title": "对合作伙伴的支持",
+      "text": "我们致力于让您的事业持续高效地成长，在每个阶段提供资源、工具与帮助。",
+      "items": [
+        {
+          "title": "全方位咨询",
+          "text": "从选址到接待首批客户，我们的专家在每个阶段随时待命。我们响应迅速，并针对您的情况给出个性化建议。"
+        },
+        {
+          "title": "员工培训",
+          "text": "我们定期为收银员与管理人员开展培训：现金操作、安全流程以及 Ecash 客户服务标准。"
+        },
+        {
+          "title": "店面设计与装修",
+          "text": "我们协助设计兑换点布局并寻找装修承包商：从平面规划到招牌安装。"
+        },
+        {
+          "title": "财务记账",
+          "text": "我们负责您兑换点的会计核算与税务申报，让您专注客户而非文书工作。"
+        },
+        {
+          "title": "资金调度",
+          "text": "Ecash 的集中式资金中心为您设定汇率并安排现金押运，让合作伙伴免于承担汇率风险。"
+        },
+        {
+          "title": "设备采购",
+          "text": "我们协助合作伙伴挑选并采购经营兑换点所需的设备。"
+        },
+        {
+          "title": "法务与技术事项",
+          "text": "我们协助办理牌照与许可文件，并解决各类技术问题：从点钞设备到网络接入。"
+        },
+        {
+          "title": "市场推广",
+          "text": "我们为您的开业投放广告，并共享连锁品牌的宣传物料：从招牌到社交媒体内容。"
+        },
+        {
+          "title": "监管沟通与报送",
+          "text": "我们负责编制并向国家银行及其他监管机构报送必需的报表，确保您的兑换点始终合规经营。"
+        },
+        {
+          "title": "人力资源",
+          "text": "我们协助您招聘收银员与管理人员：提供现成的岗位画像、合同模板与招聘指导。"
+        },
+        {
+          "title": "现金押运与安保",
+          "text": "我们安排定期现金押运，并为店面接入安保系统：报警装置、视频监控与紧急报警按钮。"
+        },
+        {
+          "title": "与国家银行的黄金业务",
+          "text": "在与国家银行的黄金业务方面，我们为合作伙伴提供咨询并共同开展合作。"
+        }
+      ]
+    },
+    "faq": {
+      "title": "常见问题",
+      "items": [
+        {
+          "q": "如何挑选合适的店址？",
+          "a": "我们协助您为兑换点挑选合适的位置，并分析客流、竞争环境与客户便利度。"
+        },
+        {
+          "q": "开设一家兑换点需要多长时间？",
+          "a": "从提交申请到开业通常需要 1.5 至 3 个月，具体时长取决于店面寻找与证件办理进度。我们在每个阶段给予支持。"
+        },
+        {
+          "q": "加盟有哪些要求？",
+          "a": "我们寻找具备创业思维、愿意遵循我们标准的合作伙伴。有经营管理经验更佳，但即使是新手，我们也会提供培训与支持。"
+        }
+      ]
+    },
+    "scrollTop": "回到顶部",
+    "contactModal": {
+      "title": "请填写表单",
+      "name": "姓名",
+      "phone": "手机号码",
+      "funds": "可用资金及金额",
+      "experience": "请介绍您的从业经历",
+      "tagsLabel": "您的身份是？",
+      "tagsPlaceholder": "例如：我从事加密货币行业",
+      "tagEntrepreneur": "创业者",
+      "tagInvestor": "投资者",
+      "tagDirector": "董事 / 高管",
+      "submit": "提交申请",
+      "done": "申请已提交！我们会与您联系",
+      "close": "关闭"
+    }
+  },
+  "errors": {
+    "unknown": "出了点问题",
+    "required": "此项为必填",
+    "wrongPassword": "密码错误",
+    "emailTaken": "该电子邮箱已被注册",
+    "codeInvalid": "验证码错误",
+    "codeExpired": "验证码已过期，请重新获取",
+    "unauthorized": "请先登录",
+    "phoneRequired": "请输入手机号码",
+    "amountRequired": "请输入金额",
+    "rateRequired": "请输入期望汇率",
+    "dateRequired": "请选择日期",
+    "nameRequired": "请输入您的姓名",
+    "notFound": "未找到",
+    "badBody": "请求格式有误",
+    "branchUnknown": "未找到该网点",
+    "unknownStep": "未知步骤",
+    "timeout": "服务器无响应，请重试",
+    "network": "无法连接到服务器",
+    "serverError": "服务器错误，请稍后重试",
+    "tooManyRequests": "请求过于频繁，请稍等一分钟",
+    "forbiddenOrigin": "请求被拒绝",
+    "dateInPast": "该日期已过",
+    "iinInvalid": "个人识别号为 12 位数字",
+    "passwordMin": "至少 8 个字符",
+    "passwordDigit": "至少包含一个数字",
+    "passwordMatch": "两次输入的密码不一致",
+    "INVALID_CREDENTIALS": "登录名或密码错误",
+    "INVALID_TOKEN": "登录状态已过期，请重新登录",
+    "INVALID_OTP": "验证码错误",
+    "OTP_EXPIRED": "验证码已过期，已超过 5 分钟",
+    "OTP_COOLDOWN": "一分钟后可重新获取验证码",
+    "OTP_SEND_FAILED": "短信发送失败，请稍后重试",
+    "PHONE_ALREADY_REGISTERED": "该号码已被注册",
+    "ACCOUNT_NOT_FOUND": "未找到使用该号码的账户",
+    "CLIENT_NOT_LINKED": "账户尚未绑定 Ecash 客户",
+    "REQUEST_NOT_FOUND": "未找到该申请",
+    "DEPARTMENT_NOT_FOUND": "未找到该网点",
+    "STATISTICS_NOT_FOUND": "该网点统计数据不可用",
+    "RATES_NOT_FOUND": "未找到汇率",
+    "KASSA_NOT_FOUND": "未找到收银台",
+    "REQUEST_ALREADY_EXISTS": "该货币组合已有进行中的申请",
+    "REQUEST_NOT_ACTIVE": "该申请已处理完毕",
+    "REQUEST_NOT_CANCELLABLE": "该申请已无法取消",
+    "BOOKING_ALREADY_REQUESTED": "该申请已提交过预订",
+    "RATE_NOT_CONFIRMED": "资金专员尚未答复",
+    "RATE_REJECTED": "资金专员未批准专属汇率",
+    "RATE_EXPIRED": "决定时限已过，请重新提交申请",
+    "NOT_INDIVIDUAL_REQUEST": "这不是专属汇率申请",
+    "ACCEPT_CREATE_FAILED": "创建申请失败，请稍后重试",
+    "CURRENCY_REQUIRED": "请选择货币",
+    "CURRENCY_INVALID": "两种货币必须不同",
+    "VALUE_REQUIRED": "请输入金额",
+    "AMOUNT_REQUIRED": "请输入金额",
+    "RATE_REQUIRED": "请输入汇率",
+    "DEPARTMENT_REQUIRED": "请选择网点",
+    "BODY_REQUIRED": "请填写表单",
+    "OTP_REQUIRED": "请输入短信验证码",
+    "VALIDATION": "请检查标记的字段",
+    "FORBIDDEN": "拒绝访问",
+    "NOT_FOUND": "未找到",
+    "UPSTREAM_UNAVAILABLE": "Ecash 服务暂时不可用",
+    "UPSTREAM_TIMEOUT": "Ecash 服务无响应，请重试",
+    "UPSTREAM_UNREACHABLE": "无法连接 Ecash 服务",
+    "UNKNOWN": "意外错误"
+  },
+  "addressModal": {
+    "title": "填写您的地址",
+    "subtitle": "我们会显示最近的兑换点",
+    "placeholder": "地址",
+    "save": "保存",
+    "clear": "清除",
+    "close": "关闭",
+    "mapAlt": "网点地图",
+    "mapEmpty": "未找到网点",
+    "locate": "我附近",
+    "locating": "正在获取您的位置…",
+    "locateDenied": "无法获取您的位置，请手动填写地址",
+    "locateEmpty": "未找到带坐标的网点",
+    "mapExpand": "全屏显示",
+    "mapCollapse": "收起地图",
+    "mapLoading": "正在加载网点…"
+  },
+  "addressDropdown": {
+    "cta": "填写您的地址",
+    "title": "填写您的地址",
+    "subtitle": "我们会显示最近的兑换点",
+    "placeholder": "地址",
+    "save": "保存",
+    "clear": "清除",
+    "country": "哈萨克斯坦",
+    "suggestions": "地址建议",
+    "cities": {
+      "almaty": "阿拉木图",
+      "astana": "阿斯塔纳",
+      "shymkent": "希姆肯特"
+    }
+  },
+  "system": {
+    "errorTitle": "出了点问题",
+    "errorText": "发生了意外错误，请重试。",
+    "retry": "重试",
+    "notFoundTitle": "页面未找到",
+    "notFoundText": "该页面不存在或已被移动。",
+    "toHome": "返回首页",
+    "loading": "加载中…"
+  },
+  "requests": {
+    "title": "我的申请",
+    "empty": "暂无申请",
+    "needLogin": "登录后可查看您的申请",
+    "status0": "审核中",
+    "status8": "已锁定",
+    "status1": "已完成",
+    "status3": "已取消",
+    "awaiting": "申请已提交给资金专员，预计几分钟内答复",
+    "offerTitle": "资金专员给出了汇率",
+    "offerText": "您有 {min} 分钟做出决定",
+    "accept": "接受",
+    "decline": "拒绝",
+    "cancel": "取消申请",
+    "cancelled": "预订已取消",
+    "reason": "原因",
+    "ticket": "凭条",
+    "history": "变更记录",
+    "timeLeft": "锁定有效期",
+    "expired": "锁定已过期",
+    "pair": "货币兑换",
+    "details": "详情",
+    "rate": "汇率",
+    "sentAt": "申请提交时间",
+    "number": "申请 #{id}",
+    "toList": "返回申请列表",
+    "loadMore": "显示更多",
+    "loadError": "申请加载失败",
+    "retry": "重试",
+    "branch": "网点地址",
+    "yourData": "您的信息",
+    "commentLabel": "备注",
+    "onMapBtn": "在地图上查看"
+  },
+  "rates": {
+    "gold": "金条 {grams} 克",
+    "updatedAt": "汇率更新时间：{time}",
+    "perUnit": "{rate} ₸ = 1 {code}",
+    "noHistory": "该时间段的数据尚不足",
+    "marketSource": "哈萨克斯坦国家银行官方汇率",
+    "currency": "货币",
+    "chart": {
+      "group": "图表周期",
+      "caption": "{code} 汇率走势，周期：{period}。",
+      "time": "日期",
+      "summary": "数据点：{count} 个，最低 {min}，最高 {max}。",
+      "changeUp": "上涨 {value} %",
+      "changeDown": "下跌 {value} %",
+      "changeFlat": "无变化"
+    }
+  },
+  "nav": {
+    "menu": "菜单",
+    "home": "首页",
+    "locations": "网点",
+    "booking": "锁定汇率",
+    "individualRate": "专属汇率",
+    "subscribe": "汇率通知",
+    "requests": "我的申请",
+    "news": "资讯",
+    "profile": "个人中心",
+    "franchise": "加盟",
+    "close": "关闭菜单"
+  },
+  "branches": {
+    "open": "营业中",
+    "closed": "已打烊",
+    "copy": "复制地址",
+    "copied": "地址已复制",
+    "onMap": "在地图上查看",
+    "km": "公里",
+    "geoHint": "允许定位后可查看距离",
+    "bestBuy": "买入最优",
+    "bestSell": "卖出最优",
+    "loadError": "网点加载失败",
+    "retry": "重试"
+  },
+  "theme": {
+    "label": "切换主题"
+  },
+  "meta": {
+    "siteName": "ecash — 货币兑换",
+    "home": {
+      "title": "ecash — 哈萨克斯坦货币兑换",
+      "description": "实时汇率、60 分钟汇率锁定、专属汇率，以及您附近的兑换点"
+    },
+    "locations": {
+      "title": "ecash 网点 — 汇率与地址",
+      "description": "地图上的全部 ecash 网点：地址、营业时间、实时汇率与全城最优汇率"
+    },
+    "booking": {
+      "title": "锁定汇率 — ecash",
+      "description": "将汇率锁定 60 分钟：款项将在您选择的网点预留"
+    },
+    "individualRate": {
+      "title": "专属汇率 — ecash",
+      "description": "大额兑换可申请专属汇率，资金专员将在几分钟内答复"
+    },
+    "subscribe": {
+      "title": "汇率通知 — ecash",
+      "description": "订阅汇率变动：汇率达到您的目标时我们会通知您"
+    },
+    "franchise": {
+      "title": "ecash 加盟 — 打造您的兑换事业",
+      "description": "通过 ecash 加盟开设兑换点：技术、支持与深入人心的品牌"
+    },
+    "login": {
+      "title": "登录 — ecash"
+    },
+    "signup": {
+      "title": "注册 — ecash"
+    },
+    "recovery": {
+      "title": "找回密码 — ecash"
+    },
+    "profile": {
+      "title": "个人中心 — ecash"
+    },
+    "notifications": {
+      "title": "通知 — ecash"
+    },
+    "news": {
+      "title": "资讯 — ecash"
+    },
+    "requests": {
+      "title": "我的申请 — ecash"
+    }
+  }
+}

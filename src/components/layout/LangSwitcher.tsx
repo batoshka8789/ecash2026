@@ -6,10 +6,10 @@ import { usePathname, useRouter } from '@/i18n/navigation';
 import { routing, type Locale } from '@/i18n/routing';
 import { clsx } from 'clsx';
 
-const labels: Record<Locale, string> = { ru: 'Рус', en: 'Eng', kk: 'Қаз' };
+const labels: Record<Locale, string> = { ru: 'Рус', en: 'Eng', kk: 'Қаз', zh: '中文' };
 
 /**
- * Переключатель языка ru / en / kk.
+ * Переключатель языка ru / en / kk / zh.
  * Паттерн listbox: стрелки двигают фокус по опциям, Esc закрывает
  * и возвращает фокус на кнопку, уход фокуса/клик вне — закрывает.
  */
