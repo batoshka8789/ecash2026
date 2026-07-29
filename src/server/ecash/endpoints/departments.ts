@@ -1,7 +1,7 @@
 import 'server-only';
 import type { Department, DepartmentInfo } from '@/lib/domain';
 import { ecashFetch } from '../http';
-import { mapDepartment, mapDepartmentInfo } from '../mappers';
+import { mapDepartment, mapDepartmentInfo } from '@/shared/ecash/mappers';
 import { getServiceToken, invalidateServiceToken } from '../service-token';
 import { EcashError } from '../errors';
 

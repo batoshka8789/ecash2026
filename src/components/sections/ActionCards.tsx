@@ -2,24 +2,22 @@
 
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { MaskGlyph } from '@/components/ui/MaskGlyph';
+import { ActionIcon, type ActionIconName } from '@/components/ui/ActionIcons';
 
 /**
- * Глифы нав-панели — АЛЬФА-МАСКИ, извлечённые напрямую из пиксельных
- * PNG-экспортов макета (public/img/actions/*, 8x для ретины): ни один
- * шрифтовой/векторный набор не совпал с экспортами на 100% (Iconsax дал
- * IoU 0.81–0.84 на трёх иконках, «люди с ромбом» и «человек с купюрами» —
- * составные глифы, которых нет ни в одном наборе). Маска красится
- * background-цветом (currentColor), поэтому темы работают как обычно.
- * w/h — размер глифа в CSS-пикселях, 1:1 с экспортом бейджа 50×54.
+ * Глифы нав-панели — вектора из набора макета (ui/ActionIcons). Раньше
+ * здесь были альфа-маски из пиксельных PNG-экспортов макета: у них у каждой
+ * был свой размер (26×24, 26×28, 28×24 …), потому что экспорты обрезаны по
+ * контенту. У векторов общая рамка 24×24, поэтому размер один на все пять —
+ * глифы наконец выровнены между собой.
  */
-const actions = [
-  { key: 'individualRate', glyph: 'individual-rate', w: 26, h: 24, href: '/individual-rate' },
-  { key: 'booking', glyph: 'booking', w: 26, h: 26, href: '/booking' },
-  { key: 'notify', glyph: 'notify', w: 26, h: 28, href: '/subscribe' },
-  { key: 'franchise', glyph: 'franchise', w: 28, h: 24, href: '/franchise' },
-  { key: 'news', glyph: 'news', w: 26, h: 26, href: '/news' },
-] as const;
+const actions: { key: string; icon: ActionIconName; href: string }[] = [
+  { key: 'individualRate', icon: 'individualRate', href: '/individual-rate' },
+  { key: 'booking', icon: 'booking', href: '/booking' },
+  { key: 'notify', icon: 'notify', href: '/subscribe' },
+  { key: 'franchise', icon: 'franchise', href: '/franchise' },
+  { key: 'news', icon: 'news', href: '/news' },
+];
 
 
 /**
@@ -64,7 +62,7 @@ export function ActionCards() {
   return (
     <div className="container-page">
       <div className="scrollbar-hide flex snap-x snap-mandatory gap-2 overflow-x-auto pt-6 sm:gap-5 sm:pt-7">
-        {actions.map(({ key, glyph, w, h, href }) => (
+        {actions.map(({ key, icon, href }) => (
           <Link
             key={key}
             href={href}
@@ -75,7 +73,7 @@ export function ActionCards() {
             className="group flex w-28 shrink-0 snap-start cursor-pointer flex-col items-center gap-3 py-2 text-center sm:h-[142px] sm:w-56 sm:justify-center sm:gap-4 sm:rounded-[20px] sm:border sm:border-stroke-surface2 sm:bg-surface-page-surf2 sm:px-8 sm:py-5 sm:transition-[background,transform] sm:duration-200 sm:hover:-translate-y-0.5 sm:hover:bg-comp-surface2-hover [html[data-theme=light]_&]:sm:border-stroke-surface3"
           >
             <span className="flex h-[54px] w-[50px] shrink-0 items-center justify-center rounded-[20px] bg-surface-page-surf3 text-text-default transition-transform duration-200 group-hover:scale-110 [html[data-theme=light]_&]:text-text-default/80">
-              <MaskGlyph src={`/img/actions/${glyph}.png`} w={w} h={h} />
+              <ActionIcon name={icon} className="h-[26px] w-[26px]" />
             </span>
             <span className="text-sm leading-tight text-text-default">{t(key)}</span>
           </Link>

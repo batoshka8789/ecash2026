@@ -58,3 +58,6 @@ tsconfig.tsbuildinfo
 
 # спецификация Ecash Mobile Api (справочник, в репозиторий не кладём)
 /api-spec
+
+# конфиг IDE JetBrains
+/.idea

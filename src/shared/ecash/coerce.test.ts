@@ -36,25 +36,25 @@ describe('iso', () => {
 describe('normalizeCoords — своп перепутанных lat/lon', () => {
   it('переворачивает координаты Алматы (реальный ответ depInfo)', () => {
     // depId 1: lat=76.850845, lon=43.237542 — на деле долгота и широта
-    expect(normalizeCoords('76.850845', '43.237542', 1)).toEqual({
+    expect(normalizeCoords('76.850845', '43.237542')).toEqual({
       lat: 43.237542,
       lon: 76.850845,
     });
   });
   it('переворачивает координаты Астаны', () => {
-    expect(normalizeCoords('71.404164', '51.132516', 11)).toEqual({
+    expect(normalizeCoords('71.404164', '51.132516')).toEqual({
       lat: 51.132516,
       lon: 71.404164,
     });
   });
   it('правильные координаты проходят без изменений', () => {
-    expect(normalizeCoords('43.237542', '76.850845', 1)).toEqual({
+    expect(normalizeCoords('43.237542', '76.850845')).toEqual({
       lat: 43.237542,
       lon: 76.850845,
     });
   });
   it('вне Казахстана — null, не угадываем', () => {
-    expect(normalizeCoords('10', '10', 99)).toBeNull();
-    expect(normalizeCoords('abc', '76.9', 99)).toBeNull();
+    expect(normalizeCoords('10', '10')).toBeNull();
+    expect(normalizeCoords('abc', '76.9')).toBeNull();
   });
 });

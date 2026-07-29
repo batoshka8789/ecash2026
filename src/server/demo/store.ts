@@ -1,7 +1,7 @@
 import 'server-only';
 import { env } from '@/server/env';
 import type { Account, ExchangeRequest, OperationsPage, RequestAccept } from '@/lib/domain';
-import { phaseOf, sideOf } from '@/server/ecash/mappers';
+import { phaseOf, sideOf } from '@/shared/ecash/mappers';
 import { EcashError } from '@/server/ecash/errors';
 import type { ReserveBody } from '@/server/ecash/endpoints/reserve';
 

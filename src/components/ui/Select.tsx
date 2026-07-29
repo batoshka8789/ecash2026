@@ -29,6 +29,7 @@ export function Select({
   searchable = false,
   searchPlaceholder,
   noResultsText,
+  arrow = 'triangle',
 }: {
   value: string | null;
   options: SelectOption[];
@@ -50,6 +51,12 @@ export function Select({
   searchPlaceholder?: string;
   /** текст пустой выдачи (i18n) — нужен при searchable */
   noResultsText?: string;
+  /**
+   * Значок раскрытия. По умолчанию заливной треугольник — так нарисовано
+   * большинство селектов макета. У валютных полей калькулятора это «птичка»,
+   * поэтому там передаётся chevron.
+   */
+  arrow?: 'triangle' | 'chevron';
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -299,10 +306,10 @@ export function Select({
         <span className={clsx('truncate', !selected && 'text-text-disabled')}>
           {selected ? (renderValue ? renderValue(selected) : selected.label) : (placeholder ?? '—')}
         </span>
-        {/* в макете это заливной треугольник arrow_down (10.67×6), не «птичка»
-            keyboard_arrow_down — ближайший аналог в Material Symbols */}
+        {/* по умолчанию — заливной треугольник arrow_down (10.67×6) из макета;
+            arrow="chevron" даёт «птичку» keyboard_arrow_down */}
         <Icon
-          name="arrow_drop_down"
+          name={arrow === 'chevron' ? 'keyboard_arrow_down' : 'arrow_drop_down'}
           size={20}
           className={clsx('shrink-0 transition-transform', open && 'rotate-180')}
         />

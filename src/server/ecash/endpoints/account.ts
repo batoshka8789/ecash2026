@@ -1,7 +1,7 @@
 import 'server-only';
 import type { Account } from '@/lib/domain';
 import { ecashFetch } from '../http';
-import { mapAccount } from '../mappers';
+import { mapAccount } from '@/shared/ecash/mappers';
 
 /** Методы в контексте пользователя — только с пользовательским токеном. */
 

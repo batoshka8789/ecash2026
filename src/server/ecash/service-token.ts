@@ -33,12 +33,15 @@ const cache: Cache = (g.__ecashServiceToken ??= { state: null, inflight: null })
 const MARGIN_MS = 60_000;
 
 async function issue(): Promise<TokenState> {
+  // Тело — ровно clientId + clientSecret: ServiceTokenRequest в Swagger объявлен
+  // с additionalProperties: false, а scope сервер проставляет сам (в выданном
+  // JWT приходит claim scope=mobile-service). Раньше мы слали его в теле —
+  // сервер поле игнорировал, проверено запросом с ним и без него.
   const r = await ecashFetch<AuthResponse>('/mobile/service/token', {
     method: 'POST',
     body: {
       clientId: env.ECASH_CLIENT_ID,
       clientSecret: env.ECASH_CLIENT_SECRET,
-      scope: env.ECASH_SERVICE_SCOPE,
     },
   });
   return {
@@ -86,4 +89,14 @@ export async function getServiceToken(): Promise<string> {
 /** Сброс кэша (после 401 от справочника — токен мог быть отозван). */
 export function invalidateServiceToken(): void {
   cache.state = null;
+}
+
+/**
+ * Сколько секунд токену осталось жить — браузеру, чтобы он знал, когда
+ * просить следующий, и не ловил 401 посреди работы. Уже с запасом MARGIN_MS,
+ * заложенным при выдаче; на всякий случай не отдаём отрицательное.
+ */
+export function serviceTokenExpiresIn(): number {
+  if (!cache.state) return 0;
+  return Math.max(0, Math.floor((cache.state.expiresAt - Date.now()) / 1000));
 }

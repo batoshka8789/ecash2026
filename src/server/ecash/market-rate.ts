@@ -58,3 +58,21 @@ export async function marketRate(code: string): Promise<number | null> {
   }
   return c.rates.get(code.toUpperCase()) ?? null;
 }
+
+/**
+ * Вся карта курсов НБ РК разом.
+ *
+ * Нужна браузеру: курсы отделения он теперь берёт у Ecash напрямую, а «курс
+ * на бирже» подписан в макете у каждой строки. Отдать одну карту дешевле,
+ * чем спрашивать по валюте, и не завязывает наш эндпоинт на список валют
+ * конкретного отделения. Фид nationalbank.kz оставляем на сервере: это XML
+ * с чужого домена, тянуть его из браузера — ещё один origin в CSP и разбор
+ * XML на клиенте.
+ */
+export async function allMarketRates(): Promise<Record<string, number>> {
+  // прогреваем кэш тем же путём, что и точечный запрос
+  await marketRate('USD');
+  const c = g.__ecashMarket;
+  if (!c) return {};
+  return Object.fromEntries(c.rates);
+}

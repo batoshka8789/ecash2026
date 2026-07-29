@@ -9,9 +9,11 @@ import { clsx } from "clsx";
 import { Link } from "@/i18n/navigation";
 import { Logo } from "@/components/ui/Logo";
 import { Icon } from "@/components/ui/Icon";
+import { Footer } from "@/components/layout/Footer";
 import { ContactModal } from "./ContactModal";
 import { Glows } from "./Glows";
 import { FloatImage, GrainOverlay, Magnetic, Spotlight } from "./effects";
+import { VuesaxIcon, type VuesaxName } from "./VuesaxIcons";
 
 type Card = { title: string; text: string; accent?: boolean };
 
@@ -39,11 +41,12 @@ export function Landing() {
   const support = t.raw("support.items") as Card[];
   const faq = t.raw("faq.items") as { q: string; a: string }[];
 
-  // Пары иконок vuesax из макета
-  const advantageIcons: [string, string][] = [
-    ["smartphone", "monitor"],
-    ["favorite", "trending_up"],
-    ["group", "person"],
+  // Пары иконок vuesax из макета: первая — брендовая, спереди; вторая — белая,
+  // поверх неё в правом нижнем углу.
+  const advantageIcons: [VuesaxName, VuesaxName][] = [
+    ["mobile", "monitor"],
+    ["like-shapes", "trend-up"],
+    ["profile-2user", "user"],
   ];
 
   return (
@@ -269,7 +272,8 @@ export function Landing() {
           </Section>
         </Container>
 
-        <LandingFooter />
+        {/* общий футер сайта; лендингу нужен только свой ритм отбивки */}
+        <Footer className="mt-40 md:mt-[300px] lg:mt-[400px]" />
       </div>
 
       <ScrollToTopButton label={t("scrollTop")} />
@@ -692,135 +696,6 @@ function LandingHeader({ loginLabel }: { loginLabel: string }) {
   );
 }
 
-/** Футер: #333333, border #303030. */
-function LandingFooter() {
-  const t = useTranslations("footer");
-
-  return (
-    <footer className="relative mt-40 border-t border-[#303030] bg-surface-modal-bg md:mt-[300px] lg:mt-[400px]">
-      {/*
-        Своя обёртка, а не Container: у футера колонка макета шире страничной
-        (1448/124 против 1324/0) и свои паддинги по брейкпоинтам.
-      */}
-      <div className="relative mx-auto w-full max-w-[1448px] px-6 py-6 md:px-5 md:py-[60px] lg:px-10 xl:px-[124px] xl:pt-[100px]">
-        {/* 768: одна центрированная колонка, gap 60; с 1024 — ряд */}
-        <div className="flex flex-col gap-6 md:items-center md:gap-[60px] lg:flex-row lg:items-center lg:justify-between lg:gap-10">
-          <div className="flex flex-col gap-2 md:items-center md:gap-6 lg:items-start">
-            <div className="flex gap-2 md:gap-4">
-              <SocialLink href="https://wa.me/77059089073" label="WhatsApp">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  aria-hidden
-                  className="h-5 w-5 md:h-8 md:w-8"
-                >
-                  <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 1.8a8.2 8.2 0 1 1-4.2 15.3l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 0 1 12 3.8Zm-3.1 4c-.2 0-.5 0-.7.3-.2.3-.9.9-.9 2.1s.9 2.4 1 2.6c.1.2 1.8 2.9 4.4 3.9 2.2.9 2.6.7 3.1.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2l-.4-.2-1.5-.7c-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.1-.2 0-.4.1-.5l.5-.6c.1-.2.1-.3.2-.5v-.4L10.3 8c-.1-.3-.3-.3-.5-.3h-.4l-.5.1Z" />
-                </svg>
-              </SocialLink>
-              <SocialLink href="https://t.me/ecash" label="Telegram">
-                {/* `!` — material-symbols/rounded.css подключён вне слоёв
-                    каскада и своим font-size:24px перебивает утилиты */}
-                <ScalableIcon
-                  name="send"
-                  filled
-                  className="text-[20px]! md:text-[32px]!"
-                />
-              </SocialLink>
-            </div>
-            <a
-              href="tel:+77059089073"
-              className="text-base leading-5 text-text-default transition-colors hover:text-text-brand md:text-[28px] md:font-semibold md:leading-8 md:tracking-[-0.45px]"
-            >
-              +7 (705) 908 90 73
-            </a>
-          </div>
-
-          <div className="flex flex-col gap-2 md:items-center md:gap-6 lg:items-start lg:gap-10">
-            <div className="text-sm leading-[1.1] text-text-disabled md:text-xl md:leading-8 md:text-text-default">
-              {t("schedule")}
-            </div>
-            <div className="text-base leading-5 text-text-default md:text-[28px] md:font-semibold md:leading-8 md:tracking-[-0.45px]">
-              {t("scheduleValue")}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2 md:items-center md:gap-6 lg:items-start lg:gap-10">
-            <div className="text-sm leading-[1.1] text-text-disabled md:text-xl md:leading-8 md:text-text-default">
-              {t("additional")}
-            </div>
-            <span className="inline-flex items-center gap-2.5 text-base leading-5 text-text-default md:text-[28px] md:font-semibold md:leading-8 md:tracking-[-0.45px]">
-              {t("documents")}
-              <Icon name="arrow_outward" size={20} />
-            </span>
-          </div>
-        </div>
-
-        {/* 480: копирайт у левого края, 768 — по центру */}
-        <div className="mt-12 text-left text-sm leading-[1.1] text-text-disabled md:mt-20 md:text-center md:text-xl md:leading-8 md:text-text-default lg:text-left">
-          © {new Date().getFullYear()}. {t("rights")}
-        </div>
-      </div>
-    </footer>
-  );
-}
-
-/** Плитка соцсети: 42×42 r16 #262626 до 768, 72×72 r28 #272626 с 768. */
-function SocialLink({
-  href,
-  label,
-  children,
-}: {
-  href: string;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <motion.a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={label}
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.94 }}
-      className="inline-flex h-[42px] w-[42px] items-center justify-center rounded-2xl bg-surface-page-surf1 text-text-default transition-colors hover:bg-comp-surface2-hover md:h-[72px] md:w-[72px] md:rounded-[28px] md:bg-[#272626]"
-    >
-      {children}
-    </motion.a>
-  );
-}
-
-/**
- * Material-иконка с размером из класса.
- *
- * Icon задаёт fontSize инлайновым стилем, поэтому адаптивные классы на нём
- * не срабатывают, а в макете размер иконки меняется по брейкпоинтам
- * (21.33 → 48 у карточек преимуществ).
- */
-function ScalableIcon({
-  name,
-  className,
-  filled = false,
-}: {
-  name: string;
-  className?: string;
-  filled?: boolean;
-}) {
-  return (
-    <span
-      aria-hidden
-      className={clsx(
-        "material-symbols-rounded select-none leading-none",
-        className,
-      )}
-      style={{
-        fontVariationSettings: `'FILL' ${filled ? 1 : 0}, 'wght' 400, 'GRAD' 0, 'opsz' 24`,
-      }}
-    >
-      {name}
-    </span>
-  );
-}
-
 /** Матовое стекло: #262626 40 %, backdrop-blur 45.8, r40 → r64, p24 → p44. */
 function GlassCard({
   card,
@@ -829,7 +704,7 @@ function GlassCard({
   index,
 }: {
   card: Card;
-  icons?: [string, string];
+  icons?: [VuesaxName, VuesaxName];
   logo?: boolean;
   index: number;
 }) {
@@ -870,19 +745,15 @@ function GlassCard({
         ) : (
           icons && (
             <span className="flex h-[60px] w-[60px] items-center justify-center rounded-[24px] border-2 border-[#616161] transition-colors duration-300 group-hover:border-brand md:h-[100px] md:w-[100px] md:rounded-[32px]">
-              {/* 2153:195575 — пара иконок 48×48 в блоке 72×72; на 480/360 — 21.33 в 32.
-                  `!` обязателен: material-symbols/rounded.css подключён из layout.tsx
-                  вне слоёв каскада и своим font-size:24px перебивает утилиты. */}
+              {/* 2153:195575 — пара иконок 48×48 в блоке 72×72; на 480/360 — 21.33 в 32 */}
               <span className="relative h-8 w-8 md:h-[72px] md:w-[72px]">
-                <ScalableIcon
+                <VuesaxIcon
                   name={icons[0]}
-                  filled
-                  className="absolute left-0 top-0 text-[21.33px]! text-brand drop-shadow-[0_0_12px_rgb(241_90_37/0.6)] transition-transform duration-300 group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 md:text-[48px]!"
+                  className="absolute left-0 top-0 h-[21.33px] w-[21.33px] text-brand drop-shadow-[0_0_12px_rgb(241_90_37/0.6)] transition-transform duration-300 group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 md:h-12 md:w-12"
                 />
-                <ScalableIcon
+                <VuesaxIcon
                   name={icons[1]}
-                  filled
-                  className="absolute bottom-0 right-0 text-[21.33px]! text-text-default transition-transform duration-300 group-hover:translate-x-0.5 group-hover:translate-y-0.5 md:text-[48px]!"
+                  className="absolute bottom-0 right-0 h-[21.33px] w-[21.33px] text-text-default transition-transform duration-300 group-hover:translate-x-0.5 group-hover:translate-y-0.5 md:h-12 md:w-12"
                 />
               </span>
             </span>

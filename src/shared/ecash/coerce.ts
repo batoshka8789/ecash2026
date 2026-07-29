@@ -1,4 +1,3 @@
-import 'server-only';
 
 /**
  * Приведение «сырых» значений upstream к надёжным типам.
@@ -44,7 +43,14 @@ const KZ = { latMin: 40.0, latMax: 56.0, lonMin: 46.0, lonMax: 88.0 };
 const inKz = (lat: number, lon: number) =>
   lat >= KZ.latMin && lat <= KZ.latMax && lon >= KZ.lonMin && lon <= KZ.lonMax;
 
-const warned = new Set<string>();
+/*
+  Одно предупреждение на процесс/вкладку, а не на каждое отделение.
+  Своп координат у Ecash системный — перевёрнуты все 20 отделений, поэтому
+  подробность «depId=N» ничего не добавляла, зато с переездом мапперов в
+  браузер эти строки стали печататься на КАЖДУЮ загрузку страницы двадцатью
+  жёлтыми предупреждениями подряд. Оставляем один факт.
+*/
+let swapWarned = false;
 
 /**
  * depInfo отдаёт lat/lon ПЕРЕПУТАННЫМИ (Алматы: lat=76.85, lon=43.24 —
@@ -55,17 +61,18 @@ const warned = new Set<string>();
 export function normalizeCoords(
   rawLat: unknown,
   rawLon: unknown,
-  depId?: number,
 ): { lat: number; lon: number } | null {
   const a = num(rawLat, NaN);
   const b = num(rawLon, NaN);
   if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
   if (inKz(a, b)) return { lat: a, lon: b };
   if (inKz(b, a)) {
-    const key = String(depId ?? `${a},${b}`);
-    if (!warned.has(key)) {
-      warned.add(key);
-      console.warn(`[ecash] depId=${depId ?? '?'}: lat/lon перепутаны, переворачиваю`);
+    if (!swapWarned) {
+      swapWarned = true;
+      console.warn(
+        '[ecash] координаты отделений приходят перевёрнутыми (lat↔lon) — переворачиваю. ' +
+          'Сообщение выводится один раз за сессию.',
+      );
     }
     return { lat: b, lon: a };
   }

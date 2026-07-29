@@ -1,4 +1,8 @@
-import 'server-only';
+/**
+ * Мапперы ответов Ecash — ЧИСТЫЕ функции без доступа к окружению, поэтому
+ * лежат в shared: одни и те же преобразования нужны и серверу (BFF), и
+ * браузеру, который часть справочников тянет из api-dev.quiq.kz напрямую.
+ */
 import type {
   AcceptActionType,
   AcceptStatus,
@@ -48,7 +52,7 @@ export function phaseOf(status: RequestStatus): RequestPhase {
 
 // --------------------------------------------------------------- отделения
 
-type RawDep = { depId?: unknown; address?: unknown; code?: unknown };
+export type RawDep = { depId?: unknown; address?: unknown; code?: unknown };
 
 export function mapDepartment(raw: RawDep): Department {
   return {
@@ -84,7 +88,7 @@ function mapDepartmentCurrency(raw: RawCurrency): DepartmentCurrency {
   };
 }
 
-type RawDepInfo = RawDep & {
+export type RawDepInfo = RawDep & {
   name?: unknown;
   city?: unknown;
   lat?: unknown;
@@ -95,12 +99,11 @@ type RawDepInfo = RawDep & {
 };
 
 export function mapDepartmentInfo(raw: RawDepInfo): DepartmentInfo {
-  const depId = int(raw.depId) ?? 0;
   return {
     ...mapDepartment(raw),
     name: str(raw.name),
     city: str(raw.city),
-    coords: normalizeCoords(raw.lat, raw.lon, depId),
+    coords: normalizeCoords(raw.lat, raw.lon),
     timetable: raw.timetable
       ? { openTime: str(raw.timetable.openTime), closeTime: str(raw.timetable.closeTime) }
       : null,
@@ -111,7 +114,7 @@ export function mapDepartmentInfo(raw: RawDepInfo): DepartmentInfo {
 
 // -------------------------------------------------------------------- курсы
 
-type RawStat = {
+export type RawStat = {
   currencyCode?: unknown;
   currencyName?: unknown;
   buy?: unknown;
@@ -142,7 +145,7 @@ export function mapRateStat(raw: RawStat): RateStat {
   };
 }
 
-type RawBest = {
+export type RawBest = {
   city?: unknown;
   currencyCode?: unknown;
   bestBuy?: { depId?: unknown; address?: unknown; rate?: unknown } | null;

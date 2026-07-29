@@ -23,7 +23,6 @@ const schema = z.object({
   ECASH_API_BASE_URL: z.url(),
   ECASH_CLIENT_ID: z.string().min(1),
   ECASH_CLIENT_SECRET: z.string().min(1),
-  ECASH_SERVICE_SCOPE: z.string().default('mobile-service'),
   ECASH_HUB_PATH: z.string().default('/appHub'),
   ECASH_TIMEOUT_MS: z.coerce.number().int().min(1000).max(30000).default(8000),
 

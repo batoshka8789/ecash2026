@@ -1,7 +1,7 @@
 import 'server-only';
 import type { ExchangeRequest, OperationsPage } from '@/lib/domain';
 import { ecashFetch } from '../http';
-import { mapOperationsPage, mapRequest, type RawRequest } from '../mappers';
+import { mapOperationsPage, mapRequest, type RawRequest } from '@/shared/ecash/mappers';
 
 /**
  * Брони и операции. Владелец заявки — accountId из токена;

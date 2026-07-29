@@ -242,11 +242,23 @@ export function Calculator({
   };
 
   /**
-   * Селектор валюты у поля — в макете обе стороны со стрелкой-дропдауном.
-   * Обводка не зависит от open/closed: сторона KZT — цветом заливки (её не
-   * видно), сторона валюты — всегда брендовая. !-префикс перебивает
-   * open-зависимую обводку Select, которая иначе выигрывает по порядку
-   * генерации Tailwind-классов.
+   * Селектор валюты у поля. В макете это не отдельная кнопка внутри поля, а
+   * правая ячейка самого поля: во всю его высоту, без скругления и рамки,
+   * отделена от суммы вертикальной линией. Брендовая обводка появляется
+   * ТОЛЬКО у раскрытого списка (aria-expanded) — раньше сторона валюты
+   * носила её постоянно и читалась как поле в фокусе.
+   *
+   * Обводку рисуем inset-ring, а не border: бордер съел бы 1px внутренней
+   * ширины ячейки и в момент открытия дёргал бы флаг с кодом. Правые углы
+   * ячейки скруглены под поле (16 минус 1px рамки = 15), иначе обводка
+   * срезала бы угол поля по квадрату.
+   *
+   * span:first-child (визуал «флаг + код») переводим во flex: у Select это
+   * строчный контейнер, и вложенный inline-flex вставал по базовой линии —
+   * флаг съезжал на 4px ниже центра ячейки.
+   *
+   * px-4 (а не px-3): места под флаг + код + птичку хватает и на мобильном,
+   * потому что ячейка больше не отбита от края поля полями m-1/m-2.
    */
   const currencySelect = (field: Field, code: CurrencyCode) => (
     <Select
@@ -258,18 +270,14 @@ export function Calculator({
       renderValue={renderCurrencyOption}
       renderLeading={renderCurrencyFlag}
       searchable
+      arrow="chevron"
       searchPlaceholder={tRoot('flows.pair.searchCurrency')}
       noResultsText={tRoot('common.nothingFound')}
-      // !px-3: на мобильном w-32 не хватало места под флаг+код+шеврон —
-      // текст кода валюты («KZT», «USD») обрезался на предпоследней букве
-      // без эллипсиса (text-overflow не умеет эллипсировать вложенный
-      // флекс-контейнер, а не сплошной текст) — уже вложенный флаг+код,
-      // а не строка, поэтому текст просто резался посередине буквы
-      buttonClassName={clsx(
-        '!px-3 sm:!px-4',
-        code === 'KZT' ? '!border-surface-page-surf1-alt' : '!border-stroke-brand',
-      )}
-      className="m-1 w-36 shrink-0 self-center sm:m-2 sm:w-40 sm:[&>div]:left-auto sm:[&>div]:right-0 sm:[&>div]:w-[290px] [&>span]:sr-only"
+      // flex на самой ячейке, а высота кнопки — растяжкой, а не h-full:
+      // до 1024 поля стоят колонкой, и `flex-1` на рамке поля управляет там
+      // высотой, из-за чего высота становится «неопределённой» для процентов
+      // и height:100% откатывается к auto (кнопка выходила 36px вместо 54)
+      className="flex w-[136px] shrink-0 self-stretch border-l border-l-surface-page-surf1 min-[480px]:w-[140px] [&>button]:h-auto [&>button]:gap-1 [&>button]:rounded-none [&>button]:rounded-r-[15px] [&>button]:border-0 [&>button]:px-4 [&>button]:aria-expanded:inset-ring-1 [&>button]:aria-expanded:inset-ring-stroke-brand [&>button>span:first-child]:flex [&>button>span:first-child]:items-center sm:[&>div]:left-auto sm:[&>div]:right-0 sm:[&>div]:w-[290px] [&>span]:sr-only"
     />
   );
 
@@ -445,14 +453,28 @@ function AmountField({
     // Фиксированная высота (56/66 из макета) — на ЭТОЙ рамке, а не на label:
     // у элемента без своей высоты border-box не гасит бордер, и пилюля росла
     // на 2px. Обводка — только от инпута суммы (has-[label>input:focus]):
-    // focus-within ловил и поиск внутри селектора валюты, а у валютной
-    // стороны своя постоянная брендовая рамка — выходило два кольца.
-    <div className="flex h-14 flex-1 rounded-2xl border border-transparent bg-surface-page-surf2 transition-colors focus-within:bg-comp-surface2-hover has-[label>input:focus]:border-stroke-brand sm:h-[66px]">
-      {/* высота поля фиксирована в обоих состояниях — подпись не сдвигает вёрстку */}
+    // focus-within ловил и поиск внутри селектора валюты.
+    //
+    // flex-1 включается только с 1024, где поля стоят в ряд и делят ширину.
+    // До 1024 ряд — колонка, и flex-1 задавал бы полю не ширину, а ВЫСОТУ:
+    // flex-basis 0% перебивает h-14/h-[66px], и высота молча уезжала к высоте
+    // содержимого. По ширине поле и без flex-1 растягивается (align stretch).
+    <div className="flex h-14 flex-none rounded-2xl border border-transparent bg-surface-page-surf2 transition-colors focus-within:bg-comp-surface2-hover has-[label>input:focus]:border-stroke-brand sm:h-[66px] lg:flex-1">
+      {/*
+        Высота поля фиксирована в обоих состояниях — подпись не сдвигает вёрстку.
+
+        Растягиваем label ЧЕРЕЗ self-stretch, а не h-full. До 1024 ряд полей —
+        колонка, и `flex-1` на рамке управляет там не шириной, а высотой:
+        высота рамки становится «неопределённой» для процентов, `h-full`
+        (height:100%) откатывается к auto и даёт высоту строки 24px. Центрировать
+        внутри 24px нечего — плейсхолдер прилипал к верху поля, хотя селектор
+        валюты рядом стоял по центру. self-stretch не зависит от определённости
+        высоты родителя и заполняет рамку на любой ширине.
+      */}
       <label
         htmlFor={id}
         className={clsx(
-          'flex h-full min-w-0 flex-1 cursor-text flex-col justify-center px-4 sm:px-5',
+          'flex min-w-0 flex-1 cursor-text flex-col justify-center self-stretch px-4 sm:px-5',
           filled && 'gap-1',
         )}
       >
@@ -496,6 +518,8 @@ function Graph({
   const locale = useLocale();
   const errorText = useErrorText();
   const [hover, setHover] = useState<number | null>(null);
+  /** id градиента заливки: на странице два калькулятора не столкнутся */
+  const fillId = `${useId()}-chart-fill`;
 
   // компонент смонтирован только при раскрытой «Динамике» — запрос лениво
   const historyQuery = useQuery({
@@ -511,17 +535,17 @@ function Graph({
 
   /**
    * Подписи оси по фактическому размаху ряда (макет рисует Янв…Дек, но своя
-   * история короче года). Повтор соседней подписи пропускаем — иначе на
-   * коротком ряде ось превращается в «июль июль июль…».
+   * история короче года). Повтор соседней подписи пропускаем — на коротком
+   * ряде ось иначе превращается в «июль июль июль…».
    */
   const granularity: TickGranularity = chart ? tickGranularity(chart.spanMs) : 'date';
   const xTicks = useMemo(() => {
     if (!chart) return [];
     const out: { fx: number; label: string }[] = [];
-    for (const c of chart.columns) {
-      const label = formatAxisTick(c.ms, locale, granularity);
+    for (const tick of chart.xTicks) {
+      const label = formatAxisTick(tick.ms, locale, granularity);
       if (out.length > 0 && out[out.length - 1].label === label) continue;
-      out.push({ fx: c.fx, label });
+      out.push({ fx: tick.fx, label });
     }
     return out;
   }, [chart, locale, granularity]);
@@ -535,17 +559,21 @@ function Graph({
     return tRates('chart.changeFlat');
   };
 
-  const hovered = hover !== null && chart ? (chart.columns[hover] ?? null) : null;
+  const hovered = hover !== null && chart ? (chart.points[hover] ?? null) : null;
 
-  /** Ближайшая колонка к позиции курсора — подсказка со значением и датой. */
+  /**
+   * Ближайшая ТОЧКА РЯДА к позиции курсора — подсказка со значением и датой.
+   * Именно точка ряда, а не прорежённая выборка: иначе курсор «прилипал»
+   * к каждой двенадцатой точке и подсказка врала о времени замера.
+   */
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!chart) return;
     const rect = e.currentTarget.getBoundingClientRect();
     if (rect.width === 0) return;
     const frac = ((e.clientX - rect.left) / rect.width) * 100;
     let best = 0;
-    for (let i = 1; i < chart.columns.length; i += 1) {
-      if (Math.abs(chart.columns[i].fx - frac) < Math.abs(chart.columns[best].fx - frac)) best = i;
+    for (let i = 1; i < chart.points.length; i += 1) {
+      if (Math.abs(chart.points[i].fx - frac) < Math.abs(chart.points[best].fx - frac)) best = i;
     }
     setHover(best);
   };
@@ -611,13 +639,14 @@ function Graph({
               historyQuery.isPlaceholderData && 'opacity-60',
             )}
           >
-            {/* «Frame 4» — 5 подписей оси Y брендовым цветом */}
+            {/* «Frame 4» — 5 подписей оси Y брендовым цветом; tabular-nums,
+                чтобы цифры не гуляли по ширине между значениями */}
             <div
               aria-hidden
-              className="flex shrink-0 flex-col justify-between pb-5 pr-2 text-right text-xs leading-none text-text-brand sm:pb-8 sm:text-sm"
+              className="flex shrink-0 flex-col justify-between pb-5 pr-2 text-right text-xs leading-none tabular-nums text-text-brand sm:pb-8 sm:text-sm"
             >
-              {chart.yTicks.map((v, i) => (
-                <span key={i}>{formatNumber(v, locale, 2)}</span>
+              {chart.yTicks.map((tick) => (
+                <span key={tick.value}>{formatNumber(tick.value, locale, 2)}</span>
               ))}
             </div>
 
@@ -628,15 +657,22 @@ function Graph({
                 onPointerMove={onPointerMove}
                 onPointerLeave={() => setHover(null)}
               >
-                {/* вертикальная сетка по колонкам — brand 20% из токенов */}
-                {chart.columns.map((c, i) => (
+                {/* Сетка — регулярная и приглушённая: горизонтали по подписям
+                    оси Y, вертикали по отметкам времени. По точкам ряда её
+                    рисовать нельзя: снапшоты идут неравномерно, и линии
+                    сбивались в частокол там, где точки шли пачкой. */}
+                {chart.yTicks.map((tick) => (
                   <span
-                    key={`grid-${c.ms}`}
-                    className={clsx(
-                      'absolute bottom-0 top-0 w-px transition-colors',
-                      i === hover ? 'bg-brand-soft' : 'bg-brand-hardsoft',
-                    )}
-                    style={{ left: `${c.fx}%` }}
+                    key={`gy-${tick.value}`}
+                    className="absolute inset-x-0 h-px bg-surface-page-surf3"
+                    style={{ top: `${tick.fy}%` }}
+                  />
+                ))}
+                {chart.xTicks.map((tick) => (
+                  <span
+                    key={`gx-${tick.ms}`}
+                    className="absolute bottom-0 top-0 w-px bg-surface-page-surf3"
+                    style={{ left: `${tick.fx}%` }}
                   />
                 ))}
 
@@ -645,12 +681,20 @@ function Graph({
                   preserveAspectRatio="none"
                   className="absolute inset-0 h-full w-full overflow-visible"
                 >
+                  {/* заливка под линией — тот же бренд, гаснущий к низу поля */}
+                  <defs>
+                    <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--color-brand)" stopOpacity="0.22" />
+                      <stop offset="100%" stopColor="var(--color-brand)" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <path key={`fill-${code}-${period}`} d={chart.areaPath} fill={`url(#${fillId})`} />
                   <path
                     key={`${code}-${period}`}
                     d={chart.path}
                     fill="none"
                     stroke="var(--color-brand)"
-                    strokeWidth={1}
+                    strokeWidth={2}
                     strokeLinejoin="round"
                     strokeLinecap="round"
                     vectorEffect="non-scaling-stroke"
@@ -658,14 +702,13 @@ function Graph({
                   />
                 </svg>
 
-                {/* точки-маркеры 8px на реальных значениях */}
-                {chart.columns.map((c, i) => (
+                {/* Кружки 8px. На длинном ряде их остаётся четыре (края и
+                    экстремумы) — иначе сотня снапшотов «Суток» слипалась
+                    в сплошную полосу и прятала саму линию. */}
+                {chart.markers.map((c, i) => (
                   <span
                     key={`dot-${c.ms}`}
-                    className={clsx(
-                      'anim-chart-dot absolute rounded-full bg-brand',
-                      i === hover ? 'h-3 w-3' : 'h-2 w-2',
-                    )}
+                    className="anim-chart-dot absolute h-2 w-2 rounded-full bg-brand"
                     style={
                       {
                         left: `${c.fx}%`,
@@ -675,6 +718,20 @@ function Graph({
                     }
                   />
                 ))}
+
+                {/* прицел и точка под курсором — поверх линии, с кольцом фона */}
+                {hovered && (
+                  <>
+                    <span
+                      className="pointer-events-none absolute bottom-0 top-0 w-px bg-brand-soft"
+                      style={{ left: `${hovered.fx}%` }}
+                    />
+                    <span
+                      className="pointer-events-none absolute z-10 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand ring-2 ring-surface-page-surf2"
+                      style={{ left: `${hovered.fx}%`, top: `${hovered.fy}%` }}
+                    />
+                  </>
+                )}
 
                 {/* «big badge» — процент изменения в правом верхнем углу поля графика */}
                 {current !== null && (
@@ -763,7 +820,7 @@ function Graph({
               </tr>
             </thead>
             <tbody>
-              {chart.columns.map((c) => (
+              {chart.tableRows.map((c) => (
                 <tr key={`row-${c.ms}`}>
                   <th scope="row">{formatPointStamp(c.ms, locale, granularity)}</th>
                   <td>{formatNumber(c.buy, locale, 2)}</td>

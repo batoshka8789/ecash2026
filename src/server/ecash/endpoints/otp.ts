@@ -1,5 +1,5 @@
 import 'server-only';
-import type { AuthTokens } from './auth';
+import { toAuthTokens, type AuthTokens } from './auth';
 import { ecashFetch } from '../http';
 
 /**
@@ -28,11 +28,18 @@ export const otpConfirm = (phoneNumber: string, otp: string, purpose: OtpPurpose
     body: { phoneNumber, otp, purpose },
   });
 
-export const otpLogin = (phoneNumber: string, otp: string, deviceId?: string) =>
-  ecashFetch<AuthTokens>('/mobile/otp/login', {
-    method: 'POST',
-    body: { phoneNumber, otp, ...(deviceId ? { deviceId } : {}) },
-  });
+/** Вход по SMS-коду — ответ той же формы, что у /mobile/auth/login (поле `token`). */
+export const otpLogin = async (
+  phoneNumber: string,
+  otp: string,
+  deviceId?: string,
+): Promise<AuthTokens> =>
+  toAuthTokens(
+    await ecashFetch<unknown>('/mobile/otp/login', {
+      method: 'POST',
+      body: { phoneNumber, otp, ...(deviceId ? { deviceId } : {}) },
+    }),
+  );
 
 /** Сбрасывает пароль и отзывает все сессии аккаунта. */
 export const otpResetPassword = (phoneNumber: string, otp: string, newPassword: string) =>

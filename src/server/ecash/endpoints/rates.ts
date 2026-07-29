@@ -1,6 +1,6 @@
 import 'server-only';
 import type { BestRate, RateStat } from '@/lib/domain';
-import { mapBestRate, mapRateStat } from '../mappers';
+import { mapBestRate, mapRateStat } from '@/shared/ecash/mappers';
 import { serviceGet } from './departments';
 
 export async function rateStatistics(depId: number): Promise<RateStat[]> {

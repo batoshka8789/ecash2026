@@ -1,17 +1,14 @@
 import type {
   AccountWithProfile,
-  BestRate,
   Competitor,
   CurrencyCode,
-  Department,
-  DepartmentInfo,
   ExchangeRequest,
   NewsPost,
   OperationsPage,
   RateAlert,
-  RateStat,
 } from './domain';
 import { noteServerTime } from './time';
+import { ecashDirect } from './ecash-direct';
 
 /** Ошибка запроса: code — ключ i18n, field — какой инпут подсветить. */
 export class ApiError extends Error {
@@ -77,27 +74,70 @@ function httpFallback(status: number): string {
 const post = <T>(path: string, payload?: unknown) =>
   request<T>(path, { method: 'POST', body: payload !== undefined ? JSON.stringify(payload) : '{}' });
 
-/** Единая точка доступа к BFF. Браузер никогда не ходит в api-dev.quiq.kz напрямую. */
+/**
+ * Единая точка доступа к данным.
+ *
+ * ВСЕ данные Ecash браузер берёт прямо с api-dev.quiq.kz — отделения, карточка
+ * отделения, курсы отделения и лучший курс. Их CORS наш origin пускает, см.
+ * README и ecash-direct.ts. Транзита через свой сервер у данных Ecash больше нет.
+ *
+ * Через свой сервер остаётся только то, чего у Ecash нет или что нельзя
+ * отдавать браузеру:
+ * • всё пользовательское — bearer лежит в httpOnly-куке, из JS не читается;
+ * • наш слой данных — новости, избранное, подписки, конкуренты, история курсов;
+ * • курс НБ РК — публичный XML с чужого домена nationalbank.kz;
+ * • сервисный токен — выдаётся по clientSecret, который остаётся на сервере.
+ */
 export const api = {
   departments: {
-    list: (signal?: AbortSignal) =>
-      request<{ departments: Department[] }>('/departments', { signal }),
-    info: (depId: number, signal?: AbortSignal) =>
-      request<{ department: DepartmentInfo }>(`/departments/${depId}`, { signal }),
+    list: async (signal?: AbortSignal) => ({
+      departments: await ecashDirect.depList(signal),
+    }),
+    info: async (depId: number, signal?: AbortSignal) => ({
+      department: await ecashDirect.depInfo(depId, signal),
+    }),
   },
 
   rates: {
-    forDep: (depId: number, signal?: AbortSignal) =>
-      request<{
-        depId: number;
+    /**
+     * Курсы отделения — НАПРЯМУЮ с api-dev.quiq.kz, наша добавка (курс НБ РК,
+     * избранное, конкуренты) — отдельным запросом к своему серверу. Раньше это
+     * был один составной ответ `/api/rates`, где курсы Ecash шли транзитом
+     * через нас; теперь транзита нет. Форма результата не изменилась, поэтому
+     * вызывающие экраны (калькулятор, список курсов, бронь, подписка)
+     * трогать не пришлось.
+     *
+     * `marketRates` приходит целой картой НБ РК — сужаем её до валют этого
+     * отделения, как было раньше, чтобы у экранов не поменялся контракт.
+     */
+    forDep: async (depId: number, signal?: AbortSignal) => {
+      const [rates, meta] = await Promise.all([
+        ecashDirect.rates(depId, signal),
+        request<{
+          marketRate: number | null;
+          marketRates: Record<string, number>;
+          favorites: string[];
+          competitors: Competitor[];
+        }>('/rates/meta', { signal }),
+      ]);
+
+      const marketRates: Record<string, number> = {};
+      for (const r of rates) {
+        const v = meta.marketRates[r.currencyCode.toUpperCase()];
+        if (typeof v === 'number') marketRates[r.currencyCode] = v;
+      }
+
+      return {
+        depId,
         /** курс НБ РК по USD — историческая совместимость */
-        marketRate: number | null;
+        marketRate: meta.marketRate,
         /** «Курс на бирже» по каждой валюте отделения (НБ РК) */
-        marketRates: Record<string, number>;
-        rates: RateStat[];
-        favorites: string[];
-        competitors: Competitor[];
-      }>(`/rates?depId=${depId}`, { signal }),
+        marketRates,
+        rates,
+        favorites: meta.favorites,
+        competitors: meta.competitors,
+      };
+    },
     history: (
       params: { depId: number; code: CurrencyCode; period: 'day' | 'week' | 'month' | 'year' },
       signal?: AbortSignal,
@@ -111,11 +151,9 @@ export const api = {
       }>(`/rates/history?depId=${params.depId}&code=${params.code}&period=${params.period}`, {
         signal,
       }),
-    best: (currency: CurrencyCode, city?: string, signal?: AbortSignal) =>
-      request<{ best: BestRate }>(
-        `/rates/best?currency=${currency}${city ? `&city=${encodeURIComponent(city)}` : ''}`,
-        { signal },
-      ),
+    best: async (currency: CurrencyCode, city?: string, signal?: AbortSignal) => ({
+      best: await ecashDirect.bestRate(currency, city, signal),
+    }),
   },
 
   toggleFavorite: (code: CurrencyCode) => post<{ favorites: string[] }>('/favorites', { code }),

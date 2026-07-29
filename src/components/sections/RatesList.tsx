@@ -7,7 +7,7 @@ import { clsx } from 'clsx';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
-import { MaskGlyph } from '@/components/ui/MaskGlyph';
+import { ListMapIcon } from '@/components/ui/ListMapIcon';
 import { CurrencyFlag } from '@/components/ui/CurrencyFlag';
 import { Link, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
@@ -272,11 +272,10 @@ function RateRow({
         </div>
 
         <div className="flex w-full items-center gap-2 sm:w-auto">
-          {/* «list-map» из макета — составной значок: оранжевая плита со
-              списком сзади-слева + светлая плита с картой-пином спереди-
-              справа. Глифы — альфа-маски из PNG-экспорта макета
-              (public/img/actions/list-lines|map-pin) — кастомные, в
-              наборах их нет.
+          {/* «list-map» из макета — составной значок: плита со списком
+              сзади-слева + плита с картой спереди-справа. Один вектор
+              (ui/ListMapIcon) вместо прежней ручной сборки из двух плашек
+              и двух альфа-масок.
               ?currency= обязателен: калькулятор на /locations должен
               открыться с валютой ЭТОЙ строки, а не с USD по умолчанию. */}
           <Link
@@ -292,14 +291,7 @@ function RateRow({
             title={t('showOnMap')}
             className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-divider-additional text-text-default transition-colors hover:bg-comp-surface1-hover sm:h-[46px] sm:w-[46px]"
           >
-            <span className="relative block h-7 w-7" aria-hidden>
-              <span className="absolute left-0 top-0 flex h-5 w-5 items-center justify-center rounded-md bg-btn-brand text-text-always-white">
-                <MaskGlyph src="/img/actions/list-lines.png" w={10} h={10} />
-              </span>
-              <span className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-md bg-surface-inverted text-text-inverted">
-                <MaskGlyph src="/img/actions/map-pin.png" w={19} h={19} />
-              </span>
-            </span>
+            <ListMapIcon className="h-7 w-7" />
           </Link>
           {/* ?to= — валюта именно этой строки: без него флоу открывался со
               своим дефолтом (USD) даже из строки EUR/RUB и т.д. Для строки
