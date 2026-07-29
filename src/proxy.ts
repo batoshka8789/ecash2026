@@ -7,14 +7,27 @@ const intl = createMiddleware(routing);
 /** Имя сессионной куки — дублирует src/server/session.ts (edge не тянет server-only). */
 const SESSION_COOKIE = 'ecash_s';
 
-/** Кабинетные пути (без префикса локали). */
-const PROTECTED = /^\/(profile|notifications|news|requests)(\/|$)/;
+/**
+ * Пути, требующие входа (без префикса локали). Новости отсюда убраны:
+ * они стали публичными. `admin` здесь только ради быстрого редиректа гостя —
+ * права проверяет layout раздела и `withAdmin` на каждом запросе API.
+ */
+const PROTECTED = /^\/(profile|notifications|requests|admin)(\/|$)/;
 /** Страницы входа (без префикса локали). */
 const AUTH_PAGES = /^\/(login|signup|recovery)(\/|$)/;
 
-/** Срезает префикс локали: /en/profile → /profile. */
+/**
+ * Срезает префикс локали: /en/profile → /profile. Список собирается из
+ * routing, а не пишется руками: раньше здесь было захардкожено (en|kk), и
+ * добавленный позже китайский выпал из защиты — /zh/profile гость открывал
+ * без быстрого редиректа (серверный гард layout всё же срабатывал).
+ */
+const LOCALE_PREFIX = new RegExp(
+  `^/(${routing.locales.filter((l) => l !== routing.defaultLocale).join('|')})(/.*|$)`,
+);
+
 function stripLocale(pathname: string): string {
-  const m = pathname.match(/^\/(en|kk)(\/.*|$)/);
+  const m = pathname.match(LOCALE_PREFIX);
   return m ? m[2] || '/' : pathname;
 }
 

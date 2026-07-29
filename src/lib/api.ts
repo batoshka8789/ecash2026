@@ -3,7 +3,11 @@ import type {
   Competitor,
   CurrencyCode,
   ExchangeRequest,
+  Locale,
+  NewsAdminPost,
   NewsPost,
+  NewsStatus,
+  NewsTranslations,
   OperationsPage,
   RateAlert,
 } from './domain';
@@ -158,7 +162,56 @@ export const api = {
 
   toggleFavorite: (code: CurrencyCode) => post<{ favorites: string[] }>('/favorites', { code }),
 
-  news: (signal?: AbortSignal) => request<{ posts: NewsPost[] }>('/news', { signal }),
+  /** Лента: сервер сам выбирает перевод по локали и падает на русский. */
+  news: (locale: Locale, signal?: AbortSignal) =>
+    request<{ posts: NewsPost[] }>(`/news?locale=${locale}`, { signal }),
+
+  newsBySlug: (slug: string, locale: Locale, signal?: AbortSignal) =>
+    request<{ post: NewsPost }>(`/news/${encodeURIComponent(slug)}?locale=${locale}`, { signal }),
+
+  admin: {
+    news: {
+      list: (params: { status?: NewsStatus | 'all'; q?: string } = {}, signal?: AbortSignal) => {
+        const qs = new URLSearchParams();
+        if (params.status && params.status !== 'all') qs.set('status', params.status);
+        if (params.q) qs.set('q', params.q);
+        const tail = qs.toString();
+        return request<{ posts: NewsAdminPost[] }>(`/admin/news${tail ? `?${tail}` : ''}`, { signal });
+      },
+      get: (id: string, signal?: AbortSignal) =>
+        request<{ post: NewsAdminPost }>(`/admin/news/${id}`, { signal }),
+      create: (payload: {
+        slug?: string;
+        translations: NewsTranslations;
+        image?: string;
+        status?: NewsStatus;
+      }) => post<{ post: NewsAdminPost }>('/admin/news', payload),
+      update: (
+        id: string,
+        payload: {
+          slug?: string;
+          translations?: NewsTranslations;
+          image?: string;
+          status?: NewsStatus;
+        },
+      ) =>
+        request<{ post: NewsAdminPost }>(`/admin/news/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(payload),
+        }),
+      remove: (id: string) =>
+        request<{ ok: true }>(`/admin/news/${id}`, { method: 'DELETE' }),
+    },
+    /**
+     * Загрузка обложки: файл уходит сырым телом, а не JSON-ом, поэтому мимо
+     * общего post() — там тело всегда сериализуется.
+     */
+    uploadImage: (file: File, signal?: AbortSignal) =>
+      request<{ media: { id: string; url: string; width: number; height: number; size: number } }>(
+        '/admin/media',
+        { method: 'POST', body: file, headers: { 'content-type': file.type }, signal },
+      ),
+  },
 
   auth: {
     me: (signal?: AbortSignal) =>

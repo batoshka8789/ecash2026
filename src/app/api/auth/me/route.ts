@@ -1,33 +1,39 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/server/db/client';
 import { profiles } from '@/server/db/schema';
-import { accountMe } from '@/server/ecash/endpoints/account';
 import { fromError, ok } from '@/server/api/respond';
-import { readSession, userToken } from '@/server/session';
-import { demoAccount, isDemoToken } from '@/server/demo/store';
-import { EcashError } from '@/server/ecash/errors';
+import { currentAccount } from '@/server/account';
+import { isAdminAccount } from '@/server/admin';
 import { profileFromRow } from '@/server/db/profile';
 
-/** Текущий аккаунт + наша анкета. { account: null } для гостя — без 401. */
+/**
+ * Текущий аккаунт + наша анкета. { account: null } для гостя — без 401.
+ * Развилка «демо/реальный режим» переехала в currentAccount(): она нужна
+ * ещё и гарду админки, дублировать её здесь больше нечего.
+ *
+ * `isAdmin` считается на сервере, чтобы список телефонов админов не уезжал
+ * в браузер — клиенту нужен только флаг для показа пункта меню. Запрос и так
+ * идёт на каждой странице и обновляется по фокусу окна, поэтому снятые права
+ * подхватываются сами.
+ */
 export async function GET() {
-  const token = await userToken();
-  if (!token) return ok({ account: null });
-
   try {
-    const s = await readSession();
-    const account = isDemoToken(token)
-      ? demoAccount(s?.accountId.replace(/^demo-/, '') ?? '')
-      : await accountMe(token);
+    const account = await currentAccount();
+    if (!account) return ok({ account: null });
 
     const rows = await db
       .select()
       .from(profiles)
       .where(eq(profiles.accountId, account.accountId));
 
-    return ok({ account: { ...account, profile: profileFromRow(rows[0]) } });
+    return ok({
+      account: {
+        ...account,
+        isAdmin: isAdminAccount(account),
+        profile: profileFromRow(rows[0]),
+      },
+    });
   } catch (e) {
-    // сессия с отозванным токеном — гость, а не ошибка
-    if (e instanceof EcashError && e.httpStatus === 401) return ok({ account: null });
     return fromError(e);
   }
 }

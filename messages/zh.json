@@ -169,7 +169,8 @@
     "profile": "个人中心",
     "notifications": "通知",
     "news": "资讯",
-    "franchise": "开设加盟店"
+    "franchise": "开设加盟店",
+    "admin": "编辑部"
   },
   "profile": {
     "myData": "我的资料",
@@ -246,18 +247,11 @@
     "empty": "暂无内容"
   },
   "news": {
-    "travelers": {
-      "title": "旅行者",
-      "text": "出行前的准备需要面面俱到，货币兑换也不例外。我们的服务让您快速、省心地换到所需金额，无需抵达后四处寻找兑换点，从而专心享受旅程或处理工作。我们提供优惠的条件和专业的建议，让您在旅途的每一个环节都安心从容。"
-    },
-    "cityDwellers": {
-      "title": "城市居民",
-      "text": "无论是储蓄、稳健投资还是大额消费，每个人都会用到货币兑换。我们让您轻松快捷地完成兑换，并在每一个环节保证优惠的条件与实在的价值。"
-    },
     "loading": "加载中…",
     "loadError": "资讯加载失败",
     "retry": "重试",
-    "empty": "暂无资讯"
+    "empty": "暂无资讯",
+    "backToList": "返回全部资讯"
   },
   "locations": {
     "title": "Ecash 网点",
@@ -659,7 +653,16 @@
     "UPSTREAM_UNAVAILABLE": "Ecash 服务暂时不可用",
     "UPSTREAM_TIMEOUT": "Ecash 服务无响应，请重试",
     "UPSTREAM_UNREACHABLE": "无法连接 Ecash 服务",
-    "UNKNOWN": "意外错误"
+    "UNKNOWN": "意外错误",
+    "forbidden": "无访问权限",
+    "fileTooLarge": "文件过大——最大 8 MB",
+    "fileType": "不支持该格式——需要图片",
+    "fileBroken": "无法读取文件",
+    "slugInvalid": "地址：拉丁字母、数字和连字符",
+    "slugTaken": "该地址已被占用",
+    "titleRequired": "请填写标题",
+    "newsRuRequired": "发布前请填写俄语版本：标题和正文",
+    "conflict": "记录已在其他窗口被修改——请刷新页面"
   },
   "addressModal": {
     "title": "填写您的地址",

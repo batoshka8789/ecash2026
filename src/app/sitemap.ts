@@ -4,7 +4,15 @@ import { routing } from '@/i18n/routing';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://ecash.kz';
 
 /** Публичные страницы × локали. Кабинет и авторизация не индексируются. */
-const PUBLIC_PATHS = ['', '/locations', '/booking', '/individual-rate', '/subscribe', '/franchise'];
+const PUBLIC_PATHS = [
+  '',
+  '/locations',
+  '/booking',
+  '/individual-rate',
+  '/subscribe',
+  '/franchise',
+  '/news',
+];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();

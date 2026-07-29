@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { EcashError } from './ecash/errors';
 import { refreshTokens, type AuthTokens } from './ecash/endpoints/auth';
 import { seal, unseal } from './session-crypto';
+import { isAdminPhone } from './admin';
 
 /**
  * Сессия = зашифрованная httpOnly-кука с токенами Ecash. Ничего не хранится
@@ -22,6 +23,12 @@ export type SessionData = {
   /** epoch ms истечения accessToken (с запасом 30 с) */
   accessExpiresAt: number;
   accountId: string;
+  /**
+   * Телефон аккаунта. Нужен гарду раздела /admin в Server Component, где
+   * нельзя ни ходить в сеть, ни ротировать куку. Это кеш ЛИЧНОСТИ, а не роли:
+   * сама роль по-прежнему считается от ADMIN_PHONES при каждой проверке.
+   */
+  phone?: string;
 };
 
 const cookieOpts = {
@@ -32,12 +39,17 @@ const cookieOpts = {
   secure: process.env.NODE_ENV === 'production',
 } as const;
 
-export function sessionFromTokens(tokens: AuthTokens, accountId: string): SessionData {
+export function sessionFromTokens(
+  tokens: AuthTokens,
+  accountId: string,
+  phone = '',
+): SessionData {
   return {
     accessToken: tokens.accessToken,
     refreshToken: tokens.refreshToken,
     accessExpiresAt: Date.now() + tokens.expiresIn * 1000 - 30_000,
     accountId,
+    phone,
   };
 }
 
@@ -72,7 +84,7 @@ export async function userToken(): Promise<string | null> {
 
   try {
     const fresh = await refreshTokens(s.refreshToken);
-    const next = sessionFromTokens(fresh, s.accountId);
+    const next = sessionFromTokens(fresh, s.accountId, s.phone ?? '');
     await createSession(next);
     return next.accessToken;
   } catch (e) {
@@ -95,4 +107,19 @@ export async function isAuthenticated(): Promise<boolean> {
 /** accountId текущей сессии, null для гостя. */
 export async function sessionAccountId(): Promise<string | null> {
   return (await readSession())?.accountId ?? null;
+}
+
+/**
+ * Права админа для Server Components: без сети и без записи кук — там нельзя
+ * ни то, ни другое. Телефон берётся из зашифрованной куки, а решение всё равно
+ * принимается по актуальному ADMIN_PHONES.
+ *
+ * Это только для того, чтобы не рисовать страницу. Настоящая, авторитетная
+ * проверка — `withAdmin` на каждом запросе к API: нарисованный без прав экран
+ * не даёт доступа к данным. Старые куки без `phone` дадут false — админ один
+ * раз перелогинится, и это правильное поведение по умолчанию.
+ */
+export async function sessionIsAdmin(): Promise<boolean> {
+  const phone = (await readSession())?.phone;
+  return phone ? isAdminPhone(phone) : false;
 }

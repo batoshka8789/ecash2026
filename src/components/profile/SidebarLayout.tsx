@@ -7,12 +7,14 @@ import { Icon } from '@/components/ui/Icon';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { AppBanner } from '@/components/layout/AppBanner';
+import { useAuth } from '@/lib/auth';
 
 /** Раскладка личного кабинета: сайдбар слева + контент. */
 export function SidebarLayout({ children }: { children: React.ReactNode }) {
   const t = useTranslations('sidebar');
   const tNav = useTranslations('nav');
   const pathname = usePathname();
+  const { account } = useAuth();
 
   const items = [
     {
@@ -37,6 +39,19 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
       label: tNav('requests'),
       match: ['/requests'],
     },
+    // раздел публикации новостей — виден только администраторам; пока сессия
+    // грузится, пункта нет, поэтому у обычного пользователя он не мелькнёт
+    ...(account?.isAdmin
+      ? [
+          {
+            key: 'admin',
+            icon: 'edit_note',
+            href: '/admin/news' as const,
+            label: t('admin'),
+            match: ['/admin'],
+          },
+        ]
+      : []),
   ];
 
   return (

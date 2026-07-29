@@ -1,7 +1,10 @@
 import 'server-only';
 import { NextResponse } from 'next/server';
+import type { Account } from '@/lib/domain';
 import { env } from '@/server/env';
 import { userToken } from '@/server/session';
+import { currentAccount } from '@/server/account';
+import { isAdminAccount } from '@/server/admin';
 import { fail } from './respond';
 
 /**
@@ -69,5 +72,31 @@ export function withUser(
     const token = await userToken();
     if (!token) return fail('errors.unauthorized', 401);
     return handler(req, token, ctx);
+  };
+}
+
+/**
+ * Обёртка админских роутов. Это АВТОРИТЕТНАЯ проверка прав: телефон берётся
+ * из актуального аккаунта, а не из куки, поэтому 30-дневная сессия сама по
+ * себе прав не даёт. Гард страниц (sessionIsAdmin) лишь не рисует экран.
+ *
+ * Не-админу отвечаем 404, а не 403: существование раздела не подтверждаем.
+ */
+export function withAdmin(
+  handler: (
+    req: Request,
+    token: string,
+    ctx: { params: Promise<Record<string, string>>; account: Account },
+  ) => Promise<NextResponse>,
+) {
+  return async (req: Request, ctx: { params: Promise<Record<string, string>> }) => {
+    const originErr = checkOrigin(req);
+    if (originErr) return originErr;
+    const token = await userToken();
+    if (!token) return fail('errors.unauthorized', 401);
+    const account = await currentAccount();
+    if (!account) return fail('errors.unauthorized', 401);
+    if (!isAdminAccount(account)) return fail('errors.notFound', 404);
+    return handler(req, token, { ...ctx, account });
   };
 }

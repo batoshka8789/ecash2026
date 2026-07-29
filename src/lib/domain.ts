@@ -3,6 +3,10 @@
  * запросами к api-dev.quiq.kz; числовые статусы — из документации.
  * Старые мок-типы в types.ts удаляются по мере перевода экранов.
  */
+import type { Locale } from '@/i18n/routing';
+
+/** Реэкспорт: доменные типы новостей завязаны на локали, удобно брать отсюда. */
+export type { Locale };
 
 // ------------------------------------------------------------------ валюты
 
@@ -92,7 +96,11 @@ export type Profile = {
   address: string;
 };
 
-export type AccountWithProfile = Account & { profile: Profile };
+export type AccountWithProfile = Account & {
+  profile: Profile;
+  /** права на раздел публикации новостей; считает сервер по списку телефонов */
+  isAdmin?: boolean;
+};
 
 /**
  * Показываемое имя аккаунта. ФИО из ядра Ecash появляется только после
@@ -240,13 +248,45 @@ export type RateAlert = {
   createdAt: string;
 };
 
+/**
+ * Новости. Раньше заголовок и текст лежали в messages/*.json, а в БД был лишь
+ * ключ перевода — из-за этого опубликовать новость без пересборки было
+ * невозможно. Теперь контент целиком в БД, по локали на перевод.
+ */
+export type NewsStatus = 'draft' | 'published';
+
+export type NewsTranslation = {
+  title: string;
+  /** анонс для карточки ленты; пустой — выводится из body автоматически */
+  excerpt: string;
+  /** текст с разметкой, см. src/lib/richtext.ts */
+  body: string;
+};
+
+/** Обязателен только `ru` — он же фолбэк для незаполненных локалей. */
+export type NewsTranslations = Partial<Record<Locale, NewsTranslation>>;
+
+/** Новость с уже выбранным переводом — то, что отдаётся публичным экранам. */
 export type NewsPost = {
   id: string;
   slug: string;
   image: string;
-  /** ключи в messages.news.<key>.title / .text */
-  key: string;
+  title: string;
+  excerpt: string;
+  /** только в карточке одной новости; в ленте не передаётся */
+  body?: string;
   publishedAt: string;
+};
+
+/** Полная запись для админки: все переводы и черновики. */
+export type NewsAdminPost = {
+  id: string;
+  slug: string;
+  image: string;
+  status: NewsStatus;
+  translations: NewsTranslations;
+  publishedAt: string;
+  updatedAt: string;
 };
 
 export type Competitor = {

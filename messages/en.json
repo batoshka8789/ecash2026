@@ -169,7 +169,8 @@
     "profile": "My profile",
     "notifications": "Notifications",
     "news": "News",
-    "franchise": "Open a franchise"
+    "franchise": "Open a franchise",
+    "admin": "Editorial"
   },
   "profile": {
     "myData": "My data",
@@ -246,18 +247,11 @@
     "empty": "Nothing here yet"
   },
   "news": {
-    "travelers": {
-      "title": "Travelers",
-      "text": "When preparing for a trip, it is important to think everything through in advance, including currency exchange. Our services help you get the amount you need quickly and hassle-free, so you can focus on your vacation or work instead of looking for exchange offices upon arrival. We offer favorable terms and professional advice for those who want to be confident at every stage of their journey."
-    },
-    "cityDwellers": {
-      "title": "City dwellers",
-      "text": "Everyone needs currency exchange — whether for savings, profitable investments or large purchases. We help you exchange money easily and quickly, guaranteeing favorable terms and value at every step."
-    },
     "loading": "Loading…",
     "loadError": "Failed to load news",
     "retry": "Retry",
-    "empty": "No news yet"
+    "empty": "No news yet",
+    "backToList": "Back to all news"
   },
   "locations": {
     "title": "Ecash branches",
@@ -659,7 +653,16 @@
     "UPSTREAM_UNAVAILABLE": "Ecash service is temporarily unavailable",
     "UPSTREAM_TIMEOUT": "Ecash service is not responding. Try again",
     "UPSTREAM_UNREACHABLE": "Cannot reach the Ecash service",
-    "UNKNOWN": "Unexpected error"
+    "UNKNOWN": "Unexpected error",
+    "forbidden": "No access",
+    "fileTooLarge": "File is too large — up to 8 MB",
+    "fileType": "This format is not supported — an image is required",
+    "fileBroken": "Could not read the file",
+    "slugInvalid": "Address: latin letters, digits and hyphens",
+    "slugTaken": "This address is already taken",
+    "titleRequired": "Enter a title",
+    "newsRuRequired": "To publish, fill in the Russian version: title and text",
+    "conflict": "The record was changed in another window — reload the page"
   },
   "addressModal": {
     "title": "Enter your address",

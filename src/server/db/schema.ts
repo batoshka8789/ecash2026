@@ -1,5 +1,6 @@
 import {
   boolean,
+  customType,
   index,
   integer,
   jsonb,
@@ -10,6 +11,12 @@ import {
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
+import type { NewsTranslations } from '@/lib/domain';
+
+/** Двоичные данные: в drizzle нет готового bytea, объявляем свой тип. */
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType: () => 'bytea',
+});
 
 /**
  * Наш слой данных — то, чего нет в API Ecash и что документация относит
@@ -62,13 +69,41 @@ export const rateAlerts = pgTable(
   (t) => [index('rate_alerts_account_idx').on(t.accountId)],
 );
 
+/**
+ * Картинки новостей — байтами в БД, а не файлами на диске: Railway стирает
+ * файловую систему при каждом деплое, поэтому загруженное в public/ не
+ * пережило бы ни одной выкладки. Отдаются через /api/media/[id].
+ */
+export const media = pgTable('media', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  /** после нормализации всегда image/webp */
+  mime: text('mime').notNull(),
+  bytes: bytea('bytes').notNull(),
+  width: integer('width').notNull(),
+  height: integer('height').notNull(),
+  size: integer('size').notNull(),
+  uploadedBy: text('uploaded_by').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Новости. Контент лежит здесь целиком: раньше в строке был только ключ
+ * перевода, а тексты — в messages/*.json, которые вшиваются в бандл на сборке,
+ * поэтому опубликовать новость без деплоя было невозможно.
+ */
 export const news = pgTable('news', {
   id: uuid('id').primaryKey().defaultRandom(),
   slug: text('slug').notNull().unique(),
   image: text('image').notNull(),
-  /** ключ переводов messages.news.<key>.* */
-  key: text('key').notNull(),
+  /** переводы по локалям; обязателен ru, он же фолбэк для остальных */
+  translations: jsonb('translations').$type<NewsTranslations>().notNull().default({}),
+  /** 'draft' | 'published' — публичный список отдаёт только опубликованные */
+  status: text('status').notNull().default('draft'),
+  /** legacy-ключ messages.news.<key>.*; у новых записей пуст */
+  key: text('key'),
+  authorAccountId: text('author_account_id'),
   publishedAt: timestamp('published_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const competitors = pgTable('competitors', {

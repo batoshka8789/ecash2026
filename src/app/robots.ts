@@ -8,7 +8,8 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/api/', '/profile', '/notifications', '/requests', '/news'],
+        // /news стали публичными и индексируются; /admin — закрытый раздел
+        disallow: ['/api/', '/profile', '/notifications', '/requests', '/admin'],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,

@@ -26,6 +26,7 @@ export async function POST(req: Request) {
       refreshToken: DEMO_TOKEN,
       accessExpiresAt: Date.now() + 3600_000 * 24,
       accountId: account.accountId,
+      phone: account.phoneNumber,
     });
     return ok({ account });
   }
@@ -33,7 +34,7 @@ export async function POST(req: Request) {
   try {
     const tokens = await login(parsed.login, parsed.password);
     const account = await accountMe(tokens.accessToken);
-    await createSession(sessionFromTokens(tokens, account.accountId));
+    await createSession(sessionFromTokens(tokens, account.accountId, account.phoneNumber));
     return ok({ account });
   } catch (e) {
     return fromError(e);

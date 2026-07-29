@@ -39,7 +39,9 @@ export function PillTabs<T extends string>({
           type="button"
           onClick={() => onChange(tab.value)}
           className={clsx(
-            'flex-1 cursor-pointer font-medium transition-colors',
+            // px-3 и nowrap: в узком контейнере (например, рядом с полем
+            // поиска) подписи иначе наезжали друг на друга
+            'flex-1 cursor-pointer whitespace-nowrap px-3 font-medium transition-colors',
             r20
               ? 'h-[46px] rounded-[20px] text-sm leading-5'
               : 'h-11 rounded-full text-base',

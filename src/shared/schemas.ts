@@ -131,6 +131,69 @@ export const profilePatchBody = z.object({
   address: z.string().max(300).optional(),
 });
 
+// ------------------------------------------------------------------ новости
+
+export const localeSchema = z.enum(['ru', 'en', 'kk', 'zh']);
+
+export const slugSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(2)
+  .max(80)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'errors.slugInvalid');
+
+export const newsTranslationSchema = z.object({
+  title: z.string().trim().min(1, 'errors.titleRequired').max(200),
+  /** пустой — выжимка выводится из body автоматически */
+  excerpt: z.string().trim().max(400).default(''),
+  /** разметка, см. src/lib/richtext.ts; сервер только хранит, не рендерит */
+  body: z.string().max(20_000).default(''),
+});
+
+/**
+ * Локали перечислены явно, а не через record: так в типе закодировано,
+ * что обязателен только русский, а остальные языки опциональны.
+ */
+export const newsTranslationsSchema = z.object({
+  ru: newsTranslationSchema,
+  en: newsTranslationSchema.optional(),
+  kk: newsTranslationSchema.optional(),
+  zh: newsTranslationSchema.optional(),
+});
+
+/** В PATCH переводы сливаются по локалям; null удаляет язык (кроме ru). */
+export const newsTranslationsPatch = z.object({
+  ru: newsTranslationSchema.optional(),
+  en: newsTranslationSchema.nullable().optional(),
+  kk: newsTranslationSchema.nullable().optional(),
+  zh: newsTranslationSchema.nullable().optional(),
+});
+
+export const newsCreateBody = z.object({
+  /** не задан — сервер сгенерирует из русского заголовка */
+  slug: slugSchema.optional(),
+  translations: newsTranslationsSchema,
+  image: z.string().trim().max(300).default(''),
+  status: z.enum(['draft', 'published']).default('draft'),
+});
+
+export const newsPatchBody = z.object({
+  slug: slugSchema.optional(),
+  translations: newsTranslationsPatch.optional(),
+  image: z.string().trim().max(300).optional(),
+  status: z.enum(['draft', 'published']).optional(),
+});
+
+export const adminNewsQuery = z.object({
+  status: z.enum(['draft', 'published', 'all']).default('all'),
+  q: z.string().trim().max(100).optional(),
+});
+
+export const publicNewsQuery = z.object({
+  locale: localeSchema.default('ru'),
+});
+
 // ---------------------------------------------------------------- наш слой
 
 export const favoriteToggleBody = z.object({ code: currencyCodeSchema });
