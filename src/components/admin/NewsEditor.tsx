@@ -420,7 +420,11 @@ export function NewsEditor({ id }: { id?: string }) {
       {/* min-w-0 на колонках обязателен: у элемента сетки минимальная ширина по
           умолчанию равна min-content, и панель форматирования из 12 кнопок
           растягивала бы всю страницу вместо того, чтобы прокручиваться сама */}
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(440px,720px)]">
+      {/* Пополам на ноутбуке и фиксированное превью на широком экране.
+          minmax(_,720px) во второй колонке не годился: свободное место
+          раздаётся до растяжения 1fr, поэтому превью забирало свои 720, а
+          редактору на экране 1280 оставалось 224 px. */}
+      <div className="grid gap-6 xl:grid-cols-2 2xl:grid-cols-[minmax(0,1fr)_720px]">
         <div className={clsx(tab === 'edit' ? 'block' : 'hidden', 'min-w-0 xl:block')}>{editor}</div>
         <div className={clsx(tab === 'preview' ? 'block' : 'hidden', 'min-w-0 xl:block')}>
           <div className="xl:sticky xl:top-24">{preview}</div>
