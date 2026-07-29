@@ -7,7 +7,7 @@ import { checkOrigin, rateLimited } from '@/server/api/guard';
 import { body, fail, fromError, ok } from '@/server/api/respond';
 import { createSession, sessionFromTokens } from '@/server/session';
 import { registerBody } from '@/shared/schemas';
-import { DEMO_OTP, DEMO_TOKEN, demoAccount } from '@/server/demo/store';
+import { DEMO_OTP, DEMO_TOKEN, demoAccount, demoSetPassword } from '@/server/demo/store';
 
 /** Регистрация: телефон подтверждён OTP (purpose 0) → пароль → сессия. */
 export async function POST(req: Request) {
@@ -21,6 +21,7 @@ export async function POST(req: Request) {
   if (env.ECASH_OTP_MOCK) {
     if (parsed.otp !== DEMO_OTP) return fail('errors.INVALID_OTP', 401, { field: 'otp' });
     const account = demoAccount(parsed.phoneNumber);
+    demoSetPassword(parsed.phoneNumber, parsed.password);
     await createSession({
       accessToken: DEMO_TOKEN,
       refreshToken: DEMO_TOKEN,

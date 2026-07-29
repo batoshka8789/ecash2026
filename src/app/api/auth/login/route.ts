@@ -6,7 +6,7 @@ import { checkOrigin, rateLimited } from '@/server/api/guard';
 import { body, fail, fromError, ok } from '@/server/api/respond';
 import { createSession, sessionFromTokens } from '@/server/session';
 import { loginBody } from '@/shared/schemas';
-import { DEMO_TOKEN, demoAccount } from '@/server/demo/store';
+import { DEMO_TOKEN, demoAccount, demoCheckPassword } from '@/server/demo/store';
 
 /** Вход: телефон или ИИН + пароль. */
 export async function POST(req: Request) {
@@ -17,8 +17,9 @@ export async function POST(req: Request) {
   const parsed = await body(req, loginBody);
   if (parsed instanceof NextResponse) return parsed;
 
-  // демо-режим: фиксированный пароль, аккаунт не ходит в upstream
-  if (env.ECASH_OTP_MOCK && parsed.password === 'ecash2026') {
+  // демо-режим: свой пароль с регистрации (плюс запасной 'ecash2026'),
+  // аккаунт не ходит в upstream
+  if (env.ECASH_OTP_MOCK && demoCheckPassword(parsed.login, parsed.password)) {
     const account = demoAccount(parsed.login);
     await createSession({
       accessToken: DEMO_TOKEN,

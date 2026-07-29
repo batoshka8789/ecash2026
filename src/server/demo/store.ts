@@ -32,8 +32,35 @@ export function demoAccount(phone: string): Account {
 }
 
 type DemoDb = { requests: Map<string, ExchangeRequest[]>; nextId: number };
-const g = globalThis as unknown as { __ecashDemo?: DemoDb };
+const g = globalThis as unknown as {
+  __ecashDemo?: DemoDb;
+  __ecashDemoPasswords?: Map<string, string>;
+};
 const store: DemoDb = (g.__ecashDemo ??= { requests: new Map(), nextId: 10432 });
+
+/**
+ * Пароли демо-аккаунтов (только ECASH_OTP_MOCK=1). Раньше вход в демо-режиме
+ * сверялся с захардкоженной строкой 'ecash2026', никак не связанной с
+ * паролем, который человек вводил при регистрации, — свежезарегистрированный
+ * аккаунт после выхода залогинить назад было нельзя в принципе: форма всегда
+ * отвечала «Неверный логин или пароль». 'ecash2026' оставлен запасным
+ * вариантом для быстрого входа без регистрации — но реальный пароль теперь
+ * тоже работает.
+ */
+const DEMO_MAGIC_PASSWORD = 'ecash2026';
+const passwords = (g.__ecashDemoPasswords ??= new Map<string, string>());
+
+const phoneKey = (phone: string) => phone.replace(/\D/g, '');
+
+export function demoSetPassword(phone: string, password: string): void {
+  passwords.set(phoneKey(phone), password);
+}
+
+export function demoCheckPassword(login: string, password: string): boolean {
+  if (password === DEMO_MAGIC_PASSWORD) return true;
+  const saved = passwords.get(phoneKey(login));
+  return saved !== undefined && saved === password;
+}
 
 const TREASURER_DELAY_MS = 8000;
 const HOLD_MINUTES = 60;

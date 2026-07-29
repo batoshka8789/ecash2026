@@ -137,13 +137,11 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
       <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
         <h3 className="text-lg font-bold text-text-default sm:text-xl">{t('pair')}</h3>
         <div className="mt-4 flex flex-col gap-3 lg:flex-row">
+          {/* value — currencyFrom, amount — currencyTo (контракт Ecash,
+              раздел 4.3) — прямо, без ветвления по типу валюты */}
           <AmountBox
             label={`${tf('pair.give')} (${currencySymbol(r.currencyFrom)})`}
-            value={
-              r.currencyFrom === 'KZT'
-                ? formatNumber(r.amount, locale)
-                : formatNumber(r.value, locale)
-            }
+            value={formatNumber(r.value, locale)}
             readOnly
             currency={r.currencyFrom}
           />
@@ -152,9 +150,7 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
             value={
               r.status === 0 && r.isIndividual && !r.needsClientConfirmation
                 ? tf('pair.underReview')
-                : r.currencyTo === 'KZT'
-                  ? formatNumber(r.amount, locale)
-                  : formatNumber(r.value, locale)
+                : formatNumber(r.amount, locale)
             }
             readOnly
             currency={r.currencyTo}

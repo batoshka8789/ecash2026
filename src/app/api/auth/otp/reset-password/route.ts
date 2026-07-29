@@ -5,7 +5,7 @@ import { checkOrigin, rateLimited } from '@/server/api/guard';
 import { body, fail, fromError, ok } from '@/server/api/respond';
 import { destroySession } from '@/server/session';
 import { otpResetBody } from '@/shared/schemas';
-import { DEMO_OTP } from '@/server/demo/store';
+import { DEMO_OTP, demoSetPassword } from '@/server/demo/store';
 
 /** Сброс пароля по SMS (purpose 2). Upstream отзывает все сессии аккаунта. */
 export async function POST(req: Request) {
@@ -18,6 +18,7 @@ export async function POST(req: Request) {
 
   if (env.ECASH_OTP_MOCK) {
     if (parsed.otp !== DEMO_OTP) return fail('errors.INVALID_OTP', 401, { field: 'otp' });
+    demoSetPassword(parsed.phoneNumber, parsed.newPassword);
     await destroySession();
     return ok({ reset: true });
   }

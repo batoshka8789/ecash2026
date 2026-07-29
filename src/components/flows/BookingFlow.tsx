@@ -24,8 +24,9 @@ const DEFAULT_DEP = 1;
 
 /**
  * Флоу «Забронировать курс» и «Запросить индивидуальный курс» — по реальному
- * контракту /mobile/reserve: value = сумма в валюте, amount = сумма в тенге,
- * направление по правилу currencyFrom ≠ KZT → покупка у клиента.
+ * контракту /mobile/reserve: value = сумма в currencyFrom (что отдаём),
+ * amount = сумма в currencyTo (что получаем), направление по правилу
+ * currencyFrom ≠ KZT → покупка у клиента.
  * После отправки — переход на карточку /requests/[id]: заявка живёт в статусе 0
  * до ответа казначея, бронь (60 мин) начинается с его ответа.
  */
@@ -107,21 +108,29 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   );
   const validAmount = Number.isFinite(amountNum) && amountNum > 0;
 
-  /** value — сумма в валюте, amount — в тенге */
-  const { value, amount } = useMemo(() => {
-    if (!validAmount || rate <= 0) return { value: 0, amount: 0 };
-    return kztGive
-      ? { value: amountNum / rate, amount: amountNum }
-      : { value: amountNum, amount: amountNum * rate };
+  /**
+   * По контракту Ecash (раздел 4.3 ответа по интеграции, карточка заявки):
+   * value — сколько клиент ОТДАЁТ, в currencyFrom; amount — сколько
+   * ПОЛУЧАЕТ, в currencyTo. Не «валюта/тенге» — направление в паре может
+   * быть любым. Раньше value был жёстко привязан к иностранной валюте,
+   * а amount — к тенге: при покупке валюты за тенге (обычный сценарий
+   * калькулятора, currencyFrom=KZT) в апстрим уходила бы перепутанная
+   * пара — сумма в тенге как value, сумма в валюте как amount, ровно
+   * наоборот контракту. Тот же перекос был виден и локально: карточка
+   * уведомления показывала «19,72 (KZT)» вместо «10 000 (KZT)».
+   */
+  const amount = useMemo(() => {
+    if (!validAmount || rate <= 0) return 0;
+    return kztGive ? amountNum / rate : amountNum * rate;
   }, [validAmount, rate, kztGive, amountNum]);
 
   const get = useMemo(() => {
     if (mode === 'individual' || individual) return t('pair.underReview');
     if (!validAmount || rate <= 0) return '';
     return kztGive
-      ? `${formatNumber(value, locale)} ${currencySymbol(foreign)}`
+      ? `${formatNumber(amount, locale)} ${currencySymbol(foreign)}`
       : `${formatNumber(amount, locale)} ₸`;
-  }, [mode, individual, validAmount, rate, kztGive, value, amount, foreign, locale, t]);
+  }, [mode, individual, validAmount, rate, kztGive, amount, foreign, locale, t]);
 
   const currencyOptions = useMemo(
     () =>
@@ -139,8 +148,9 @@ export function BookingFlow({ mode }: { mode: Mode }) {
       const desired = parseFloat(desiredRate.replace(/[\s ]/g, '').replace(',', '.'));
       const isInd = mode === 'individual' || individual;
       const effRate = isInd && Number.isFinite(desired) && desired > 0 ? desired : rate;
-      const effValue = kztGive ? amountNum / effRate : amountNum;
-      const effAmount = kztGive ? amountNum : amountNum * effRate;
+      // value — currencyFrom (то, что отдаём), amount — currencyTo (что получаем)
+      const effValue = amountNum;
+      const effAmount = kztGive ? amountNum / effRate : amountNum * effRate;
       const comment = banknotes ? t(`banknotes.${banknotes as 'small' | 'large'}`) : undefined;
       const payload = {
         currencyFrom: kztGive ? 'KZT' : foreign,
