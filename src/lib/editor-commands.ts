@@ -5,7 +5,19 @@
  * нажатие добавляет вторую пару звёздочек вместо снятия).
  */
 
-export type EditCommand = 'bold' | 'italic' | 'h2' | 'h3' | 'bullet' | 'ordered' | 'link';
+export type EditCommand =
+  | 'bold'
+  | 'italic'
+  | 'strike'
+  | 'mark'
+  | 'h2'
+  | 'h3'
+  | 'bullet'
+  | 'ordered'
+  | 'quote'
+  | 'callout'
+  | 'link'
+  | 'divider';
 
 export type EditResult = {
   value: string;
@@ -17,10 +29,17 @@ export type EditResult = {
 const PLACEHOLDER: Partial<Record<EditCommand, string>> = {
   bold: 'текст',
   italic: 'текст',
+  strike: 'текст',
+  mark: 'текст',
   link: 'текст ссылки',
 };
 
-const WRAP: Partial<Record<EditCommand, string>> = { bold: '**', italic: '*' };
+const WRAP: Partial<Record<EditCommand, string>> = {
+  bold: '**',
+  italic: '*',
+  strike: '~~',
+  mark: '==',
+};
 
 /** Префиксы блочных команд и общий шаблон для снятия чужого префикса. */
 const PREFIX: Partial<Record<EditCommand, (i: number) => string>> = {
@@ -28,9 +47,13 @@ const PREFIX: Partial<Record<EditCommand, (i: number) => string>> = {
   h3: () => '### ',
   bullet: () => '- ',
   ordered: (i) => `${i + 1}. `,
+  quote: () => '> ',
+  callout: () => '!> ',
 };
 
-const ANY_PREFIX = /^(#{1,6}\s+|[-*•]\s+|\d{1,3}[.)]\s+)/;
+// '!>' проверяется тем же шаблоном, что и '>', поэтому переключение между
+// цитатой и врезкой снимает чужой префикс, а не наслаивает свой поверх
+const ANY_PREFIX = /^(#{1,6}\s+|!?>\s?|[-*•]\s+|\d{1,3}[.)]\s+)/;
 
 export function applyCommand(
   cmd: EditCommand,
@@ -38,6 +61,7 @@ export function applyCommand(
   start: number,
   end: number,
 ): EditResult {
+  if (cmd === 'divider') return applyDivider(value, start, end);
   if (cmd === 'link') return applyLink(value, start, end);
   if (WRAP[cmd]) return applyWrap(WRAP[cmd]!, PLACEHOLDER[cmd] ?? '', value, start, end);
   return applyBlock(cmd, value, start, end);
@@ -90,6 +114,20 @@ function applyLink(value: string, start: number, end: number): EditResult {
     selStart: start + text.length + 3,
     selEnd: start + text.length + 3 + 'https://'.length,
   };
+}
+
+/**
+ * Разделитель — самостоятельная строка. Пустые строки вокруг добавляем только
+ * там, где их ещё нет, иначе при повторных нажатиях копятся пустые абзацы.
+ */
+function applyDivider(value: string, start: number, end: number): EditResult {
+  const before = value.slice(0, start);
+  const after = value.slice(end);
+  const lead = !before || before.endsWith('\n') ? '' : '\n';
+  const tail = !after || after.startsWith('\n') ? '' : '\n';
+  const inserted = `${lead}---${tail}`;
+  const caret = start + inserted.length;
+  return { value: before + inserted + after, selStart: caret, selEnd: caret };
 }
 
 /** Границы строк, попавших в выделение. */

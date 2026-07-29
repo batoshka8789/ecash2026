@@ -58,6 +58,7 @@ export function NewsList() {
           >
             <NewsCard
               image={post.image}
+              imageFocus={post.imageFocus}
               title={post.title}
               excerpt={post.excerpt}
               priority={i === 0}

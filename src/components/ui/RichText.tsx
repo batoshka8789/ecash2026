@@ -1,6 +1,7 @@
 import { Fragment, useMemo } from 'react';
 import { clsx } from 'clsx';
 import { Link } from '@/i18n/navigation';
+import { Icon } from '@/components/ui/Icon';
 import { parseRichText, type Block, type Inline } from '@/lib/richtext';
 
 /**
@@ -53,6 +54,29 @@ function BlockView({ block }: { block: Block }) {
     );
   }
 
+  if (block.type === 'quote') {
+    return (
+      <blockquote className="mt-4 border-l-[3px] border-stroke-brand pl-4 text-sm italic leading-relaxed text-text-default sm:text-base">
+        <InlineView nodes={block.children} />
+      </blockquote>
+    );
+  }
+
+  if (block.type === 'callout') {
+    return (
+      <div className="mt-4 flex gap-3 rounded-2xl bg-brand-hardsoft p-4">
+        <Icon name="info" size={20} className="mt-0.5 shrink-0 text-text-brand" />
+        <p className="text-sm leading-relaxed text-text-default">
+          <InlineView nodes={block.children} />
+        </p>
+      </div>
+    );
+  }
+
+  if (block.type === 'divider') {
+    return <hr className="mt-6 border-0 border-t border-stroke-surface2" />;
+  }
+
   return (
     <p className="mt-3 text-sm leading-relaxed text-text-disabled">
       <InlineView nodes={block.children} />
@@ -79,6 +103,29 @@ function InlineView({ nodes }: { nodes: Inline[] }) {
             <em key={i}>
               <InlineView nodes={node.children} />
             </em>
+          );
+        }
+
+        if (node.type === 'strike') {
+          return (
+            <s key={i} className="opacity-70">
+              <InlineView nodes={node.children} />
+            </s>
+          );
+        }
+
+        if (node.type === 'mark') {
+          // Цвет — в подложке, буквы обычные. Фирменным цветом по фирменной же
+          // подложке контраст выходил ~2.8:1 в светлой теме, то есть ниже
+          // порога читаемости; так он высокий в обеих темах, а выделение
+          // всё равно читается цветным — как маркером.
+          return (
+            <mark
+              key={i}
+              className="rounded bg-brand-hardsoft px-1 py-0.5 font-medium text-text-default"
+            >
+              <InlineView nodes={node.children} />
+            </mark>
           );
         }
 

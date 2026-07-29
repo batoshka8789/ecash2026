@@ -56,6 +56,7 @@ export const POST = withAdmin(async (req, _token, { account }) => {
       .values({
         slug,
         image: parsed.image,
+        imageFocus: parsed.imageFocus,
         translations: parsed.translations,
         status: parsed.status,
         authorAccountId: account.accountId,

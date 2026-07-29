@@ -95,6 +95,8 @@ export const news = pgTable('news', {
   id: uuid('id').primaryKey().defaultRandom(),
   slug: text('slug').notNull().unique(),
   image: text('image').notNull(),
+  /** видимая часть обложки при обрезке, формат CSS object-position */
+  imageFocus: text('image_focus').notNull().default('50% 50%'),
   /** переводы по локалям; обязателен ru, он же фолбэк для остальных */
   translations: jsonb('translations').$type<NewsTranslations>().notNull().default({}),
   /** 'draft' | 'published' — публичный список отдаёт только опубликованные */

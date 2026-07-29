@@ -64,6 +64,7 @@ export const PATCH = withAdmin(async (req, _token, ctx) => {
       .set({
         ...(parsed.slug ? { slug: parsed.slug } : {}),
         ...(parsed.image !== undefined ? { image: parsed.image } : {}),
+        ...(parsed.imageFocus ? { imageFocus: parsed.imageFocus } : {}),
         translations,
         status,
         updatedAt: new Date(),

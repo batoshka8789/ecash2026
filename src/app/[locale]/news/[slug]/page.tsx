@@ -59,6 +59,7 @@ export default async function NewsPostPage({
               alt={post.title}
               fill
               sizes="(max-width: 768px) 100vw, 768px"
+              style={{ objectPosition: post.imageFocus }}
               className="object-cover"
               priority
             />

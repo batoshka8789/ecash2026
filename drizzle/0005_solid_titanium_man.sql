@@ -1,0 +1,1 @@
+ALTER TABLE "news" ADD COLUMN "image_focus" text DEFAULT '50% 50%' NOT NULL;

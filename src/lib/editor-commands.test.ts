@@ -90,3 +90,44 @@ describe('продолжение списка по Enter', () => {
     expect(continueList('обычный текст', 5)).toBeNull();
   });
 });
+
+describe('applyCommand — новые команды', () => {
+  it('выделение цветом оборачивает и снимается повторным нажатием', () => {
+    const on = applyCommand('mark', 'цена выгодная', 0, 4);
+    expect(on.value).toBe('==цена== выгодная');
+    const off = applyCommand('mark', on.value, on.selStart, on.selEnd);
+    expect(off.value).toBe('цена выгодная');
+  });
+
+  it('зачёркивание', () => {
+    expect(applyCommand('strike', 'старая цена', 0, 6).value).toBe('~~старая~~ цена');
+  });
+
+  it('цитата ставит префикс на все строки выделения', () => {
+    const r = applyCommand('quote', 'раз\nдва', 0, 7);
+    expect(r.value).toBe('> раз\n> два');
+  });
+
+  it('врезка заменяет цитату, а не наслаивается', () => {
+    expect(applyCommand('callout', '> раз', 2, 2).value).toBe('!> раз');
+  });
+
+  it('повторная цитата снимает префикс', () => {
+    expect(applyCommand('quote', '> раз', 2, 2).value).toBe('раз');
+  });
+
+  it('разделитель встаёт отдельной строкой', () => {
+    expect(applyCommand('divider', 'раз', 3, 3).value).toBe('раз\n---');
+  });
+
+  it('разделитель не плодит пустые строки', () => {
+    expect(applyCommand('divider', 'раз\n', 4, 4).value).toBe('раз\n---');
+  });
+
+  it('каретка после разделителя стоит в конце вставки', () => {
+    const r = applyCommand('divider', 'раз', 3, 3);
+    expect(r.selStart).toBe(r.value.length);
+    expect(r.selEnd).toBe(r.selStart);
+  });
+});
+

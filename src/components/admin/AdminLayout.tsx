@@ -21,7 +21,9 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main id="main" className="container-page flex-1 py-8">
+      {/* шире, чем container-page: редакция — рабочий инструмент, здесь рядом
+          стоят редактор и превью, и на 1232 px обоим было тесно */}
+      <main id="main" className="mx-auto w-full max-w-[1680px] flex-1 px-4 py-8">
         <div className="flex flex-col gap-6 lg:flex-row">
           <aside className="relative h-fit w-full shrink-0 rounded-3xl bg-surface-page-surf1 p-3 lg:w-64">
             <div className="mb-2 flex items-center gap-2 px-4 pt-2">

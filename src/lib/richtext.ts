@@ -15,12 +15,19 @@ export type Inline =
   | { type: 'text'; value: string }
   | { type: 'bold'; children: Inline[] }
   | { type: 'italic'; children: Inline[] }
+  | { type: 'strike'; children: Inline[] }
+  /** цветное выделение — акцент фирменным цветом */
+  | { type: 'mark'; children: Inline[] }
   | { type: 'link'; href: string; children: Inline[] };
 
 export type Block =
   | { type: 'heading'; level: 2 | 3; children: Inline[] }
   | { type: 'paragraph'; children: Inline[] }
-  | { type: 'list'; ordered: boolean; items: Inline[][] };
+  | { type: 'list'; ordered: boolean; items: Inline[][] }
+  | { type: 'quote'; children: Inline[] }
+  /** врезка-примечание: цветной блок с акцентом */
+  | { type: 'callout'; children: Inline[] }
+  | { type: 'divider' };
 
 /** Патологический ввод не должен подвешивать превью. */
 const MAX_BLOCKS = 2000;
@@ -42,6 +49,10 @@ export function isSafeHref(href: string): boolean {
 const RE_HEADING = /^(#{1,6})\s+(.*)$/;
 const RE_BULLET = /^[-*•]\s+(.*)$/;
 const RE_ORDERED = /^\d{1,3}[.)]\s+(.*)$/;
+const RE_QUOTE = /^>\s?(.*)$/;
+const RE_CALLOUT = /^!>\s?(.*)$/;
+/** три и более дефиса/звёздочки в строке — разделитель */
+const RE_DIVIDER = /^([-*_])\1{2,}$/;
 
 /**
  * Одна строка — один блок; пустая строка только разделяет. Правило выбрано
@@ -60,6 +71,27 @@ export function parseRichText(source: string): Block[] {
     const line = lines[i].trim();
 
     if (!line) {
+      i += 1;
+      continue;
+    }
+
+    if (RE_DIVIDER.test(line)) {
+      blocks.push({ type: 'divider' });
+      i += 1;
+      continue;
+    }
+
+    // врезку проверяем раньше цитаты: '!>' начинается не с '>'
+    const callout = RE_CALLOUT.exec(line);
+    if (callout) {
+      blocks.push({ type: 'callout', children: parseInline(callout[1]) });
+      i += 1;
+      continue;
+    }
+
+    const quote = RE_QUOTE.exec(line);
+    if (quote) {
+      blocks.push({ type: 'quote', children: parseInline(quote[1]) });
       i += 1;
       continue;
     }
@@ -121,10 +153,26 @@ export function parseInline(source: string, depth = 0): Inline[] {
     const ch = source[i];
 
     // экранирование: \* \[ \\ и т.п. — следующий символ всегда буквальный
-    if (ch === '\\' && i + 1 < source.length && /[\\*[\]()]/.test(source[i + 1])) {
+    if (ch === '\\' && i + 1 < source.length && /[\\*[\]()~=]/.test(source[i + 1])) {
       buf += source[i + 1];
       i += 2;
       continue;
+    }
+
+    if (depth < MAX_DEPTH && (ch === '~' || ch === '=')) {
+      const marker = ch === '~' ? '~~' : '==';
+      if (source.startsWith(marker, i)) {
+        const m = matchWrapped(source, i, marker);
+        if (m) {
+          flush();
+          out.push({
+            type: ch === '~' ? 'strike' : 'mark',
+            children: parseInline(m.inner, depth + 1),
+          });
+          i = m.next;
+          continue;
+        }
+      }
     }
 
     if (depth < MAX_DEPTH && (ch === '*' || ch === '[')) {
@@ -205,11 +253,11 @@ function matchWrapped(
  */
 export function richTextToPlain(source: string, limit?: number): string {
   const flat = parseRichText(source)
-    .map((block) =>
-      block.type === 'list'
-        ? block.items.map(inlineToPlain).join(' ')
-        : inlineToPlain(block.children),
-    )
+    .map((block) => {
+      if (block.type === 'divider') return '';
+      if (block.type === 'list') return block.items.map(inlineToPlain).join(' ');
+      return inlineToPlain(block.children);
+    })
     .filter(Boolean)
     .join(' ')
     .replace(/\s+/g, ' ')

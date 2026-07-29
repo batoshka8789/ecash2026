@@ -126,3 +126,84 @@ describe('richTextToPlain', () => {
     expect(richTextToPlain('Коротко', 100)).toBe('Коротко');
   });
 });
+
+describe('parseRichText — цитаты, врезки, разделитель', () => {
+  it('цитата', () => {
+    expect(parseRichText('> Слова клиента')).toEqual([
+      { type: 'quote', children: [{ type: 'text', value: 'Слова клиента' }] },
+    ]);
+  });
+
+  it('врезка не считается цитатой: «!>» проверяется раньше', () => {
+    expect(parseRichText('!> Важно')).toEqual([
+      { type: 'callout', children: [{ type: 'text', value: 'Важно' }] },
+    ]);
+  });
+
+  it('разделитель из трёх и более символов', () => {
+    expect(parseRichText('---')).toEqual([{ type: 'divider' }]);
+    expect(parseRichText('*****')).toEqual([{ type: 'divider' }]);
+  });
+
+  it('два дефиса разделителем не становятся', () => {
+    expect(parseRichText('--')[0].type).toBe('paragraph');
+  });
+
+  it('разметка внутри цитаты разбирается', () => {
+    const [block] = parseRichText('> **важно**');
+    expect(block).toEqual({
+      type: 'quote',
+      children: [{ type: 'bold', children: [{ type: 'text', value: 'важно' }] }],
+    });
+  });
+});
+
+describe('parseInline — выделение и зачёркивание', () => {
+  it('цветное выделение', () => {
+    expect(parseInline('==акцент==')).toEqual([
+      { type: 'mark', children: [{ type: 'text', value: 'акцент' }] },
+    ]);
+  });
+
+  it('зачёркнутый', () => {
+    expect(parseInline('~~старая цена~~')).toEqual([
+      { type: 'strike', children: [{ type: 'text', value: 'старая цена' }] },
+    ]);
+  });
+
+  it('незакрытый маркер остаётся текстом', () => {
+    expect(parseInline('==висит')).toEqual([{ type: 'text', value: '==висит' }]);
+  });
+
+  it('одиночный знак равенства не разметка', () => {
+    expect(parseInline('2 = 2')).toEqual([{ type: 'text', value: '2 = 2' }]);
+  });
+
+  it('вложение внутрь выделения работает', () => {
+    expect(parseInline('==**оба**==')).toEqual([
+      {
+        type: 'mark',
+        children: [{ type: 'bold', children: [{ type: 'text', value: 'оба' }] }],
+      },
+    ]);
+  });
+
+  it('экранирование снимает разметку', () => {
+    expect(parseInline('\\==не акцент==')).toEqual([{ type: 'text', value: '==не акцент==' }]);
+  });
+});
+
+describe('richTextToPlain — новые блоки', () => {
+  it('разделитель не оставляет лишних пробелов', () => {
+    expect(richTextToPlain('раз\n---\nдва')).toBe('раз два');
+  });
+
+  it('цитата и врезка попадают в выжимку', () => {
+    expect(richTextToPlain('> цитата\n!> врезка')).toBe('цитата врезка');
+  });
+
+  it('маркеры выделения в выжимку не попадают', () => {
+    expect(richTextToPlain('~~было~~ ==стало==')).toBe('было стало');
+  });
+});
+

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DEFAULT_IMAGE_FOCUS, IMAGE_FOCUS } from '@/lib/domain';
 
 /**
  * Схемы валидации входа BFF — единственный источник правды по контракту
@@ -170,11 +171,14 @@ export const newsTranslationsPatch = z.object({
   zh: newsTranslationSchema.nullable().optional(),
 });
 
+const imageFocusSchema = z.enum(IMAGE_FOCUS);
+
 export const newsCreateBody = z.object({
   /** не задан — сервер сгенерирует из русского заголовка */
   slug: slugSchema.optional(),
   translations: newsTranslationsSchema,
   image: z.string().trim().max(300).default(''),
+  imageFocus: imageFocusSchema.default(DEFAULT_IMAGE_FOCUS),
   status: z.enum(['draft', 'published']).default('draft'),
 });
 
@@ -182,6 +186,7 @@ export const newsPatchBody = z.object({
   slug: slugSchema.optional(),
   translations: newsTranslationsPatch.optional(),
   image: z.string().trim().max(300).optional(),
+  imageFocus: imageFocusSchema.optional(),
   status: z.enum(['draft', 'published']).optional(),
 });
 

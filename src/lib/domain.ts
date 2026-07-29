@@ -255,6 +255,27 @@ export type RateAlert = {
  */
 export type NewsStatus = 'draft' | 'published';
 
+/**
+ * Видимая часть обложки. Карточка ленты и шапка страницы обрезают картинку по
+ * object-cover, и какая именно часть уцелеет, зависит от пропорций экрана —
+ * поэтому точку кадрирования выбирает редактор, а не случай. Значения сразу в
+ * формате CSS object-position: девять узлов сетки 3×3.
+ */
+export const IMAGE_FOCUS = [
+  '0% 0%', '50% 0%', '100% 0%',
+  '0% 50%', '50% 50%', '100% 50%',
+  '0% 100%', '50% 100%', '100% 100%',
+] as const;
+
+export type ImageFocus = (typeof IMAGE_FOCUS)[number];
+
+export const DEFAULT_IMAGE_FOCUS: ImageFocus = '50% 50%';
+
+/** Значение из БД может быть любым — сводим к допустимому. */
+export function toImageFocus(value: unknown): ImageFocus {
+  return IMAGE_FOCUS.includes(value as ImageFocus) ? (value as ImageFocus) : DEFAULT_IMAGE_FOCUS;
+}
+
 export type NewsTranslation = {
   title: string;
   /** анонс для карточки ленты; пустой — выводится из body автоматически */
@@ -271,6 +292,7 @@ export type NewsPost = {
   id: string;
   slug: string;
   image: string;
+  imageFocus: ImageFocus;
   title: string;
   excerpt: string;
   /** только в карточке одной новости; в ленте не передаётся */
@@ -283,6 +305,7 @@ export type NewsAdminPost = {
   id: string;
   slug: string;
   image: string;
+  imageFocus: ImageFocus;
   status: NewsStatus;
   translations: NewsTranslations;
   publishedAt: string;

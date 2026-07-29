@@ -3,6 +3,7 @@ import type {
   Competitor,
   CurrencyCode,
   ExchangeRequest,
+  ImageFocus,
   Locale,
   NewsAdminPost,
   NewsPost,
@@ -184,6 +185,7 @@ export const api = {
         slug?: string;
         translations: NewsTranslations;
         image?: string;
+        imageFocus?: ImageFocus;
         status?: NewsStatus;
       }) => post<{ post: NewsAdminPost }>('/admin/news', payload),
       update: (
@@ -192,6 +194,7 @@ export const api = {
           slug?: string;
           translations?: NewsTranslations;
           image?: string;
+          imageFocus?: ImageFocus;
           status?: NewsStatus;
         },
       ) =>

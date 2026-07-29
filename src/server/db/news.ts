@@ -7,7 +7,9 @@ import type {
   NewsTranslation,
   NewsTranslations,
 } from '@/lib/domain';
+import { toImageFocus } from '@/lib/domain';
 import { richTextToPlain } from '@/lib/richtext';
+import { slugify } from '@/lib/slug';
 import type { news } from './schema';
 
 type NewsRow = typeof news.$inferSelect;
@@ -60,6 +62,7 @@ export function toPublicPost(row: NewsRow, locale: Locale, withBody: boolean): N
     id: row.id,
     slug: row.slug,
     image: row.image,
+    imageFocus: toImageFocus(row.imageFocus),
     title: t.title,
     excerpt: t.excerpt || richTextToPlain(t.body, EXCERPT_LIMIT),
     ...(withBody ? { body: t.body } : {}),
@@ -73,6 +76,7 @@ export function toAdminPost(row: NewsRow): NewsAdminPost {
     id: row.id,
     slug: row.slug,
     image: row.image,
+    imageFocus: toImageFocus(row.imageFocus),
     status: (row.status === 'published' ? 'published' : 'draft') as NewsStatus,
     translations: normalizeTranslations(row.translations),
     publishedAt: row.publishedAt.toISOString(),
@@ -80,26 +84,4 @@ export function toAdminPost(row: NewsRow): NewsAdminPost {
   };
 }
 
-/**
- * Транслитерация для адреса новости. Заголовки русские, поэтому без неё slug
- * получался бы пустым; казахские буквы добавлены по той же причине.
- */
-const TRANSLIT: Record<string, string> = {
-  а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z',
-  и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r',
-  с: 's', т: 't', у: 'u', ф: 'f', х: 'h', ц: 'c', ч: 'ch', ш: 'sh', щ: 'shch',
-  ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya',
-  ә: 'a', ғ: 'g', қ: 'k', ң: 'n', ө: 'o', ұ: 'u', ү: 'u', һ: 'h', і: 'i',
-};
-
-export function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .split('')
-    .map((ch) => TRANSLIT[ch] ?? ch)
-    .join('')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80)
-    .replace(/-+$/g, '');
-}
+export { slugify };

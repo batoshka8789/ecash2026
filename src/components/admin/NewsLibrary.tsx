@@ -10,6 +10,7 @@ import { PillTabs } from '@/components/ui/PillTabs';
 import { Toast } from '@/components/ui/Toast';
 import { api } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
+import { richTextToPlain } from '@/lib/richtext';
 import type { Locale, NewsAdminPost, NewsStatus } from '@/lib/domain';
 
 const LOCALES: Locale[] = ['ru', 'en', 'kk', 'zh'];
@@ -71,6 +72,15 @@ export function NewsLibrary() {
 
   const pending = toggle.isPending || remove.isPending;
 
+  const counts = useMemo(() => {
+    const all = data?.posts ?? [];
+    return {
+      all: all.length,
+      published: all.filter((p) => p.status === 'published').length,
+      draft: all.filter((p) => p.status === 'draft').length,
+    };
+  }, [data]);
+
   return (
     <div className="flex flex-col gap-5">
       <Toast open={Boolean(toast)} tone="positive" onClose={() => setToast(null)} closeLabel="Закрыть">
@@ -78,7 +88,14 @@ export function NewsLibrary() {
       </Toast>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-text-default sm:text-2xl">Новости</h1>
+        <div>
+          <h1 className="text-xl font-bold text-text-default sm:text-2xl">Библиотека новостей</h1>
+          <p className="mt-1 text-sm text-text-disabled">
+            {data
+              ? `${counts.all} ${plural(counts.all, 'материал', 'материала', 'материалов')} · ${counts.published} опубликовано · ${counts.draft} в черновиках`
+              : 'Загружаю…'}
+          </p>
+        </div>
         <Button onClick={() => router.push('/admin/news/new')}>Создать новость</Button>
       </div>
 
@@ -137,41 +154,47 @@ export function NewsLibrary() {
       )}
 
       {posts.map((post) => {
-        const title = post.translations.ru?.title || Object.values(post.translations)[0]?.title || '(без заголовка)';
+        const ru = post.translations.ru;
+        const title = ru?.title || Object.values(post.translations)[0]?.title || '(без заголовка)';
+        const summary =
+          ru?.excerpt || richTextToPlain(ru?.body ?? '', 160) || 'Текста пока нет';
+        const published = post.status === 'published';
         return (
           <div
             key={post.id}
-            className="flex flex-col gap-3 rounded-2xl bg-surface-page-surf1 p-4 sm:flex-row sm:items-center sm:gap-4"
+            className="flex flex-col gap-4 rounded-2xl bg-surface-page-surf1 p-4 transition-colors hover:bg-comp-surface1-hover sm:flex-row sm:items-center"
           >
-            <div className="h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-surface-page-surf2">
+            <Link
+              href={`/admin/news/${post.id}`}
+              aria-label={`Открыть «${title}»`}
+              className="h-24 w-full shrink-0 overflow-hidden rounded-xl bg-surface-page-surf2 sm:h-20 sm:w-32"
+            >
               {post.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={post.image} alt="" className="h-full w-full object-cover" />
+                <img
+                  src={post.image}
+                  alt=""
+                  style={{ objectPosition: post.imageFocus }}
+                  className="h-full w-full object-cover"
+                />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-text-disabled">
+                <span className="flex h-full w-full items-center justify-center text-text-disabled">
                   <Icon name="image" size={20} />
-                </div>
+                </span>
               )}
-            </div>
+            </Link>
 
             <div className="min-w-0 flex-1">
-              <Link
-                href={`/admin/news/${post.id}`}
-                className="block truncate font-medium text-text-default hover:text-text-brand"
-              >
-                {title}
-              </Link>
-              <p className="truncate text-xs text-text-disabled">/{post.slug}</p>
-              <div className="mt-1 flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span
                   className={clsx(
                     'rounded-full px-2 py-0.5 text-[11px] font-medium',
-                    post.status === 'published'
+                    published
                       ? 'bg-positive text-text-always-white'
                       : 'bg-surface-page-surf2 text-text-disabled',
                   )}
                 >
-                  {post.status === 'published' ? 'Опубликовано' : 'Черновик'}
+                  {published ? 'Опубликовано' : 'Черновик'}
                 </span>
                 <span aria-hidden className="flex gap-1">
                   {LOCALES.map((l) => (
@@ -189,22 +212,45 @@ export function NewsLibrary() {
                   ))}
                 </span>
                 <span className="sr-only">
-                  Языки: {LOCALES.filter((l) => post.translations[l]).map((l) => LOCALE_LABEL[l]).join(', ') || 'нет'}
+                  Языки:{' '}
+                  {LOCALES.filter((l) => post.translations[l])
+                    .map((l) => LOCALE_LABEL[l])
+                    .join(', ') || 'нет'}
                 </span>
                 <span className="text-xs text-text-disabled">
                   {formatDateTime(post.updatedAt, 'ru')}
                 </span>
               </div>
+
+              <Link
+                href={`/admin/news/${post.id}`}
+                className="mt-1.5 block truncate text-base font-semibold text-text-default hover:text-text-brand"
+              >
+                {title}
+              </Link>
+              <p className="mt-0.5 line-clamp-2 text-sm text-text-disabled">{summary}</p>
+              <p className="mt-1 truncate text-xs text-text-disabled">/news/{post.slug}</p>
             </div>
 
-            <div className="flex shrink-0 gap-2">
+            <div className="flex shrink-0 flex-wrap gap-2">
+              {published && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Открыть на сайте"
+                  title="Открыть на сайте"
+                  onClick={() => window.open(`/news/${post.slug}`, '_blank', 'noopener')}
+                >
+                  <Icon name="open_in_new" size={20} />
+                </Button>
+              )}
               <Button
                 variant="surf2"
                 size="md"
                 disabled={pending}
                 onClick={() => toggle.mutate(post)}
               >
-                {post.status === 'published' ? 'Снять' : 'Опубликовать'}
+                {published ? 'Снять' : 'Опубликовать'}
               </Button>
               <Button
                 variant="ghost"
@@ -259,4 +305,13 @@ export function NewsLibrary() {
       )}
     </div>
   );
+}
+
+/** Склонение числительного: 1 материал / 2 материала / 5 материалов. */
+function plural(n: number, one: string, few: string, many: string): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+  return many;
 }

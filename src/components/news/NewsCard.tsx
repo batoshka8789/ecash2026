@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { clsx } from 'clsx';
 import { Icon } from '@/components/ui/Icon';
+import { DEFAULT_IMAGE_FOCUS, type ImageFocus } from '@/lib/domain';
 
 /**
  * Карточка новости — ОДИН компонент на ленту и на живое превью в админке.
@@ -11,6 +12,7 @@ import { Icon } from '@/components/ui/Icon';
  */
 export function NewsCard({
   image,
+  imageFocus = DEFAULT_IMAGE_FOCUS,
   title,
   excerpt,
   /** локальный blob-предпросмотр: файл ещё грузится, next/image его не умеет */
@@ -19,6 +21,8 @@ export function NewsCard({
   className,
 }: {
   image: string | null;
+  /** какая часть обложки уцелеет при обрезке; см. IMAGE_FOCUS */
+  imageFocus?: ImageFocus;
   title: string;
   excerpt: string;
   localImage?: string | null;
@@ -37,13 +41,19 @@ export function NewsCard({
             // blob-URL: обычный img — оптимизатор Next такие адреса не берёт,
             // а CSP их уже разрешает (img-src ... blob:)
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={src} alt={title} className="h-full w-full object-cover" />
+            <img
+              src={src}
+              alt={title}
+              style={{ objectPosition: imageFocus }}
+              className="h-full w-full object-cover"
+            />
           ) : (
             <Image
               src={src}
               alt={title}
               fill
               sizes="(max-width: 768px) 100vw, 720px"
+              style={{ objectPosition: imageFocus }}
               className="object-cover"
               priority={priority}
             />
