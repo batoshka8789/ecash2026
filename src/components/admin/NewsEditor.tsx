@@ -417,9 +417,12 @@ export function NewsEditor({ id }: { id?: string }) {
         />
       </div>
 
+      {/* min-w-0 на колонках обязателен: у элемента сетки минимальная ширина по
+          умолчанию равна min-content, и панель форматирования из 12 кнопок
+          растягивала бы всю страницу вместо того, чтобы прокручиваться сама */}
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(440px,720px)]">
-        <div className={clsx(tab === 'edit' ? 'block' : 'hidden', 'xl:block')}>{editor}</div>
-        <div className={clsx(tab === 'preview' ? 'block' : 'hidden', 'xl:block')}>
+        <div className={clsx(tab === 'edit' ? 'block' : 'hidden', 'min-w-0 xl:block')}>{editor}</div>
+        <div className={clsx(tab === 'preview' ? 'block' : 'hidden', 'min-w-0 xl:block')}>
           <div className="xl:sticky xl:top-24">{preview}</div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 
 export type Device = 'mobile' | 'desktop';
@@ -38,26 +38,40 @@ export function DeviceFrame({
   const [height, setHeight] = useState(0);
   const width = WIDTH[device];
 
+  const measure = useCallback(() => {
+    const outer = outerRef.current;
+    const content = contentRef.current;
+    // На мобильном редактор и превью переключаются вкладками, и пока превью
+    // скрыто, ширина равна нулю. Записать её значило бы scale(0) — пустое
+    // место вместо превью, поэтому нулевой замер пропускаем.
+    if (!outer?.clientWidth || !content) return;
+
+    const next = Math.min(1, outer.clientWidth / width);
+    // сравниваем перед записью: замер, меняющий собственный вход, иначе
+    // уходит в бесконечный цикл
+    setScale((prev) => (Math.abs(prev - next) < 0.001 ? prev : next));
+    setHeight((prev) => {
+      const h = content.scrollHeight * next;
+      return Math.abs(prev - h) < 1 ? prev : h;
+    });
+  }, [width]);
+
+  // После каждого коммита: ResizeObserver НЕ срабатывает, когда предок
+  // переключается с display:none на видимый (у скрытого элемента бокса нет,
+  // и наблюдать нечего) — на мобильном превью так и оставалось в масштабе 1.
+  // Клик по вкладке — это коммит, поэтому здесь замер и происходит.
+  useLayoutEffect(measure);
+
+  // А наблюдатель нужен для настоящих изменений размера: окно, длина текста.
   useLayoutEffect(() => {
     const outer = outerRef.current;
     const content = contentRef.current;
     if (!outer || !content) return;
-
-    const measure = () => {
-      const next = Math.min(1, outer.clientWidth / width);
-      setScale((prev) => (Math.abs(prev - next) < 0.001 ? prev : next));
-      setHeight((prev) => {
-        const h = content.scrollHeight * next;
-        return Math.abs(prev - h) < 1 ? prev : h;
-      });
-    };
-
-    measure();
     const ro = new ResizeObserver(measure);
     ro.observe(outer);
     ro.observe(content);
     return () => ro.disconnect();
-  }, [width]);
+  }, [measure]);
 
   return (
     <div ref={outerRef}>
