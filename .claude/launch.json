@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "//": "Порт 3000 обязателен: CORS Ecash пускает ровно http://localhost:3000, с другого порта прямые запросы из браузера блокируются.",
+      "//": "Порт больше не привязан к CORS-белому списку Ecash: в апстрим ходит только сервер.",
       "name": "ecash-dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
