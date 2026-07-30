@@ -35,11 +35,6 @@ const SOCIAL_AUTH_ENABLED = process.env.NEXT_PUBLIC_SOCIAL_AUTH === '1';
 /** Подпись-объяснение под парой соц-кнопок; на неё ссылаются обе кнопки. */
 const SOCIAL_HINT_ID = 'social-auth-hint';
 
-/** Ошибка поля логина: оно видно только на первом шаге входа. */
-function isLoginFieldError(e: unknown): e is ApiError {
-  return e instanceof ApiError && (e.field === 'login' || e.field === 'phoneNumber');
-}
-
 /**
  * Авторизация по контракту Ecash Mobile (api-spec/ecash-mobile-api.json):
  * вход POST /mobile/auth/login «логин → пароль», регистрация
@@ -75,8 +70,7 @@ export function AuthCard({
   const errorText = useErrorText();
 
   const [tab, setTab] = useState<Tab>(initialTab);
-  // вход: логин → пароль (в макете это два отдельных экрана)
-  const [loginStep, setLoginStep] = useState<'login' | 'password'>('login');
+  // вход: логин и пароль одним экраном
   const [loginValue, setLoginValue] = useState('');
   const [password, setPassword] = useState('');
   // регистрация: данные (телефон + пароли) → код из SMS
@@ -107,10 +101,6 @@ export function AuthCard({
   const loginMut = useMutation({
     mutationFn: () => api.auth.login(loginValue.trim(), password),
     onSuccess: finish,
-    // поле логина есть только на первом шаге — иначе ошибка останется невидимой
-    onError: (e) => {
-      if (isLoginFieldError(e)) setLoginStep('login');
-    },
   });
 
   const sendMut = useMutation({
@@ -161,10 +151,6 @@ export function AuthCard({
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (tab === 'login') {
-      if (loginStep === 'login') {
-        if (loginValue.trim()) setLoginStep('password');
-        return;
-      }
       loginMut.mutate();
       return;
     }
@@ -231,7 +217,6 @@ export function AuthCard({
                 value={tab}
                 onChange={(v) => {
                   setTab(v);
-                  setLoginStep('login');
                   setOtp('');
                   setDevCode(null);
                   // Состояние пароля общее у входа и регистрации, а поле пароля
@@ -248,10 +233,10 @@ export function AuthCard({
               />
 
               {tab === 'login' ? (
-                /* поле + ссылка (зазор 4), затем кнопка через 12 */
+                /* поля с зазором 8, под ними ссылка, затем кнопка через 12 */
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-1">
-                    {loginStep === 'login' ? (
+                    <div className="flex flex-col gap-2">
                       <Input
                         placeholder={t('loginLabel')}
                         value={loginValue}
@@ -260,7 +245,6 @@ export function AuthCard({
                         autoComplete="username"
                         inputMode="tel"
                       />
-                    ) : (
                       <Input
                         placeholder={t('passwordPlaceholder')}
                         value={password}
@@ -269,7 +253,7 @@ export function AuthCard({
                         errors={err('password')}
                         autoComplete="current-password"
                       />
-                    )}
+                    </div>
                     <button
                       type="button"
                       onClick={() => router.push('/recovery')}
