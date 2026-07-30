@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Roboto } from 'next/font/google';
+import { Lora, Roboto } from 'next/font/google';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
@@ -16,6 +16,13 @@ const roboto = Roboto({
   variable: '--font-roboto',
   subsets: ['latin', 'cyrillic'],
   weight: ['400', '500', '700'],
+});
+
+/** Второй шрифт — только для «шрифт» в редакторе текста новостей (RichTextEditor). */
+const lora = Lora({
+  variable: '--font-lora',
+  subsets: ['latin', 'cyrillic'],
+  weight: ['400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
@@ -45,7 +52,7 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       data-theme={theme === 'light' ? 'light' : undefined}
-      className={`${roboto.variable} h-full antialiased`}
+      className={`${roboto.variable} ${lora.variable} h-full antialiased`}
     >
       <body className="min-h-full">
         <NextIntlClientProvider>

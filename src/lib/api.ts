@@ -185,6 +185,27 @@ export const api = {
         request<{ ok: true }>(`/admin/news/${id}`, { method: 'DELETE' }),
     },
     /**
+     * Машинный перевод новости. Отправляем то, что сейчас в редакторе,
+     * включая несохранённые правки — сервер в базу за текстом не ходит.
+     */
+    translate: (
+      payload: {
+        from: Locale;
+        to: Locale[];
+        fields: { title: string; excerpt: string; body: string };
+      },
+      signal?: AbortSignal,
+    ) =>
+      request<{
+        translations: Partial<Record<Locale, { title: string; excerpt: string; body: string }>>;
+        failed: Partial<Record<Locale, string>>;
+      }>('/admin/translate', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        signal,
+      }),
+
+    /**
      * Загрузка обложки: файл уходит сырым телом, а не JSON-ом, поэтому мимо
      * общего post() — там тело всегда сериализуется.
      */

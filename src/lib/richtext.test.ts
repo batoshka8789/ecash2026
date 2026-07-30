@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isSafeHref, parseInline, parseRichText, richTextToPlain } from './richtext';
+import { isSafeHref, parseInline, parseRichText } from './richtext';
 
 /** Компактная запись дерева — сравнивать структуры целиком нечитаемо. */
 const brief = (src: string): string =>
@@ -104,29 +104,6 @@ describe('ссылки и безопасность', () => {
   });
 });
 
-describe('richTextToPlain', () => {
-  it('снимает разметку', () => {
-    expect(richTextToPlain('## Заголовок\n**жирный** и *курсив*')).toBe(
-      'Заголовок жирный и курсив',
-    );
-  });
-
-  it('разворачивает списки', () => {
-    expect(richTextToPlain('- раз\n- два')).toBe('раз два');
-  });
-
-  it('обрезает по границе слова с многоточием', () => {
-    const out = richTextToPlain('Довольно длинное предложение для проверки обрезки', 20);
-    expect(out.length).toBeLessThanOrEqual(21);
-    expect(out.endsWith('…')).toBe(true);
-    expect(out).not.toContain('  ');
-  });
-
-  it('короткий текст не трогает', () => {
-    expect(richTextToPlain('Коротко', 100)).toBe('Коротко');
-  });
-});
-
 describe('parseRichText — цитаты, врезки, разделитель', () => {
   it('цитата', () => {
     expect(parseRichText('> Слова клиента')).toEqual([
@@ -193,17 +170,4 @@ describe('parseInline — выделение и зачёркивание', () =>
   });
 });
 
-describe('richTextToPlain — новые блоки', () => {
-  it('разделитель не оставляет лишних пробелов', () => {
-    expect(richTextToPlain('раз\n---\nдва')).toBe('раз два');
-  });
-
-  it('цитата и врезка попадают в выжимку', () => {
-    expect(richTextToPlain('> цитата\n!> врезка')).toBe('цитата врезка');
-  });
-
-  it('маркеры выделения в выжимку не попадают', () => {
-    expect(richTextToPlain('~~было~~ ==стало==')).toBe('было стало');
-  });
-});
 

@@ -1,14 +1,18 @@
 /**
- * Разметка текста новостей — подмножество Markdown, разобранное в дерево
- * объектов. Рендерер (components/ui/RichText.tsx) строит из него React-элементы
- * и НИКОГДА не собирает HTML-строку: `dangerouslySetInnerHTML` в проекте не
- * используется нигде, санитайзера нет — а раз HTML не собирается, то и
- * отравить его нечем. Единственная точка, куда попадают данные извне, — href,
- * и она закрыта белым списком схем (isSafeHref).
+ * Старая разметка текста новостей — подмножество Markdown, разобранное в
+ * дерево объектов. Текущий редактор (admin/RichTextEditor.tsx) хранит текст
+ * JSON-документом Tiptap (см. lib/richtext-doc.ts) и сюда больше не пишет;
+ * этот парсер остаётся ТОЛЬКО как путь миграции новостей, сохранённых до
+ * перехода на Tiptap, — richtext-doc.ts вызывает его один раз при чтении
+ * старой строки и превращает результат в тот же JSON-документ.
  *
  * Парсер намеренно ТОТАЛЬНЫЙ: недописанная разметка не ошибка, а обычный
- * текст. Он вызывается на каждое нажатие клавиши в живом превью, то есть
- * почти всегда видит незаконченную строку.
+ * текст — важно для старых черновиков, где строка могла обрываться где
+ * угодно.
+ *
+ * isSafeHref используется и здесь (ссылки в старой разметке), и в новом
+ * JSON-рендерере (RichText.tsx) — единственная точка, куда попадают данные
+ * извне, закрыта одним и тем же белым списком схем.
  */
 
 export type Inline =
@@ -247,31 +251,3 @@ function matchWrapped(
   return null;
 }
 
-/**
- * Текст без разметки: для автоматической выжимки в карточке ленты, для alt
- * картинки и для поиска по библиотеке.
- */
-export function richTextToPlain(source: string, limit?: number): string {
-  const flat = parseRichText(source)
-    .map((block) => {
-      if (block.type === 'divider') return '';
-      if (block.type === 'list') return block.items.map(inlineToPlain).join(' ');
-      return inlineToPlain(block.children);
-    })
-    .filter(Boolean)
-    .join(' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  if (!limit || flat.length <= limit) return flat;
-  // режем по границе слова, чтобы выжимка не обрывалась посреди слова
-  const cut = flat.slice(0, limit);
-  const space = cut.lastIndexOf(' ');
-  return `${(space > limit * 0.6 ? cut.slice(0, space) : cut).trimEnd()}…`;
-}
-
-function inlineToPlain(nodes: Inline[]): string {
-  return nodes
-    .map((n) => (n.type === 'text' ? n.value : inlineToPlain(n.children)))
-    .join('');
-}

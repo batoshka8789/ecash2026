@@ -10,7 +10,7 @@ import { PillTabs } from '@/components/ui/PillTabs';
 import { Toast } from '@/components/ui/Toast';
 import { api } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
-import { richTextToPlain } from '@/lib/richtext';
+import { plainTextFromStoredBody } from '@/lib/richtext-doc';
 import type { Locale, NewsAdminPost, NewsStatus } from '@/lib/domain';
 
 const LOCALES: Locale[] = ['ru', 'en', 'kk', 'zh'];
@@ -157,7 +157,7 @@ export function NewsLibrary() {
         const ru = post.translations.ru;
         const title = ru?.title || Object.values(post.translations)[0]?.title || '(без заголовка)';
         const summary =
-          ru?.excerpt || richTextToPlain(ru?.body ?? '', 160) || 'Текста пока нет';
+          ru?.excerpt || plainTextFromStoredBody(ru?.body ?? '', 160) || 'Текста пока нет';
         const published = post.status === 'published';
         return (
           <div

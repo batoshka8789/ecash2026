@@ -1,146 +1,169 @@
-import { Fragment, useMemo } from 'react';
+import { Fragment, type ReactNode, useMemo } from 'react';
 import { clsx } from 'clsx';
 import { Link } from '@/i18n/navigation';
 import { Icon } from '@/components/ui/Icon';
-import { parseRichText, type Block, type Inline } from '@/lib/richtext';
+import { isSafeColor, isSafeFontFamily, isSafeHref, parseStoredBody, type NodeJson } from '@/lib/richtext-doc';
 
 /**
- * Рендер размеченного текста новости. Строит React-элементы из дерева, а не
- * HTML-строку: `dangerouslySetInnerHTML` в проекте не используется нигде и
- * санитайзера нет — при таком рендере он и не нужен, вставить разметку
- * физически некуда.
+ * Рендер текста новости из JSON-документа Tiptap (см. lib/richtext-doc.ts).
+ * Строит React-элементы обходом дерева по явному списку типов узлов/марок —
+ * НИКОГДА не через `dangerouslySetInnerHTML`. Неизвестный тип узла или марки
+ * (повреждённые данные, будущая несовместимость) просто пропускается, а не
+ * роняет страницу.
  *
- * Классы совпадают с карточкой ленты, чтобы живое превью в админке и
- * публичная страница выглядели одинаково.
+ * Классы совпадают с прежним рендерером разметки, чтобы живое превью в
+ * админке и публичная страница выглядели как раньше.
  */
 export function RichText({ source, className }: { source: string; className?: string }) {
-  const blocks = useMemo(() => parseRichText(source), [source]);
-  if (blocks.length === 0) return null;
+  const doc = useMemo(() => parseStoredBody(source), [source]);
+  if (doc.content.length === 0) return null;
 
   return (
     // первый блок без верхнего отступа — иначе текст «отъезжает» от картинки
     <div className={clsx('[&>*:first-child]:mt-0', className)}>
-      {blocks.map((block, i) => (
-        <BlockView key={i} block={block} />
+      {doc.content.map((node, i) => (
+        <BlockView key={i} node={node} />
       ))}
     </div>
   );
 }
 
-function BlockView({ block }: { block: Block }) {
-  if (block.type === 'heading') {
-    return block.level === 2 ? (
+/** Инлайновое содержимое одного узла-обёртки (пункт списка, цитата, врезка). */
+function innerInline(node: NodeJson): NodeJson[] {
+  const first = node.content?.[0];
+  return first?.type === 'paragraph' ? (first.content ?? []) : (node.content ?? []);
+}
+
+function BlockView({ node }: { node: NodeJson }) {
+  if (node.type === 'heading') {
+    const level = node.attrs?.level === 3 ? 3 : 2;
+    return level === 2 ? (
       <h2 className="mt-6 text-lg font-bold text-text-default sm:text-2xl">
-        <InlineView nodes={block.children} />
+        <InlineView nodes={node.content ?? []} />
       </h2>
     ) : (
       <h3 className="mt-4 text-base font-bold text-text-default sm:text-lg">
-        <InlineView nodes={block.children} />
+        <InlineView nodes={node.content ?? []} />
       </h3>
     );
   }
 
-  if (block.type === 'list') {
+  if (node.type === 'bulletList' || node.type === 'orderedList') {
     const cls = 'mt-3 flex flex-col gap-1 pl-5 text-sm leading-relaxed text-text-disabled';
-    const items = block.items.map((item, i) => (
+    const items = (node.content ?? []).map((item, i) => (
       <li key={i}>
-        <InlineView nodes={item} />
+        <InlineView nodes={innerInline(item)} />
       </li>
     ));
-    return block.ordered ? (
+    return node.type === 'orderedList' ? (
       <ol className={clsx(cls, 'list-decimal')}>{items}</ol>
     ) : (
       <ul className={clsx(cls, 'list-disc')}>{items}</ul>
     );
   }
 
-  if (block.type === 'quote') {
+  if (node.type === 'blockquote') {
     return (
       <blockquote className="mt-4 border-l-[3px] border-stroke-brand pl-4 text-sm italic leading-relaxed text-text-default sm:text-base">
-        <InlineView nodes={block.children} />
+        <InlineView nodes={innerInline(node)} />
       </blockquote>
     );
   }
 
-  if (block.type === 'callout') {
+  if (node.type === 'callout') {
     return (
       <div className="mt-4 flex gap-3 rounded-2xl bg-brand-hardsoft p-4">
         <Icon name="info" size={20} className="mt-0.5 shrink-0 text-text-brand" />
         <p className="text-sm leading-relaxed text-text-default">
-          <InlineView nodes={block.children} />
+          <InlineView nodes={innerInline(node)} />
         </p>
       </div>
     );
   }
 
-  if (block.type === 'divider') {
+  if (node.type === 'horizontalRule') {
     return <hr className="mt-6 border-0 border-t border-stroke-surface2" />;
   }
 
-  return (
-    <p className="mt-3 text-sm leading-relaxed text-text-disabled">
-      <InlineView nodes={block.children} />
-    </p>
-  );
+  if (node.type === 'paragraph') {
+    const content = node.content ?? [];
+    if (content.length === 0) return null;
+    return (
+      <p className="mt-3 text-sm leading-relaxed text-text-disabled">
+        <InlineView nodes={content} />
+      </p>
+    );
+  }
+
+  // неизвестный тип узла: пробуем показать хотя бы вложенный текст
+  return node.content ? <InlineView nodes={node.content} /> : null;
 }
 
-function InlineView({ nodes }: { nodes: Inline[] }) {
+function InlineView({ nodes }: { nodes: NodeJson[] }) {
   return (
     <>
       {nodes.map((node, i) => {
-        if (node.type === 'text') return <Fragment key={i}>{node.value}</Fragment>;
-
-        if (node.type === 'bold') {
-          return (
-            <strong key={i} className="font-semibold text-text-default">
-              <InlineView nodes={node.children} />
-            </strong>
-          );
-        }
-
-        if (node.type === 'italic') {
-          return (
-            <em key={i}>
-              <InlineView nodes={node.children} />
-            </em>
-          );
-        }
-
-        if (node.type === 'strike') {
-          return (
-            <s key={i} className="opacity-70">
-              <InlineView nodes={node.children} />
-            </s>
-          );
-        }
-
-        if (node.type === 'mark') {
-          // Цвет — в подложке, буквы обычные. Фирменным цветом по фирменной же
-          // подложке контраст выходил ~2.8:1 в светлой теме, то есть ниже
-          // порога читаемости; так он высокий в обеих темах, а выделение
-          // всё равно читается цветным — как маркером.
-          return (
-            <mark
-              key={i}
-              className="rounded bg-brand-hardsoft px-1 py-0.5 font-medium text-text-default"
-            >
-              <InlineView nodes={node.children} />
-            </mark>
-          );
-        }
-
-        const cls = 'text-text-brand underline underline-offset-2';
-        // внутренние ссылки — через Link из i18n-навигации, чтобы не терять локаль
-        return node.href.startsWith('/') ? (
-          <Link key={i} href={node.href} className={cls}>
-            <InlineView nodes={node.children} />
-          </Link>
-        ) : (
-          <a key={i} href={node.href} target="_blank" rel="noopener noreferrer" className={cls}>
-            <InlineView nodes={node.children} />
-          </a>
-        );
+        if (node.type !== 'text' || !node.text) return null;
+        return <Fragment key={i}>{applyMarks(node.text, node.marks)}</Fragment>;
       })}
     </>
   );
+}
+
+/**
+ * Марки лежат плоским списком на текстовом узле (формат Tiptap), а не
+ * вложенным деревом — оборачиваем текст по фиксированному порядку снаружи
+ * внутрь. Порядок не влияет на итоговый вид: цвет/шрифт идут инлайновым
+ * style, а он побеждает класс контейнера независимо от глубины вложенности.
+ */
+function applyMarks(text: string, marks: { type: string; attrs?: Record<string, unknown> }[] | undefined): ReactNode {
+  let node: ReactNode = text;
+
+  const highlight = marks?.some((m) => m.type === 'highlight');
+  const bold = marks?.some((m) => m.type === 'bold');
+  const italic = marks?.some((m) => m.type === 'italic');
+  const underline = marks?.some((m) => m.type === 'underline');
+  const strike = marks?.some((m) => m.type === 'strike');
+  const link = marks?.find((m) => m.type === 'link');
+  const style = marks?.find((m) => m.type === 'textStyle');
+
+  if (highlight) {
+    // Цвет — в подложке, буквы обычные. Фирменным цветом по фирменной же
+    // подложке контраст выходил ~2.8:1 в светлой теме, то есть ниже порога
+    // читаемости; так он высокий в обеих темах, а выделение всё равно
+    // читается цветным — как маркером.
+    node = <mark className="rounded bg-brand-hardsoft px-1 py-0.5 font-medium text-text-default">{node}</mark>;
+  }
+  if (strike) node = <s className="opacity-70">{node}</s>;
+  if (underline) node = <u>{node}</u>;
+  if (italic) node = <em>{node}</em>;
+  if (bold) node = <strong className="font-semibold text-text-default">{node}</strong>;
+
+  if (style?.attrs) {
+    const color = style.attrs.color;
+    const font = style.attrs.fontFamily;
+    const css: React.CSSProperties = {};
+    if (isSafeColor(color)) css.color = color;
+    if (isSafeFontFamily(font)) css.fontFamily = font;
+    if (css.color || css.fontFamily) node = <span style={css}>{node}</span>;
+  }
+
+  if (link?.attrs) {
+    const href = link.attrs.href;
+    if (typeof href === 'string' && isSafeHref(href)) {
+      const cls = 'text-text-brand underline underline-offset-2';
+      // внутренние ссылки — через Link из i18n-навигации, чтобы не терять локаль
+      node = href.startsWith('/') ? (
+        <Link href={href} className={cls}>
+          {node}
+        </Link>
+      ) : (
+        <a href={href} target="_blank" rel="noopener noreferrer" className={cls}>
+          {node}
+        </a>
+      );
+    }
+  }
+
+  return node;
 }

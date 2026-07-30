@@ -662,7 +662,9 @@
     "slugTaken": "该地址已被占用",
     "titleRequired": "请填写标题",
     "newsRuRequired": "发布前请填写俄语版本：标题和正文",
-    "conflict": "记录已在其他窗口被修改——请刷新页面"
+    "conflict": "记录已在其他窗口被修改——请刷新页面",
+    "translateUnavailable": "翻译服务当前不可用。请稍后重试，或手动填写该语言。",
+    "translateQuota": "翻译服务的每日额度已用完。请明天再试，或手动填写该语言。"
   },
   "addressModal": {
     "title": "填写您的地址",

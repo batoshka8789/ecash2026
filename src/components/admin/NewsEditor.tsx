@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { clsx } from 'clsx';
 import { useRouter } from '@/i18n/navigation';
@@ -10,12 +10,13 @@ import { PillTabs } from '@/components/ui/PillTabs';
 import { Toast } from '@/components/ui/Toast';
 import { RichText } from '@/components/ui/RichText';
 import { NewsCard } from '@/components/news/NewsCard';
-import { RichTextArea } from './RichTextArea';
+import { RichTextEditor } from './RichTextEditor';
 import { ImageDrop } from './ImageDrop';
 import { DeviceFrame, type Device } from './DeviceFrame';
+import { useAdminStrings } from './strings';
 import { api, ApiError } from '@/lib/api';
 import { useErrorText } from '@/lib/useErrorText';
-import { richTextToPlain } from '@/lib/richtext';
+import { isBodyEmpty, plainTextFromStoredBody } from '@/lib/richtext-doc';
 import { slugify } from '@/lib/slug';
 import {
   DEFAULT_IMAGE_FOCUS,
@@ -30,6 +31,16 @@ const LOCALE_LABEL: Record<Locale, string> = { ru: 'Рус', en: 'Eng', kk: 'Қ�
 const TITLE_LIMIT = 200;
 
 const empty = (): NewsTranslation => ({ title: '', excerpt: '', body: '' });
+
+/** Пустые переводы не отправляем — иначе язык будет числиться заполненным. */
+function nonEmptyTranslations(tr: NewsTranslations): NewsTranslations {
+  const out: NewsTranslations = {};
+  for (const l of LOCALES) {
+    const v = tr[l];
+    if (v?.title.trim()) out[l] = v;
+  }
+  return out;
+}
 
 /** Секция формы: заголовок с иконкой + содержимое. */
 function Section({
@@ -67,6 +78,7 @@ export function NewsEditor({ id }: { id?: string }) {
   const router = useRouter();
   const qc = useQueryClient();
   const errorText = useErrorText();
+  const t = useAdminStrings();
 
   const [locale, setLocale] = useState<Locale>('ru');
   const [tab, setTab] = useState<'edit' | 'preview'>('edit');
@@ -80,6 +92,7 @@ export function NewsEditor({ id }: { id?: string }) {
   const [dirty, setDirty] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [translating, setTranslating] = useState(false);
 
   const existing = useQuery({
     queryKey: ['admin', 'news', id],
@@ -112,24 +125,57 @@ export function NewsEditor({ id }: { id?: string }) {
     setTr((prev) => ({ ...prev, [locale]: { ...(prev[locale] ?? empty()), [field]: value } }));
   };
 
-  /** Пустые переводы не отправляем — иначе язык будет числиться заполненным. */
-  const payloadTranslations = useMemo(() => {
-    const out: NewsTranslations = {};
-    for (const l of LOCALES) {
-      const t = tr[l];
-      if (t?.title.trim()) out[l] = t;
-    }
-    return out;
-  }, [tr]);
-
-  const ruReady = Boolean(tr.ru?.title.trim() && tr.ru?.body.trim());
+  const ruReady = Boolean(tr.ru?.title.trim() && tr.ru?.body && !isBodyEmpty(tr.ru.body));
   // тем же правилом адрес выведет сервер, если поле оставить пустым
   const effectiveSlug = slug || slugify(tr.ru?.title ?? '') || 'novost';
 
+  /**
+   * Автоматически заполняет ТОЛЬКО пустые локали переводом с русского —
+   * заполненные (в том числе вручную поправленные) не трогает, поэтому
+   * безопасно звать и на каждое сохранение, и по кнопке «Перевести». Тост
+   * сюда не входит: при автопереводе на сохранении его почти сразу перекрыл
+   * бы тост «Сохранено», а вкладки с точками и так покажут результат.
+   *
+   * Возвращает переводы напрямую (не через состояние): mutationFn ниже не
+   * может полагаться на tr из замыкания — setTr к этому моменту ещё не
+   * долетит до реального значения при повторном вызове в том же тике.
+   */
+  const runAutoTranslate = async (
+    base: NewsTranslations,
+  ): Promise<{ tr: NewsTranslations; done: Locale[] }> => {
+    const missing = LOCALES.filter((l) => l !== 'ru' && !base[l]?.title.trim());
+    if (!base.ru?.title.trim() || !base.ru?.body || isBodyEmpty(base.ru.body) || !missing.length) {
+      return { tr: base, done: [] };
+    }
+    try {
+      const res = await api.admin.translate({ from: 'ru', to: missing, fields: base.ru });
+      const done = Object.keys(res.translations) as Locale[];
+      if (!done.length) return { tr: base, done: [] };
+      const merged = { ...base, ...res.translations };
+      setTr(merged);
+      setDirty(true);
+      return { tr: merged, done };
+    } catch {
+      return { tr: base, done: [] }; // перевод — необязательный шаг, не должен блокировать сохранение
+    }
+  };
+
+  const translateNow = async () => {
+    if (!ruReady || translating) return;
+    setTranslating(true);
+    try {
+      const { done } = await runAutoTranslate(tr);
+      if (done.length) setToast(t.translated(done.map((l) => t.languageName[l]).join(', ')));
+    } finally {
+      setTranslating(false);
+    }
+  };
+
   const save = useMutation({
     mutationFn: async (status?: 'draft' | 'published') => {
+      const { tr: finalTr } = await runAutoTranslate(tr);
       const payload = {
-        translations: payloadTranslations,
+        translations: nonEmptyTranslations(finalTr),
         image: image ?? '',
         imageFocus,
         ...(slug ? { slug } : {}),
@@ -168,19 +214,35 @@ export function NewsEditor({ id }: { id?: string }) {
   };
 
   const previewTitle = current.title || 'Заголовок новости';
-  const previewExcerpt = current.excerpt || richTextToPlain(current.body, 220);
+  const previewExcerpt = current.excerpt || plainTextFromStoredBody(current.body, 220);
   const titleLeft = TITLE_LIMIT - current.title.length;
 
   const editor = (
     <div className="flex flex-col gap-4">
-      <PillTabs
-        value={locale}
-        onChange={setLocale}
-        tabs={LOCALES.map((l) => ({
-          value: l,
-          label: `${LOCALE_LABEL[l]}${tr[l]?.title.trim() ? ' •' : ''}`,
-        }))}
-      />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <PillTabs
+          value={locale}
+          onChange={setLocale}
+          tabs={LOCALES.map((l) => ({
+            value: l,
+            label: `${LOCALE_LABEL[l]}${tr[l]?.title.trim() ? ' •' : ''}`,
+          }))}
+        />
+        <button
+          type="button"
+          onClick={() => void translateNow()}
+          disabled={!ruReady || translating}
+          title={ruReady ? t.translateNote : t.translateNeedsRu}
+          className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-text-brand transition-colors hover:bg-brand-hardsoft disabled:cursor-not-allowed disabled:text-text-disabled disabled:hover:bg-transparent"
+        >
+          <Icon
+            name={translating ? 'progress_activity' : 'translate'}
+            size={16}
+            className={translating ? 'animate-spin' : undefined}
+          />
+          {translating ? t.translating : t.translate}
+        </button>
+      </div>
 
       <Section
         icon="title"
@@ -233,10 +295,15 @@ export function NewsEditor({ id }: { id?: string }) {
         title="Текст новости"
         hint={locale === 'ru' ? 'обязательно' : undefined}
       >
-        <RichTextArea
+        <RichTextEditor
+          // Tiptap читает value только при создании редактора — remount нужен
+          // не только при смене вкладки локали, но и один раз, когда данные
+          // существующей новости долетают асинхронно (locale тогда не
+          // меняется, и без id в ключе редактор навсегда остался бы пустым).
+          key={`${locale}-${syncedFor ?? 'new'}`}
           value={current.body}
           onChange={(v) => setField('body', v)}
-          placeholder="Выделите слово и нажмите кнопку на панели — или наберите разметку вручную."
+          placeholder={t.bodyPlaceholder}
         />
       </Section>
 
@@ -298,7 +365,7 @@ export function NewsEditor({ id }: { id?: string }) {
         <span className="mt-2 text-sm text-text-disabled">сегодня</span>
 
         <RichText source={current.body} className="mt-4 pb-6" />
-        {!current.body.trim() && (
+        {isBodyEmpty(current.body) && (
           <p className="mt-4 text-sm text-text-disabled">Текста пока нет</p>
         )}
       </article>

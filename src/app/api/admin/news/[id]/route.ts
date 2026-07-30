@@ -6,6 +6,7 @@ import { rateLimited, withAdmin } from '@/server/api/guard';
 import { body, fail, fromError, ok } from '@/server/api/respond';
 import { normalizeTranslations, toAdminPost } from '@/server/db/news';
 import { isUniqueViolation } from '@/server/db/errors';
+import { isBodyEmpty } from '@/lib/richtext-doc';
 import { newsPatchBody } from '@/shared/schemas';
 import type { NewsTranslations } from '@/lib/domain';
 
@@ -56,7 +57,7 @@ export const PATCH = withAdmin(async (req, _token, ctx) => {
     const status = parsed.status ?? current.status;
     if (status === 'published') {
       const ru = translations.ru;
-      if (!ru?.title || !ru.body.trim()) return fail('errors.newsRuRequired', 422);
+      if (!ru?.title || isBodyEmpty(ru.body)) return fail('errors.newsRuRequired', 422);
     }
 
     const [row] = await db

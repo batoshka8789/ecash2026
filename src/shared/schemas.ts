@@ -148,8 +148,12 @@ export const newsTranslationSchema = z.object({
   title: z.string().trim().min(1, 'errors.titleRequired').max(200),
   /** пустой — выжимка выводится из body автоматически */
   excerpt: z.string().trim().max(400).default(''),
-  /** разметка, см. src/lib/richtext.ts; сервер только хранит, не рендерит */
-  body: z.string().max(20_000).default(''),
+  /**
+   * JSON-документ редактора (см. src/lib/richtext-doc.ts); сервер только
+   * хранит, не рендерит. Лимит выше, чем видимый текст: та же статья в
+   * Tiptap JSON занимает намного больше байт, чем занимала markdown-строкой.
+   */
+  body: z.string().max(120_000).default(''),
 });
 
 /**
@@ -188,6 +192,21 @@ export const newsPatchBody = z.object({
   image: z.string().trim().max(300).optional(),
   imageFocus: imageFocusSchema.optional(),
   status: z.enum(['draft', 'published']).optional(),
+});
+
+/**
+ * Запрос на машинный перевод. Поля приходят из редактора как есть — сервер
+ * не читает их из базы: переводить надо ровно то, что сейчас на экране,
+ * включая несохранённые правки.
+ */
+export const newsTranslateBody = z.object({
+  from: localeSchema.default('ru'),
+  to: z.array(localeSchema).min(1).max(4),
+  fields: z.object({
+    title: z.string().trim().max(200),
+    excerpt: z.string().trim().max(400).default(''),
+    body: z.string().max(120_000).default(''),
+  }),
 });
 
 export const adminNewsQuery = z.object({

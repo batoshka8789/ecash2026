@@ -60,6 +60,13 @@ const schema = z.object({
     .default('0')
     .transform((v) => v === '1'),
 
+  /**
+   * Почта для переводчика новостей. Работает и без неё, но анонимная дневная
+   * норма — 5 000 символов на IP, а с указанной почтой 50 000. Это адрес
+   * владельца стенда, наружу он не показывается.
+   */
+  TRANSLATE_EMAIL: z.email().optional(),
+
   REALTIME_ENABLED: z
     .enum(['true', 'false'])
     .default('true')

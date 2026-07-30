@@ -11,6 +11,13 @@
     var(--font-roboto), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
     'Noto Sans SC', 'Source Han Sans SC', system-ui, sans-serif;
 
+  /* Второй шрифт для текста новости — те же CJK-фолбэки, что у --font-sans. */
+  --font-serif:
+    var(--font-lora), 'Songti SC', 'STSong', 'Noto Serif SC', 'Source Han Serif SC', serif;
+  /* Моноширинный — чисто системный стек, догружать нечего. */
+  --font-editor-mono:
+    ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+
   /* Градиент обводок лендинга (макет: linear #F6844B → #BF5AF5) */
   --gradient-accent: linear-gradient(135deg, #f6844b, #bf5af5);
 }

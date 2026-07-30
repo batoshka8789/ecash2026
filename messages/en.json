@@ -662,7 +662,9 @@
     "slugTaken": "This address is already taken",
     "titleRequired": "Enter a title",
     "newsRuRequired": "To publish, fill in the Russian version: title and text",
-    "conflict": "The record was changed in another window — reload the page"
+    "conflict": "The record was changed in another window — reload the page",
+    "translateUnavailable": "The translator is unavailable right now. Try again later or fill the language in by hand.",
+    "translateQuota": "The translator’s daily quota is used up. Try tomorrow or fill the language in by hand."
   },
   "addressModal": {
     "title": "Enter your address",

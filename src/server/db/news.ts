@@ -8,7 +8,7 @@ import type {
   NewsTranslations,
 } from '@/lib/domain';
 import { toImageFocus } from '@/lib/domain';
-import { richTextToPlain } from '@/lib/richtext';
+import { plainTextFromStoredBody } from '@/lib/richtext-doc';
 import { slugify } from '@/lib/slug';
 import type { news } from './schema';
 
@@ -64,7 +64,7 @@ export function toPublicPost(row: NewsRow, locale: Locale, withBody: boolean): N
     image: row.image,
     imageFocus: toImageFocus(row.imageFocus),
     title: t.title,
-    excerpt: t.excerpt || richTextToPlain(t.body, EXCERPT_LIMIT),
+    excerpt: t.excerpt || plainTextFromStoredBody(t.body, EXCERPT_LIMIT),
     ...(withBody ? { body: t.body } : {}),
     publishedAt: row.publishedAt.toISOString(),
   };
