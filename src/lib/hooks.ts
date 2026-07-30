@@ -3,24 +3,6 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { secondsLeft } from './time';
 
-/**
- * Следит за media query (например, «(max-width: 639px)»). SSR/гидратация:
- * серверный снапшот — всегда false, чтобы разметка на сервере не зависела
- * от неизвестного там экрана; после гидратации значение сразу актуализируется.
- */
-export function useMediaQuery(query: string): boolean {
-  const subscribe = useCallback(
-    (onChange: () => void) => {
-      const mql = window.matchMedia(query);
-      mql.addEventListener('change', onChange);
-      return () => mql.removeEventListener('change', onChange);
-    },
-    [query],
-  );
-  const getSnapshot = useCallback(() => window.matchMedia(query).matches, [query]);
-  return useSyncExternalStore(subscribe, getSnapshot, () => false);
-}
-
 /** Общий секундный тикер для всех таймеров страницы. */
 function subscribeTick(onTick: () => void): () => void {
   const id = setInterval(onTick, 1000);

@@ -326,6 +326,13 @@ export const api = {
       { signal },
     ),
 
+  /** Подсказки по мере ввода — реальные казахстанские адреса (BFF → Nominatim). */
+  geocodeSuggest: (q: string, signal?: AbortSignal) =>
+    request<{ suggestions: { label: string; lat: number; lon: number }[] }>(
+      `/geocode/suggest?q=${encodeURIComponent(q)}`,
+      { signal },
+    ),
+
   franchiseLead: (payload: {
     name: string;
     phone: string;

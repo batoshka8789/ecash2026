@@ -751,6 +751,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                   onBackgroundClick={() => setActiveDepId(null)}
                   label={t('title')}
                   emptyText={t('nothingFound')}
+                  unavailableText={t('mapUnavailable')}
                   labels={mapLabels}
                   className={mapFull ? 'h-full' : 'h-[420px] md:h-[517px] lg:h-[717px]'}
                 />

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Lora, Manrope, Playfair_Display, Roboto } from 'next/font/google';
+import { Inter, Lora, Manrope, Playfair_Display, Roboto } from 'next/font/google';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
@@ -38,6 +38,18 @@ const manrope = Manrope({
   weight: ['400', '500', '700', '800'],
 });
 
+/**
+ * Inter несёт часть типографики букинг-флоу и хлебных крошек (макет
+ * ecash-beta): плейсхолдеры полей, подписи поиска в Select, «Главная»
+ * в крошках. Суффикс -src обязателен — ключ темы Tailwind называется
+ * --font-inter, и next/font не может объявить переменную тем же именем.
+ */
+const inter = Inter({
+  variable: '--font-inter-src',
+  subsets: ['latin', 'cyrillic'],
+  weight: ['400', '500', '600'],
+});
+
 export const metadata: Metadata = {
   title: 'ecash — обмен валют',
   description: 'Курсы валют, бронирование и обменники рядом с вами',
@@ -65,7 +77,7 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       data-theme={theme === 'light' ? 'light' : undefined}
-      className={`${roboto.variable} ${lora.variable} ${playfair.variable} ${manrope.variable} h-full antialiased`}
+      className={`${roboto.variable} ${lora.variable} ${playfair.variable} ${manrope.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full">
         <NextIntlClientProvider>

@@ -10,7 +10,7 @@
  * кнопки), поэтому единственная поверхность выбора адреса — модалка.
  */
 
-import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 import { clsx } from 'clsx';
@@ -66,46 +66,48 @@ export function useGuestAddress(): string {
 
 /* ------------------------------------------------------ подсказки адресов */
 
+/** С этой длины запроса дёргаем живой геокодер, а не список отделений. */
+const MIN_LIVE_QUERY = 3;
+/** Геокодер дёргаем не чаще, чем раз в 350 мс тишины — как у карты в AddressModal. */
+const DEBOUNCE_MS = 350;
+
 /**
- * Подсказки — substring-фильтр по честным адресам отделений
- * (`/api/departments`), внешних геокодеров нет. Пустой запрос отдаёт
- * первые `limit` адресов — есть что показать сразу после открытия.
+ * Подсказки адреса — реальные казахстанские адреса от геокодера (BFF → OSM
+ * Nominatim, `/api/geocode/suggest`), а не substring-совпадение по паре
+ * десятков адресов Ecash: пользователь может ввести любой адрес в
+ * Казахстане, а не только адрес существующего обменника. Пустое или
+ * короткое (< {@link MIN_LIVE_QUERY}) поле — подсказок нет вовсе.
  */
 export function useAddressSuggestions(
   query: string,
   opts?: { limit?: number; enabled?: boolean },
 ) {
   const { limit = 6, enabled = true } = opts ?? {};
+  const trimmed = query.trim();
+  const live = trimmed.length >= MIN_LIVE_QUERY;
 
-  const { data } = useQuery({
-    queryKey: ['departments'],
-    queryFn: ({ signal }) => api.departments.list(signal),
+  const [debounced, setDebounced] = useState('');
+  useEffect(() => {
+    if (!live) return;
+    const id = setTimeout(() => setDebounced(trimmed), DEBOUNCE_MS);
+    return () => clearTimeout(id);
+  }, [trimmed, live]);
+
+  const liveQ = useQuery({
+    queryKey: ['geocode', 'suggest', debounced.toLowerCase()],
+    queryFn: ({ signal }) => api.geocodeSuggest(debounced, signal),
+    enabled: enabled && live && debounced === trimmed,
     staleTime: 5 * 60_000,
-    enabled,
   });
 
-  // дубли (одно отделение с двумя кассами) схлопываем без учёта регистра
-  const addresses = useMemo(() => {
-    const seen = new Set<string>();
-    const out: string[] = [];
-    for (const d of data?.departments ?? []) {
-      const address = d.address.trim();
-      const key = address.toLowerCase();
-      if (!seen.has(key)) {
-        seen.add(key);
-        out.push(address);
-      }
-    }
-    return out;
-  }, [data]);
-
   const suggestions = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const pool = q ? addresses.filter((a) => a.toLowerCase().includes(q)) : addresses;
-    return pool.slice(0, limit);
-  }, [addresses, query, limit]);
+    // ничего не ввели, или debounced ещё не догнал trimmed — подсказок нет;
+    // так не мигаем устаревшей выдачей на середине набора
+    if (!live || debounced !== trimmed) return [];
+    return (liveQ.data?.suggestions ?? []).map((s) => s.label).slice(0, limit);
+  }, [live, debounced, trimmed, liveQ.data, limit]);
 
-  return { addresses, suggestions };
+  return { suggestions, loading: live && (debounced !== trimmed || liveQ.isFetching) };
 }
 
 /* --------------------------------------------- клавиатурная навигация ---- */

@@ -1,17 +1,36 @@
 'use client';
 
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useId, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { clsx } from 'clsx';
 import { Icon } from '@/components/ui/Icon';
-import { Iconsax } from '@/components/ui/Iconsax';
 import { CurrencyFlag } from '@/components/ui/CurrencyFlag';
-import { MobileSheet } from '@/components/ui/MobileSheet';
+import { Select, type SelectOption } from '@/components/ui/Select';
 import { currencyFlagClass } from '@/lib/format';
-import { useMediaQuery } from '@/lib/hooks';
 import type { DepartmentInfo } from '@/lib/domain';
 
-/** Поле суммы с плавающим лейблом и выбором валюты — блок «Валютная пара». */
+/** Флаг валюты у опции селектора — «Currency» из макета: 40×32, r8. */
+function renderCurrencyFlag(opt: SelectOption) {
+  return <CurrencyFlag flag={currencyFlagClass(opt.value) ?? 'gold'} className="h-8 !w-10 shrink-0" />;
+}
+
+/** Значение в закрытом селекте: флаг + код. */
+function renderCurrencyValue(opt: SelectOption) {
+  return (
+    <span className="inline-flex min-w-0 items-center gap-2">
+      {renderCurrencyFlag(opt)}
+      <span className="truncate font-medium">{opt.value}</span>
+    </span>
+  );
+}
+
+/**
+ * Поле суммы с «плавающей» подписью и выбором валюты — блок «Валютная пара».
+ * Тот же рисунок поля, что у калькулятора на главной (Calculator.tsx):
+ * единая карточка surf2, ячейка валюты справа отделена вертикальной линией.
+ * Без currencyOptions/onCurrencyChange сторона валюты статична (например,
+ * фиксированная тенге в паре Ecash).
+ */
 export function AmountBox({
   label,
   value,
@@ -38,180 +57,90 @@ export function AmountBox({
 }) {
   const t = useTranslations('flows');
   const tCommon = useTranslations('common');
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const rootRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
   const autoId = useId();
   const id = inputId ?? autoId;
   const flag = currencyFlagClass(currency);
   const canPick = Boolean(currencyOptions?.length && onCurrencyChange);
-  // На мобильном — тот же нижний шит, что у Select.tsx (Калькулятор,
-  // выбор отделения): один и тот же пикер должен вести себя одинаково
-  // везде на сайте, а не только на главной.
-  const isMobile = useMediaQuery('(max-width: 639px)');
+  const filled = value !== '';
 
-  /** Опции после фильтра поиска по коду/названию — как в Select.tsx. */
-  const visibleOptions = useMemo(() => {
-    if (!currencyOptions) return [];
-    const q = query.trim().toLowerCase();
-    if (!q) return currencyOptions;
-    return currencyOptions.filter((o) => [o.code, o.name].some((s) => s.toLowerCase().includes(q)));
-  }, [currencyOptions, query]);
-
-  const close = () => {
-    setOpen(false);
-    setQuery('');
-  };
-
-  const toggleOpen = () => {
-    if (open) {
-      close();
-      return;
-    }
-    setQuery('');
-    setOpen(true);
-    requestAnimationFrame(() => searchRef.current?.focus());
-  };
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) close();
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close();
-    };
-    document.addEventListener('pointerdown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('pointerdown', onDown);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
+  const options: SelectOption[] = (currencyOptions ?? []).map((o) => ({
+    value: o.code,
+    label: o.code,
+    hint: o.name,
+  }));
 
   return (
     <div
-      ref={rootRef}
       className={clsx(
-        // border всегда (прозрачный в покое): invalid-рамка не сдвигает
-        // разметку, фокус — брендовая обводка по радиусу поля, единая для всех полей сайта;
-        // при ошибке красная рамка держится и в фокусе (focus-* победил бы
-        // по специфичности и прятал бы её во время правки поля)
-        // обводка — только от инпута суммы (has-[label>input:focus]):
-        // focus-within ловил и автофокус поиска в открытом селекторе валюты —
-        // выходило два оранжевых кольца разом (тот же приём, что в Calculator)
-        'relative flex flex-1 items-center rounded-2xl border bg-surface-page-surf2 transition-colors',
+        'flex h-14 flex-none rounded-2xl border bg-surface-page-surf2 transition-colors focus-within:bg-comp-surface2-hover sm:h-[66px] lg:flex-1',
         invalid ? 'border-negative' : 'border-transparent has-[label>input:focus]:border-stroke-brand',
         className,
       )}
     >
-      <label htmlFor={id} className="min-w-0 flex-1 px-4 py-2">
-        <span className="block text-[11px] leading-tight text-text-disabled">{label}</span>
+      <label
+        htmlFor={id}
+        className={clsx(
+          'flex min-w-0 flex-1 cursor-text flex-col justify-center self-stretch px-4 sm:px-5',
+          filled && 'gap-1',
+        )}
+      >
+        <span className={clsx('truncate text-text-disabled', filled ? 'text-xs font-bold' : 'sr-only')}>
+          {label}
+        </span>
         <input
           id={id}
           value={value}
           readOnly={readOnly}
           onChange={(e) => onChange?.(e.target.value)}
           inputMode="decimal"
-          placeholder=" "
+          autoComplete="off"
+          placeholder={label}
           aria-invalid={invalid || undefined}
-          className="w-full bg-transparent text-base text-text-default outline-none placeholder:text-text-disabled"
+          className="w-full min-w-0 bg-transparent text-base font-medium text-text-default outline-none placeholder:font-medium placeholder:text-text-disabled"
         />
       </label>
-      <button
-        type="button"
-        onClick={canPick ? toggleOpen : undefined}
-        aria-haspopup={canPick ? 'listbox' : undefined}
-        aria-expanded={canPick ? open : undefined}
-        aria-label={canPick ? t('pair.pickCurrency') : undefined}
-        tabIndex={canPick ? 0 : -1}
-        className={clsx(
-          'm-2 inline-flex shrink-0 items-center gap-2 rounded-xl bg-surface-modal-surf1 px-3 py-2 text-base font-medium text-text-default transition-colors',
-          canPick ? 'cursor-pointer hover:bg-comp-surface2-hover' : 'cursor-default',
-        )}
-      >
-        {/* !-префикс: у flag-icons свой .fi{width:1.333333em} перебивает w-9 той же специфичности */}
-        <CurrencyFlag flag={flag ?? 'gold'} className="h-6 !w-9" />
-        {currency}
-        {canPick && <Icon name="keyboard_arrow_down" size={18} />}
-      </button>
-
-      {open &&
-        canPick &&
-        (() => {
-          const searchField = (
-            <div className="relative">
-              <Icon
-                name="search"
-                size={18}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled"
-              />
-              <input
-                ref={searchRef}
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t('pair.searchCurrency')}
-                aria-label={t('pair.searchCurrency')}
-                autoComplete="off"
-                spellCheck={false}
-                className="h-10 w-full rounded-xl border border-stroke-modal bg-transparent pl-10 pr-3 text-sm text-text-default outline-none transition-colors placeholder:text-text-disabled focus:border-stroke-brand"
-              />
-            </div>
-          );
-
-          const listbox = (
-            <ul
-              role="listbox"
-              aria-label={t('pair.pickCurrency')}
-              className={isMobile ? undefined : 'max-h-60 overflow-auto'}
-            >
-              {visibleOptions.map((opt) => (
-                <li key={opt.code}>
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={opt.code === currency}
-                    onClick={() => {
-                      onCurrencyChange!(opt.code);
-                      close();
-                    }}
-                    className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors hover:bg-comp-surface1-hover"
-                  >
-                    <CurrencyFlag flag={currencyFlagClass(opt.code) ?? 'gold'} className="h-5 !w-8" />
-                    <span className="flex min-w-0 flex-col">
-                      <span className="text-sm text-text-default">{opt.code}</span>
-                      <span className="truncate text-xs text-text-disabled">{opt.name}</span>
-                    </span>
-                    {opt.code === currency && (
-                      <Icon name="check" size={16} className="ml-auto shrink-0" />
-                    )}
-                  </button>
-                </li>
-              ))}
-              {visibleOptions.length === 0 && (
-                <li role="presentation" className="px-3 py-2.5 text-sm text-text-disabled">
-                  {tCommon('nothingFound')}
-                </li>
-              )}
-            </ul>
-          );
-
-          return isMobile ? (
-            <MobileSheet open={open} onClose={close} header={searchField}>
-              {listbox}
-            </MobileSheet>
-          ) : (
-            <div className="absolute right-2 top-full z-30 mt-1 w-64 rounded-2xl border border-stroke-modal bg-surface-modal-surf1 p-1.5 shadow-xl">
-              <div className="mb-1.5">{searchField}</div>
-              {listbox}
-            </div>
-          );
-        })()}
+      {canPick ? (
+        <Select
+          value={currency}
+          options={options}
+          onChange={(v) => onCurrencyChange!(v)}
+          label={label}
+          placeholder={currency}
+          renderValue={renderCurrencyValue}
+          renderLeading={renderCurrencyFlag}
+          searchable
+          arrow="chevron"
+          searchPlaceholder={t('pair.searchCurrency')}
+          noResultsText={tCommon('nothingFound')}
+          className="flex w-[136px] shrink-0 self-stretch border-l border-l-surface-page-surf1 min-[480px]:w-[140px] [&>button]:h-auto [&>button]:gap-1 [&>button]:rounded-none [&>button]:rounded-r-[15px] [&>button]:border-0 [&>button]:px-4 [&>button]:aria-expanded:inset-ring-1 [&>button]:aria-expanded:inset-ring-stroke-brand [&>button>span:first-child]:flex [&>button>span:first-child]:items-center sm:[&>div]:left-auto sm:[&>div]:right-0 sm:[&>div]:w-[290px] [&>span]:sr-only"
+        />
+      ) : (
+        <div
+          aria-hidden
+          className="flex w-[136px] shrink-0 items-center gap-2 self-stretch border-l border-l-surface-page-surf1 px-4 min-[480px]:w-[140px]"
+        >
+          <CurrencyFlag flag={flag ?? 'gold'} className="h-8 !w-10 shrink-0" />
+          <span className="truncate font-medium text-text-default">{currency}</span>
+        </div>
+      )}
     </div>
   );
 }
+
+/** Строка адреса/графика: иконка 20 (16 на мобиле) + текст, зазор 8. */
+function InfoRow({ icon, children }: { icon: string; children: React.ReactNode }) {
+  return (
+    // «Frame 1437254872» 511:17776 — строка 20px с 768 и 16px ниже, зазор 8
+    <div className="flex h-4 items-center gap-2 md:h-5">
+      <Icon name={icon} size={20} className="shrink-0 text-base! text-text-default md:text-xl!" />
+      {children}
+    </div>
+  );
+}
+
+/** Текст строки: 14/15.4 ниже 768, 16/21 SemiBold с трекингом −0.31 с 768. */
+const rowText =
+  'text-sm leading-[15.4px] md:text-base md:font-semibold md:leading-[21px] md:tracking-[-0.31px]';
 
 /** Адрес выбранного отделения + бейдж и плашка «в другом отделении выгоднее». */
 export function BranchAddress({
@@ -231,24 +160,27 @@ export function BranchAddress({
 
   return (
     <div>
-      <h2 className="text-lg font-bold text-text-default sm:text-2xl">{t('title')}</h2>
-      <div className="mt-3">
+      <h2 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+        {t('title')}
+      </h2>
+      {/* «Frame 1437255099» 511:17768 — бейдж и строки колонкой с зазором 8 */}
+      <div className="mt-5 flex flex-col gap-2">
         {nearest && (
-          <span className="rounded-md bg-additional-3 px-2 py-0.5 text-[11px] font-medium text-text-always-white">
+          <span className="inline-flex h-[18px] w-fit items-center rounded-lg bg-additional-3 px-2 text-xs font-bold leading-[18px] text-text-always-white">
             {t('nearest')}
           </span>
         )}
-        <div className="mt-2 flex items-center gap-2 text-base text-text-default">
-          <Iconsax name="bank" size={18} className="shrink-0 text-text-disabled" />
-          <span className="min-w-0 truncate">{department?.address ?? '—'}</span>
-        </div>
+        <InfoRow icon="account_balance">
+          <span className={clsx('min-w-0 truncate text-text-default', rowText)}>
+            {department?.address ?? '—'}
+          </span>
+        </InfoRow>
         {department?.timetable && (
-          <div className="mt-1.5 flex items-center gap-2 text-sm">
-            <Iconsax name="clock" size={16} className="text-text-disabled" />
-            <span className="text-text-default">
+          <InfoRow icon="schedule">
+            <span className={clsx('text-text-default', rowText)}>
               {department.timetable.openTime} - {department.timetable.closeTime}
             </span>
-          </div>
+          </InfoRow>
         )}
       </div>
 
@@ -256,18 +188,22 @@ export function BranchAddress({
         <button
           type="button"
           onClick={() => onPickBetter?.(betterOffer.depId)}
-          className="mt-4 flex cursor-pointer items-center gap-3 rounded-2xl bg-surface-page-surf2 px-4 py-3 text-left text-sm text-text-default transition-colors hover:bg-comp-surface2-hover"
+          /* «alert» 1000:38497 — зазор 24 до стрелки и две тени; внутри группы
+             «Frame 1437254862» зазор 12. Ниже 768 плашка растянута (alignSelf=STRETCH) */
+          className="mt-6 flex w-full cursor-pointer items-center gap-6 rounded-2xl bg-surface-page-surf2 p-3 text-left text-base font-medium leading-5 text-text-default shadow-[0_1px_4px_rgb(12_12_13/0.05),0_1px_4px_rgb(12_12_13/0.1)] transition-colors hover:bg-comp-surface2-hover md:mt-7 md:w-auto md:p-4"
         >
-          <Icon name="directions_run" size={20} className="text-brand" />
-          <span>
-            {t('betterAt')} <span className="text-text-brand">{betterOffer.address}</span>,
-            <br />
-            {t('betterRate')} ={' '}
-            <span className="text-text-positive">
-              {betterOffer.rate.toLocaleString('ru-RU')} ₸
+          <span className="flex min-w-0 items-center gap-3">
+            <Icon name="directions_run" size={32} className="shrink-0 text-brand" />
+            <span>
+              {t('betterAt')} <span className="text-text-brand">{betterOffer.address}</span>,
+              <br />
+              {t('betterRate')} ={' '}
+              <span className="text-text-positive">
+                {betterOffer.rate.toLocaleString('ru-RU')} ₸
+              </span>
             </span>
           </span>
-          <Icon name="chevron_right" size={20} className="ml-2 shrink-0 text-text-disabled" />
+          <Icon name="chevron_right" size={24} className="ml-auto shrink-0 text-text-disabled" />
         </button>
       )}
       <span className="sr-only">{tb('onMap')}</span>
@@ -293,17 +229,21 @@ export function BanknotesPicker({
   const open = expanded || value !== null;
 
   return (
-    <div className="rounded-2xl bg-surface-page-surf1 px-5 py-4 sm:rounded-3xl sm:px-8 sm:py-5">
+    <div className="rounded-[22px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:rounded-[28px] md:p-8">
       {!open ? (
         <button
           type="button"
           onClick={() => setExpanded(true)}
           aria-expanded={false}
           aria-controls={listId}
-          className="flex cursor-pointer items-center gap-3 text-base text-text-default transition-opacity hover:opacity-80"
+          className="flex cursor-pointer items-center gap-3 text-sm leading-[15.4px] text-text-default transition-opacity hover:opacity-80"
         >
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand text-text-always-white">
-            <Icon name="add" size={18} />
+          {/* «Frame 1437255222» 758:23483 — 32×24 с полями 4 по бокам круга,
+              за счёт этого подпись начинается на 44px от края блока */}
+          <span className="flex h-6 shrink-0 items-center px-1">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand text-text-always-white">
+              <Icon name="add" size={16} />
+            </span>
           </span>
           {t('choose')}
         </button>
@@ -317,16 +257,21 @@ export function BanknotesPicker({
             }}
             aria-expanded
             aria-controls={listId}
-            className="flex cursor-pointer items-center gap-3 text-sm text-text-disabled transition-colors hover:text-text-default"
+            className="flex cursor-pointer items-center gap-3 text-sm text-text-default transition-opacity hover:opacity-80"
           >
-            <Icon name="cancel" size={20} />
+            <Icon name="cancel" size={24} className="shrink-0" />
             {t('label')}
           </button>
-          <div id={listId} role="radiogroup" aria-label={t('label')} className="mt-3 flex flex-col gap-2">
+          <div
+            id={listId}
+            role="radiogroup"
+            aria-label={t('label')}
+            className="mt-7 flex flex-col gap-4"
+          >
             {(['small', 'large'] as const).map((opt) => (
               <label
                 key={opt}
-                className="flex cursor-pointer items-center gap-3 text-base text-text-default"
+                className="flex cursor-pointer items-center gap-3 text-lg font-medium leading-5 text-text-default"
               >
                 <input
                   type="radio"
@@ -337,13 +282,13 @@ export function BanknotesPicker({
                 />
                 <span
                   className={clsx(
-                    'flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand',
+                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand',
                     value === opt
-                      ? 'border-transparent bg-surface-modal-surf1 text-text-default'
+                      ? 'border-transparent bg-btn-2 text-text-default'
                       : 'border-stroke-surface3 text-transparent',
                   )}
                 >
-                  <Icon name="check" size={14} />
+                  <Icon name="check" size={19} />
                 </span>
                 {t(opt)}
               </label>

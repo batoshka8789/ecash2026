@@ -444,6 +444,7 @@ export function AddressModal({
                   label={t('mapAlt')}
                   // пока отделения грузятся, «не найдены» было бы неправдой
                   emptyText={pointsLoading ? t('mapLoading') : t('mapEmpty')}
+                  unavailableText={t('mapUnavailable')}
                   className="h-full w-full"
                 />
 

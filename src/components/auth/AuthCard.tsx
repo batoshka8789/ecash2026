@@ -264,7 +264,7 @@ export function AuthCard({
                   </div>
 
                   {generalError && <GeneralError text={generalError} />}
-                  <Button type="submit" size="auth" className="w-full" disabled={busy}>
+                  <Button type="submit" size="lg" className="w-full" disabled={busy}>
                     {t('continue')}
                   </Button>
                 </div>
@@ -312,7 +312,7 @@ export function AuthCard({
                   </div>
 
                   {generalError && <GeneralError text={generalError} />}
-                  <Button type="submit" size="auth" className="w-full" disabled={busy}>
+                  <Button type="submit" size="lg" className="w-full" disabled={busy}>
                     {t('continue')}
                   </Button>
                 </div>
@@ -369,7 +369,7 @@ export function AuthCard({
               {generalError && <GeneralError text={generalError} />}
               <Button
                 type="submit"
-                size="auth"
+                size="lg"
                 className="w-full"
                 disabled={busy || otp.length !== 6}
               >

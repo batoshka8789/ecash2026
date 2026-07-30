@@ -206,6 +206,7 @@ export function AddressCard() {
           label={t('title')}
           // пока отделения грузятся, «не найдены» было бы неправдой
           emptyText={pointsLoading ? t('mapLoading') : t('mapEmpty')}
+          unavailableText={t('mapUnavailable')}
           className="h-64 sm:h-72"
         />
 
