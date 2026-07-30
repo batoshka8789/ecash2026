@@ -312,10 +312,3 @@ export type NewsAdminPost = {
   updatedAt: string;
 };
 
-export type Competitor = {
-  id: string;
-  nameKey: string;
-  color: string;
-  buy: number;
-  sell: number;
-};

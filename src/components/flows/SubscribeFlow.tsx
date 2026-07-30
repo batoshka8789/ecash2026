@@ -21,6 +21,16 @@ const DEFAULT_DEP = 1;
 
 const parseRate = (v: string) => parseFloat(v.replace(/[\s ]/g, '').replace(',', '.'));
 
+/**
+ * «dropdown date»: та же плитка surf2, что у полей суммы — обычный Select
+ * в этом месте темнее (bg-transparent), здесь нужна заливка и высота 66 с 768.
+ */
+const dateSelectBtn = (invalid: boolean) =>
+  clsx(
+    'md:h-[66px]! bg-surface-page-surf2! hover:border-stroke-surface3!',
+    invalid ? 'border-negative!' : 'border-surface-page-surf2!',
+  );
+
 /** Радио «Покупаю/Продаю» — точь-в-точь макет (32×32 бейдж с чекмарком). */
 function OperationRadio({
   label,
@@ -59,6 +69,8 @@ function OperationRadio({
  */
 export function SubscribeFlow() {
   const t = useTranslations('subscribe');
+  /** «Ваша заявка» — общий для всех ответов на заявку заголовок */
+  const td = useTranslations('flows.done');
   const locale = useLocale();
   const router = useRouter();
   const { authed } = useAuth();
@@ -202,78 +214,107 @@ export function SubscribeFlow() {
           : null;
 
     return (
-      <div className="container-page flex flex-col gap-5 pt-6">
-        <div role="status" aria-live="polite" className="flex flex-col items-center text-center">
-          <span className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-hardsoft">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand text-text-always-white">
-              <Icon name="verified_user" size={26} filled />
+      // «Frame 1437255180» — шапка ответа и блок «Ваша заявка» колонкой с
+      // зазором 60 (40 ниже 768). Ниже 768 карточки идут в край, боковые
+      // поля остаются только у текста.
+      <div className="container-page bleed-mobile flex flex-col gap-10 pt-8 md:gap-15">
+        <div className="flex flex-col items-center gap-10">
+          <div role="status" aria-live="polite" className="flex flex-col items-center text-center">
+            {/* «request UI» — блок 184 (224 с 768) с кругом 120 по центру:
+                над и под кругом остаётся 32 (52 с 768) */}
+            <span className="flex h-[184px] items-center md:h-[224px]">
+              <span className="flex h-30 w-30 items-center justify-center rounded-full bg-brand-hardsoft">
+                <Icon name="verified_user" size={80} filled className="text-brand" />
+              </span>
             </span>
-          </span>
-          <h1 className="mt-5 text-lg font-bold text-text-default sm:text-2xl">
-            {t('successTitle')}
-          </h1>
-          <p className="mt-2 text-sm text-text-disabled">
-            {t('sentAtLabel')}: {formatDateTime(created.createdAt, locale)}
-          </p>
-        </div>
-
-        <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
-          <h2 className="text-lg font-bold text-text-default sm:text-2xl">{t('pairTitle')}</h2>
-
-          <div className="mt-5 flex flex-col items-stretch gap-3 lg:flex-row lg:items-center">
-            <AmountBox
-              label={t('targetLabel')}
-              value={formatNumber(created.targetRate, locale)}
-              readOnly
-              currency="KZT"
-            />
-            <span className="mx-auto text-text-disabled">
-              <Icon name="notifications_active" size={22} />
-            </span>
-            <AmountBox
-              label={t('perOneLabel')}
-              value="1"
-              readOnly
-              currency={createdForeign}
-            />
+            <h1 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+              {t('successTitle')}
+            </h1>
           </div>
 
-          {snapshotRate > 0 && (
-            <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-text-default">
-              {t('ecashRateAtCreation')}
-              <span className="rounded-full bg-surface-page-surf2 px-3 py-1.5 font-medium text-text-disabled">
-                {formatNumber(snapshotRate, locale)} ₸ = 1 {currencySymbol(createdForeign)}
-              </span>
-            </div>
+          {removeError && (
+            <p role="alert" className="text-center text-sm text-text-negative">
+              {removeError}
+            </p>
           )}
 
-          <p className="mt-4 text-sm text-text-disabled">
-            {t('notifyUntil')}: <span className="text-text-default">{untilDate}</span>
-          </p>
-        </section>
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <Button
+              variant="brand-outline"
+              onClick={() => removeMut.mutate(created.id)}
+              disabled={removeMut.isPending}
+              className="min-w-[217px]"
+            >
+              {t('disable')}
+            </Button>
+            <Button
+              onClick={() => router.push('/')}
+              disabled={removeMut.isPending}
+              className="min-w-[217px]"
+            >
+              {t('toHome')}
+            </Button>
+          </div>
+        </div>
 
-        {removeError && (
-          <p role="alert" className="text-center text-sm text-text-negative">
-            {removeError}
-          </p>
-        )}
+        <div className="flex flex-col gap-4 pb-6 md:gap-6">
+          <div className="flex flex-col gap-1 px-6 md:gap-2 md:px-0">
+            <h2 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+              {td('yourRequest')}
+            </h2>
+            <p className="text-sm leading-[15.4px] text-text-disabled md:text-base md:leading-[1.24]">
+              {`${t('sentAtLabel')}: ${formatDateTime(created.createdAt, locale)}`}
+            </p>
+          </div>
 
-        <div className="flex flex-col items-stretch gap-3 pb-6 sm:flex-row sm:justify-center">
-          <Button
-            variant="brand-outline"
-            onClick={() => removeMut.mutate(created.id)}
-            disabled={removeMut.isPending}
-            className="sm:min-w-52"
-          >
-            {t('disable')}
-          </Button>
-          <Button
-            onClick={() => router.push('/')}
-            disabled={removeMut.isPending}
-            className="sm:min-w-52"
-          >
-            {t('toHome')}
-          </Button>
+          <div className="flex flex-col gap-1">
+            <section className="rounded-[22px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:rounded-[28px] md:p-8">
+              <h3 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+                {t('pairTitle')}
+              </h3>
+
+              <div className="mt-5 flex flex-col items-stretch gap-3 lg:flex-row lg:items-center">
+                <AmountBox
+                  label={t('targetLabel')}
+                  value={formatNumber(created.targetRate, locale)}
+                  readOnly
+                  currency="KZT"
+                />
+                <span className="mx-auto flex h-6 w-6 items-center justify-center text-text-disabled">
+                  <Icon name="notifications_active" size={22} />
+                </span>
+                <AmountBox
+                  label={t('perOneLabel')}
+                  value="1"
+                  readOnly
+                  currency={createdForeign}
+                />
+              </div>
+
+              {snapshotRate > 0 && (
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-text-default">
+                  <span className="text-xs font-medium leading-[15.6px] md:text-sm md:leading-[15.4px]">
+                    {t('ecashRateAtCreation')}
+                  </span>
+                  <span className="rounded-xl bg-surface-page-surf2 px-3 py-1 leading-[15.4px] text-[#878787]">
+                    {formatNumber(snapshotRate, locale)} ₸ = 1 {currencySymbol(createdForeign)}
+                  </span>
+                </div>
+              )}
+            </section>
+
+            <section className="rounded-[22px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:rounded-[28px] md:p-8">
+              <h3 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+                {t('dateTitle')}
+              </h3>
+              <p className="mt-6 font-inter text-sm font-semibold leading-[14px] text-text-disabled md:mt-10">
+                {`${t('notifyUntil')}:`}
+              </p>
+              <p className="mt-2 text-base font-semibold leading-5 text-text-default">
+                {untilDate}
+              </p>
+            </section>
+          </div>
         </div>
       </div>
     );
@@ -284,7 +325,11 @@ export function SubscribeFlow() {
     // AuthModal рендерится вне <form> — иначе её собственная форма входа
     // окажется вложенной в эту, а вложенные <form> — невалидный HTML
     <>
-    <form onSubmit={submit} className="container-page flex flex-col gap-5 pt-6" noValidate>
+    <form
+      onSubmit={submit}
+      className="container-page bleed-mobile flex flex-col gap-1 pt-8"
+      noValidate
+    >
       <Toast
         open={showErrors}
         tone="negative"
@@ -302,9 +347,12 @@ export function SubscribeFlow() {
         {t('disabledToast')}
       </Toast>
 
-      <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
-        <h1 className="text-xl font-bold text-text-default sm:text-[28px]">{t('pairTitle')}</h1>
+      <section className="rounded-[22px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:rounded-[28px] md:p-8">
+        <h1 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+          {t('pairTitle')}
+        </h1>
 
+        {/* Блок ниже — общий рисунок поля суммы (см. AmountBox в PairFields) */}
         <div className="mt-5 flex flex-col items-stretch gap-3 lg:flex-row lg:items-center">
           <AmountBox
             label={t('targetLabel')}
@@ -313,7 +361,7 @@ export function SubscribeFlow() {
             currency="KZT"
             invalid={showErrors && !rateValid}
           />
-          <span className="mx-auto text-text-disabled">
+          <span className="mx-auto flex h-6 w-6 items-center justify-center text-text-disabled">
             <Icon name="notifications_active" size={22} />
           </span>
           <AmountBox
@@ -326,45 +374,44 @@ export function SubscribeFlow() {
           />
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-text-default">
-          {t('currentRate')}
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-text-default">
+          <span className="text-xs font-medium leading-[15.6px] md:text-sm md:leading-5">
+            {`${t('currentRate')}:`}
+          </span>
           {ratesQ.isPending ? (
-            <span className="h-7 w-32 animate-pulse rounded-full bg-surface-page-surf2" />
+            <span className="h-[23px] w-32 animate-pulse rounded-xl bg-surface-page-surf2" />
           ) : currentRate > 0 ? (
-            <span className="rounded-full bg-brand-hardsoft px-3 py-1.5 font-medium text-text-brand">
+            <span className="rounded-xl bg-surface-page-surf2 px-3 py-1 text-sm leading-[15.4px] text-[#878787]">
               {formatNumber(currentRate, locale)} ₸ = 1 {currencySymbol(foreign)}
             </span>
           ) : (
-            <span className="text-text-disabled">{errorText('errors.RATES_NOT_FOUND')}</span>
+            <span className="text-sm leading-[15.4px] text-text-disabled">
+              {errorText('errors.RATES_NOT_FOUND')}
+            </span>
           )}
         </div>
       </section>
 
-      <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
-        <h2 className="text-lg font-bold text-text-default sm:text-2xl">{t('untilTitle')}</h2>
-        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {/* Select менять нельзя — рамку ошибки даёт контейнер вокруг него */}
-          <div
-            className={clsx(
-              'rounded-2xl border',
-              showErrors && day === null ? 'border-negative' : 'border-transparent',
-            )}
-          >
+      <section className="rounded-[22px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:rounded-[28px] md:p-8">
+        <h2 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+          {t('dateTitle')}
+        </h2>
+        <div className="mt-6 md:mt-10">
+          <p className="font-inter text-sm font-semibold leading-[14px] text-text-disabled">
+            {`${t('notifyUntil')}:`}
+          </p>
+          {/* подписи полей скрыты визуально: над группой уже стоит общая */}
+          <div className="mt-2 grid grid-cols-3 gap-1 md:w-[404px] [&_[id$='-label']]:sr-only">
             <Select
+              buttonClassName={dateSelectBtn(showErrors && day === null)}
               label={t('day')}
               value={day}
               onChange={setDay}
               placeholder={t('day')}
               options={days.map((d) => ({ value: d, label: d }))}
             />
-          </div>
-          <div
-            className={clsx(
-              'rounded-2xl border',
-              showErrors && month === null ? 'border-negative' : 'border-transparent',
-            )}
-          >
             <Select
+              buttonClassName={dateSelectBtn(showErrors && month === null)}
               label={t('month')}
               value={month}
               onChange={(v) => {
@@ -380,14 +427,8 @@ export function SubscribeFlow() {
               placeholder={t('month')}
               options={monthNames.map((name, i) => ({ value: String(i), label: name }))}
             />
-          </div>
-          <div
-            className={clsx(
-              'rounded-2xl border',
-              showErrors && year === null ? 'border-negative' : 'border-transparent',
-            )}
-          >
             <Select
+              buttonClassName={dateSelectBtn(showErrors && year === null)}
               label={t('year')}
               value={year}
               onChange={setYear}
@@ -407,9 +448,11 @@ export function SubscribeFlow() {
       {/* Покупаю/Продаю — отдельной секцией под датой (по макету): от
           направления зависит, какой курс отслеживаем — продажи обменника
           (я покупаю) или покупки (я продаю) */}
-      <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
-        <h2 className="text-lg font-bold text-text-default sm:text-2xl">{t('typeTitle')}</h2>
-        <div role="radiogroup" aria-label={t('typeTitle')} className="mt-5 flex flex-col gap-4">
+      <section className="rounded-[22px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:rounded-[28px] md:p-8">
+        <h2 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+          {t('typeTitle')}
+        </h2>
+        <div role="radiogroup" aria-label={t('typeTitle')} className="mt-6 flex flex-col gap-4 md:mt-10">
           <OperationRadio label={t('buying')} checked={buying} onSelect={() => setBuying(true)} />
           <OperationRadio label={t('selling')} checked={!buying} onSelect={() => setBuying(false)} />
         </div>
@@ -420,7 +463,7 @@ export function SubscribeFlow() {
           </p>
         )}
 
-        <Button type="submit" className="mt-6 w-full sm:w-auto sm:min-w-52" disabled={create.isPending}>
+        <Button type="submit" className="mt-6 w-full md:mt-8 md:w-auto" disabled={create.isPending}>
           {t('cta')}
         </Button>
       </section>

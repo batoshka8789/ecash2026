@@ -1,19 +1,18 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/server/db/client';
-import { competitors, favorites } from '@/server/db/schema';
+import { favorites } from '@/server/db/schema';
 import { rateStatistics } from '@/server/ecash/endpoints/rates';
 import { allMarketRates, marketRate } from '@/server/ecash/market-rate';
 import { sessionAccountId } from '@/server/session';
 import { fromError, ok } from '@/server/api/respond';
 
 /**
- * Курсы отделения одним ответом: курсы Ecash + курс НБ РК + избранное сессии
- * + конкуренты.
+ * Курсы отделения одним ответом: курсы Ecash + курс НБ РК + избранное сессии.
  *
  * Курсы Ecash — единственная обязательная часть, поэтому только она может
- * уронить ответ. Остальные три идут через allSettled: если Postgres или
+ * уронить ответ. Остальные идут через allSettled: если Postgres или
  * nationalbank.kz недоступны, экран курсов всё равно открывается, просто без
- * биржевого курса, звёздочек и конкурентов.
+ * биржевого курса и звёздочек.
  *
  * `marketRates` сужаем до валют этого отделения — контракт, на который
  * рассчитывают калькулятор, список курсов, бронь и подписка.
@@ -24,10 +23,9 @@ export async function GET(req: Request) {
   try {
     const rates = await rateStatistics(depId);
 
-    const [marketResult, allResult, compsResult, favsResult] = await Promise.allSettled([
+    const [marketResult, allResult, favsResult] = await Promise.allSettled([
       marketRate('USD'),
       allMarketRates(),
-      db.select().from(competitors),
       sessionAccountId().then((accountId) =>
         accountId
           ? db.select().from(favorites).where(eq(favorites.accountId, accountId))
@@ -42,7 +40,6 @@ export async function GET(req: Request) {
       if (typeof v === 'number') marketRates[r.currencyCode] = v;
     }
 
-    const comps = compsResult.status === 'fulfilled' ? compsResult.value : [];
     const favs =
       favsResult.status === 'fulfilled' ? favsResult.value.map((f) => f.currencyCode) : [];
 
@@ -54,13 +51,6 @@ export async function GET(req: Request) {
       marketRates,
       rates,
       favorites: favs,
-      competitors: comps.map((c) => ({
-        id: c.id,
-        nameKey: c.nameKey,
-        color: c.color,
-        buy: Number(c.buy),
-        sell: Number(c.sell),
-      })),
     });
   } catch (e) {
     return fromError(e);

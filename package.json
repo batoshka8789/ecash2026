@@ -19,6 +19,7 @@
     "db:seed": "tsx src/server/db/seed.ts"
   },
   "dependencies": {
+    "@2gis/mapgl": "^1.76.0",
     "@microsoft/signalr": "^10.0.0",
     "@tanstack/react-query": "^5.101.4",
     "@tiptap/core": "^3.29.2",
@@ -51,6 +52,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/yandex-maps": "^2.1.36",
     "@vitejs/plugin-react": "^6.0.4",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
