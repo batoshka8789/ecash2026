@@ -43,6 +43,13 @@
       "when": 1785352226088,
       "tag": "0005_solid_titanium_man",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785409302628,
+      "tag": "0006_friendly_raza",
+      "breakpoints": true
     }
   ]
 }

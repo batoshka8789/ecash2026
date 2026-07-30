@@ -1,7 +1,6 @@
 import type {
   AccountWithProfile,
   BestRate,
-  Competitor,
   CurrencyCode,
   Department,
   DepartmentInfo,
@@ -105,9 +104,8 @@ export const api = {
   rates: {
     /**
      * Курсы отделения одним составным ответом: курсы Ecash + курс НБ РК +
-     * избранное + конкуренты. Склейка живёт на сервере (`/api/rates`), потому
-     * что три из четырёх частей браузеру недоступны — своя БД и чужой
-     * nationalbank.kz.
+     * избранное. Склейка живёт на сервере (`/api/rates`), потому что
+     * остальные части браузеру недоступны — своя БД и чужой nationalbank.kz.
      */
     forDep: (depId: number, signal?: AbortSignal) =>
       request<{
@@ -118,7 +116,6 @@ export const api = {
         marketRates: Record<string, number>;
         rates: RateStat[];
         favorites: string[];
-        competitors: Competitor[];
       }>(`/rates?depId=${depId}`, { signal }),
     history: (
       params: { depId: number; code: CurrencyCode; period: 'day' | 'week' | 'month' | 'year' },

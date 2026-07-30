@@ -21,8 +21,8 @@ const bytea = customType<{ data: Buffer; driverData: Buffer }>({
 /**
  * Наш слой данных — то, чего нет в API Ecash и что документация относит
  * «в мобильный слой»: анкета, аватар, избранное, подписки, новости,
- * конкуренты, накопленная история курсов. Ключ всюду — accountId из
- * токена Ecash: своих пользователей мы не заводим.
+ * накопленная история курсов. Ключ всюду — accountId из токена Ecash:
+ * своих пользователей мы не заводим.
  */
 
 export const profiles = pgTable('profiles', {
@@ -105,15 +105,6 @@ export const news = pgTable('news', {
   key: text('key'),
   authorAccountId: text('author_account_id'),
   publishedAt: timestamp('published_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-});
-
-export const competitors = pgTable('competitors', {
-  id: text('id').primaryKey(),
-  nameKey: text('name_key').notNull(),
-  color: text('color').notNull(),
-  buy: numeric('buy', { precision: 14, scale: 4 }).notNull(),
-  sell: numeric('sell', { precision: 14, scale: 4 }).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -62,8 +62,6 @@
       "bookmark": "收藏",
       "compareIcon": "对比汇率",
       "exchangeRate": "市场汇率",
-      "compare": "与同行对比",
-      "collapse": "收起",
       "showAll": "显示全部货币",
       "hideAll": "收起",
       "currencies": {
@@ -77,11 +75,6 @@
         "try": "土耳其里拉",
         "uzs": "乌兹别克斯坦苏姆",
         "kgs": "吉尔吉斯斯坦索姆"
-      },
-      "competitors": {
-        "blue": "蓝色兑换点",
-        "green": "绿色兑换点",
-        "red": "红色兑换点"
       },
       "allBranches": "全部网点",
       "showOnMap": "在地图上显示"
