@@ -346,6 +346,9 @@ export type NotificationDto = {
   createdAt: string | null;
   side: 'buy' | 'sell';
   amount: string;
+  /** пара валют — определяет, какие два флага показать в бейдже строки */
+  currencyFrom: CurrencyCode;
+  currencyTo: CurrencyCode;
   requestId: number | null;
   reservedUntil: string | null;
   needsClientConfirmation: boolean;

@@ -10,7 +10,7 @@ import { CurrencyFlag } from '@/components/ui/CurrencyFlag';
 import { PillTabs } from '@/components/ui/PillTabs';
 import { api, ApiError, type NotificationDto } from '@/lib/api';
 import { useCountdown } from '@/lib/hooks';
-import { formatDateTime } from '@/lib/format';
+import { currencyFlagClass, formatDateTime } from '@/lib/format';
 import { useErrorText } from '@/lib/useErrorText';
 
 /** Страница уведомлений: табы Актуальное / История, проекция заявок и подписок. */
@@ -151,8 +151,14 @@ function NotificationRow({ n }: { n: NotificationDto }) {
       <div className="flex gap-4">
         <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-surface-modal-surf1">
           {/* !-префикс: у flag-icons свой .fi{width:1.333333em} перебивает w-7 той же специфичности */}
-          <CurrencyFlag flag="kz" className="absolute left-0 top-0 h-5 !w-7 rounded-none" />
-          <CurrencyFlag flag="us" className="absolute bottom-0 right-0 h-5 !w-7 rounded-none" />
+          <CurrencyFlag
+            flag={currencyFlagClass(n.currencyFrom) ?? 'gold'}
+            className="absolute left-0 top-0 h-5 !w-7 rounded-none"
+          />
+          <CurrencyFlag
+            flag={currencyFlagClass(n.currencyTo) ?? 'gold'}
+            className="absolute bottom-0 right-0 h-5 !w-7 rounded-none"
+          />
         </span>
 
         <div className="min-w-0 flex-1">

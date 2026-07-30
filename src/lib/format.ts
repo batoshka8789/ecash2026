@@ -109,7 +109,14 @@ export function currencyName(
   }
 }
 
-/** Класс flag-icons для кода валюты; золото и неизвестные — null (рендерится бейдж). */
+/**
+ * Класс flag-icons для кода валюты; золото и неизвестные — null (рендерится
+ * золотой бейдж-заглушка). Список — по факту валют, реально приходящих от
+ * Ecash (rate_snapshots.currency_code), а не только по тем, что были под
+ * рукой при первой версии карты: 11 валют (AMD/AZN/DZD/IDR/MXN/PLN/QAR/
+ * SAR/SEK/SGD/TJS) отсутствовали и попадали под золотой бейдж вместо
+ * своего флага — воспроизводимо на любой валюте не из исходного списка.
+ */
 export function currencyFlagClass(code: string): string | null {
   const map: Record<string, string> = {
     USD: 'us',
@@ -133,6 +140,17 @@ export function currencyFlagClass(code: string): string | null {
     KRW: 'kr',
     CZK: 'cz',
     UAH: 'ua',
+    AMD: 'am',
+    AZN: 'az',
+    DZD: 'dz',
+    IDR: 'id',
+    MXN: 'mx',
+    PLN: 'pl',
+    QAR: 'qa',
+    SAR: 'sa',
+    SEK: 'se',
+    SGD: 'sg',
+    TJS: 'tj',
   };
   return map[code] ?? null;
 }

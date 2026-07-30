@@ -6,7 +6,7 @@ import { fromError, ok } from '@/server/api/respond';
 import { listOperations } from '@/server/ecash/endpoints/reserve';
 import { readSession } from '@/server/session';
 import { demoList, isDemoToken } from '@/server/demo/store';
-import type { ExchangeRequest } from '@/lib/domain';
+import type { CurrencyCode, ExchangeRequest } from '@/lib/domain';
 
 /**
  * Уведомления — проекция заявок (upstream) и подписок на курс (наша БД).
@@ -20,6 +20,9 @@ type NotificationDto = {
   createdAt: string | null;
   side: 'buy' | 'sell';
   amount: string;
+  /** пара валют — определяет, какие два флага показать в бейдже строки */
+  currencyFrom: CurrencyCode;
+  currencyTo: CurrencyCode;
   requestId: number | null;
   reservedUntil: string | null;
   needsClientConfirmation: boolean;
@@ -50,6 +53,8 @@ function fromRequest(r: ExchangeRequest): NotificationDto {
     createdAt: r.updatedAt ?? r.createdAt,
     side: r.actionType,
     amount: `${r.value.toLocaleString('ru-RU')} (${r.currencyFrom})`,
+    currencyFrom: r.currencyFrom,
+    currencyTo: r.currencyTo,
     requestId: r.requestId,
     reservedUntil: r.reservedUntil,
     needsClientConfirmation: r.needsClientConfirmation,
@@ -85,6 +90,8 @@ export const GET = withUser(async (req, token) => {
       // направление закодировано порядком пары: KZT→валюта — покупка
       side: a.currencyFrom === 'KZT' ? 'buy' : 'sell',
       amount: `${Number(a.targetRate)} (₸)`,
+      currencyFrom: a.currencyFrom as CurrencyCode,
+      currencyTo: a.currencyTo as CurrencyCode,
       requestId: null,
       reservedUntil: null,
       needsClientConfirmation: false,
