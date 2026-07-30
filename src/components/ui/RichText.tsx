@@ -2,7 +2,15 @@ import { Fragment, type ReactNode, useMemo } from 'react';
 import { clsx } from 'clsx';
 import { Link } from '@/i18n/navigation';
 import { Icon } from '@/components/ui/Icon';
-import { isSafeColor, isSafeFontFamily, isSafeHref, parseStoredBody, type NodeJson } from '@/lib/richtext-doc';
+import {
+  isSafeColor,
+  isSafeFontFamily,
+  isSafeFontSize,
+  isSafeHref,
+  isSafeTextAlign,
+  parseStoredBody,
+  type NodeJson,
+} from '@/lib/richtext-doc';
 
 /**
  * Рендер текста новости из JSON-документа Tiptap (см. lib/richtext-doc.ts).
@@ -34,15 +42,22 @@ function innerInline(node: NodeJson): NodeJson[] {
   return first?.type === 'paragraph' ? (first.content ?? []) : (node.content ?? []);
 }
 
+/** Класс выравнивания абзаца/заголовка — только доверенные значения TextAlign. */
+function alignClass(attrs: Record<string, unknown> | undefined): string | undefined {
+  const align = attrs?.textAlign;
+  if (!isSafeTextAlign(align) || align === 'left') return undefined;
+  return align === 'center' ? 'text-center' : 'text-right';
+}
+
 function BlockView({ node }: { node: NodeJson }) {
   if (node.type === 'heading') {
     const level = node.attrs?.level === 3 ? 3 : 2;
     return level === 2 ? (
-      <h2 className="mt-6 text-lg font-bold text-text-default sm:text-2xl">
+      <h2 className={clsx('mt-6 text-lg font-bold text-text-default sm:text-2xl', alignClass(node.attrs))}>
         <InlineView nodes={node.content ?? []} />
       </h2>
     ) : (
-      <h3 className="mt-4 text-base font-bold text-text-default sm:text-lg">
+      <h3 className={clsx('mt-4 text-base font-bold text-text-default sm:text-lg', alignClass(node.attrs))}>
         <InlineView nodes={node.content ?? []} />
       </h3>
     );
@@ -89,7 +104,7 @@ function BlockView({ node }: { node: NodeJson }) {
     const content = node.content ?? [];
     if (content.length === 0) return null;
     return (
-      <p className="mt-3 text-sm leading-relaxed text-text-disabled">
+      <p className={clsx('mt-3 text-sm leading-relaxed text-text-disabled', alignClass(node.attrs))}>
         <InlineView nodes={content} />
       </p>
     );
@@ -119,7 +134,7 @@ function InlineView({ nodes }: { nodes: NodeJson[] }) {
 function applyMarks(text: string, marks: { type: string; attrs?: Record<string, unknown> }[] | undefined): ReactNode {
   let node: ReactNode = text;
 
-  const highlight = marks?.some((m) => m.type === 'highlight');
+  const highlight = marks?.find((m) => m.type === 'highlight');
   const bold = marks?.some((m) => m.type === 'bold');
   const italic = marks?.some((m) => m.type === 'italic');
   const underline = marks?.some((m) => m.type === 'underline');
@@ -128,11 +143,20 @@ function applyMarks(text: string, marks: { type: string; attrs?: Record<string, 
   const style = marks?.find((m) => m.type === 'textStyle');
 
   if (highlight) {
-    // Цвет — в подложке, буквы обычные. Фирменным цветом по фирменной же
-    // подложке контраст выходил ~2.8:1 в светлой теме, то есть ниже порога
-    // читаемости; так он высокий в обеих темах, а выделение всё равно
-    // читается цветным — как маркером.
-    node = <mark className="rounded bg-brand-hardsoft px-1 py-0.5 font-medium text-text-default">{node}</mark>;
+    const hex = highlight.attrs?.color;
+    // Свой цвет подложки — только из проверенных #rrggbb, иначе фирменный
+    // фон по умолчанию (тот же оттенок, что был единственным раньше).
+    node = isSafeColor(hex) ? (
+      <mark className="rounded px-1 py-0.5 font-medium text-text-default" style={{ backgroundColor: `${hex}33` }}>
+        {node}
+      </mark>
+    ) : (
+      // Цвет — в подложке, буквы обычные. Фирменным цветом по фирменной же
+      // подложке контраст выходил ~2.8:1 в светлой теме, то есть ниже порога
+      // читаемости; так он высокий в обеих темах, а выделение всё равно
+      // читается цветным — как маркером.
+      <mark className="rounded bg-brand-hardsoft px-1 py-0.5 font-medium text-text-default">{node}</mark>
+    );
   }
   if (strike) node = <s className="opacity-70">{node}</s>;
   if (underline) node = <u>{node}</u>;
@@ -142,10 +166,12 @@ function applyMarks(text: string, marks: { type: string; attrs?: Record<string, 
   if (style?.attrs) {
     const color = style.attrs.color;
     const font = style.attrs.fontFamily;
+    const size = style.attrs.fontSize;
     const css: React.CSSProperties = {};
     if (isSafeColor(color)) css.color = color;
     if (isSafeFontFamily(font)) css.fontFamily = font;
-    if (css.color || css.fontFamily) node = <span style={css}>{node}</span>;
+    if (isSafeFontSize(size)) css.fontSize = size;
+    if (css.color || css.fontFamily || css.fontSize) node = <span style={css}>{node}</span>;
   }
 
   if (link?.attrs) {

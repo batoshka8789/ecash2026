@@ -202,15 +202,39 @@ export function isSafeColor(value: unknown): value is string {
  * Пропускаем в style только значения из этой же таблицы (isSafeFontFamily) —
  * произвольная строка из базы так же не попадёт в CSS, как и раньше.
  */
-export const FONT_KEYS = ['sans', 'serif', 'mono'] as const;
+export const FONT_KEYS = ['sans', 'serif', 'display', 'geometric', 'mono'] as const;
 export type FontKey = (typeof FONT_KEYS)[number];
 
 export const FONT_STACK: Record<FontKey, string> = {
   sans: 'var(--font-sans)',
   serif: 'var(--font-serif)',
+  display: 'var(--font-display)',
+  geometric: 'var(--font-geometric)',
   mono: 'var(--font-editor-mono)',
 };
 
 export function isSafeFontFamily(value: unknown): value is string {
   return typeof value === 'string' && (Object.values(FONT_STACK) as string[]).includes(value);
+}
+
+/** Та же логика для размера текста: фиксированный набор пунктов пикера. */
+export const SIZE_KEYS = ['small', 'normal', 'large', 'huge'] as const;
+export type SizeKey = (typeof SIZE_KEYS)[number];
+
+export const SIZE_STACK: Record<Exclude<SizeKey, 'normal'>, string> = {
+  small: '0.8em',
+  large: '1.3em',
+  huge: '1.8em',
+};
+
+export function isSafeFontSize(value: unknown): value is string {
+  return typeof value === 'string' && (Object.values(SIZE_STACK) as string[]).includes(value);
+}
+
+/** Выравнивание абзаца/заголовка — ровно то, что понимает TextAlign. */
+export const TEXT_ALIGNS = ['left', 'center', 'right'] as const;
+export type TextAlignValue = (typeof TEXT_ALIGNS)[number];
+
+export function isSafeTextAlign(value: unknown): value is TextAlignValue {
+  return typeof value === 'string' && (TEXT_ALIGNS as readonly string[]).includes(value);
 }

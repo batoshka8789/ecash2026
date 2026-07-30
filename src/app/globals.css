@@ -11,9 +11,14 @@
     var(--font-roboto), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
     'Noto Sans SC', 'Source Han Sans SC', system-ui, sans-serif;
 
-  /* Второй шрифт для текста новости — те же CJK-фолбэки, что у --font-sans. */
+  /* Остальные шрифты пикера в редакторе новости — те же CJK-фолбэки, что у --font-sans. */
   --font-serif:
     var(--font-lora), 'Songti SC', 'STSong', 'Noto Serif SC', 'Source Han Serif SC', serif;
+  --font-display:
+    var(--font-playfair), 'Songti SC', 'Noto Serif SC', 'Source Han Serif SC', serif;
+  --font-geometric:
+    var(--font-manrope), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    'Noto Sans SC', 'Source Han Sans SC', system-ui, sans-serif;
   /* Моноширинный — чисто системный стек, догружать нечего. */
   --font-editor-mono:
     ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
@@ -592,8 +597,28 @@ body {
   animation: sheet-slide-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Всплывающая панель инструмента (цвет/шрифт/ссылка) — короткий поп, не въезд:
+ * панель маленькая и заранее заякорена под кнопкой, полноразмерный слайд
+ * смотрелся бы как у мобильного шита, а не как контекстное меню. */
+@keyframes popover-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.anim-popover {
+  animation: popover-pop-in 0.14s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: top left;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .anim-sheet-slide {
+  .anim-sheet-slide,
+  .anim-popover {
     animation: none;
   }
 }

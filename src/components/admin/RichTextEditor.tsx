@@ -1,20 +1,46 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { EditorContent, useEditor, useEditorState, type Editor } from '@tiptap/react';
+import { BubbleMenu } from '@tiptap/react/menus';
 import StarterKit from '@tiptap/starter-kit';
 import { TextStyleKit } from '@tiptap/extension-text-style';
 import { Highlight } from '@tiptap/extension-highlight';
+import { TextAlign } from '@tiptap/extension-text-align';
 import { Placeholder } from '@tiptap/extension-placeholder';
 import { CharacterCount } from '@tiptap/extension-character-count';
 import { clsx } from 'clsx';
 import { Icon } from '@/components/ui/Icon';
 import { Callout } from './tiptap-callout';
+import { ToolbarPopover } from './ToolbarPopover';
 import { useAdminStrings, type AdminStrings } from './strings';
-import { FONT_STACK, parseStoredBody, serializeDoc, type Doc, type FontKey } from '@/lib/richtext-doc';
+import {
+  FONT_STACK,
+  SIZE_STACK,
+  parseStoredBody,
+  serializeDoc,
+  type Doc,
+  type FontKey,
+  type SizeKey,
+} from '@/lib/richtext-doc';
 
-const COLORS = ['#f15a25', '#009944', '#fa5050', '#0066ff', '#ad33ad', '#ffcc00'];
-const FONTS: FontKey[] = ['sans', 'serif', 'mono'];
+/** Палитра пикеров цвета/выделения — фирменные + нейтральный спектр, 2 ряда по 6. */
+const COLORS = [
+  '#f15a25',
+  '#009944',
+  '#fa5050',
+  '#0066ff',
+  '#ad33ad',
+  '#ffcc00',
+  '#ff8a3d',
+  '#14b8a6',
+  '#ec4899',
+  '#6366f1',
+  '#78716c',
+  '#0ea5e9',
+];
+const FONTS: FontKey[] = ['sans', 'serif', 'display', 'geometric', 'mono'];
+const SIZES: SizeKey[] = ['small', 'normal', 'large', 'huge'];
 
 type Tool = {
   key: string;
@@ -31,7 +57,6 @@ const GROUPS: Tool[][] = [
     { key: 'italic', icon: 'format_italic', title: (t) => t.italic, keys: 'Meta+I', active: 'italic', run: (e) => e.chain().focus().toggleItalic().run() },
     { key: 'underline', icon: 'format_underlined', title: (t) => t.underline, keys: 'Meta+U', active: 'underline', run: (e) => e.chain().focus().toggleUnderline().run() },
     { key: 'strike', icon: 'strikethrough_s', title: (t) => t.strike, active: 'strike', run: (e) => e.chain().focus().toggleStrike().run() },
-    { key: 'mark', icon: 'ink_highlighter', title: (t) => t.mark, active: 'highlight', run: (e) => e.chain().focus().toggleHighlight().run() },
   ],
   [
     { key: 'h2', icon: 'format_h2', title: (t) => t.h2, active: (e) => e.isActive('heading', { level: 2 }), run: (e) => e.chain().focus().toggleHeading({ level: 2 }).run() },
@@ -46,7 +71,20 @@ const GROUPS: Tool[][] = [
     { key: 'callout', icon: 'lightbulb', title: (t) => t.callout, active: 'callout', run: (e) => e.chain().focus().toggleCallout().run() },
     { key: 'divider', icon: 'horizontal_rule', title: (t) => t.divider, active: () => false, run: (e) => e.chain().focus().setHorizontalRule().run() },
   ],
+  [
+    { key: 'alignLeft', icon: 'format_align_left', title: (t) => t.alignLeft, active: (e) => e.isActive({ textAlign: 'left' }), run: (e) => e.chain().focus().setTextAlign('left').run() },
+    { key: 'alignCenter', icon: 'format_align_center', title: (t) => t.alignCenter, active: (e) => e.isActive({ textAlign: 'center' }), run: (e) => e.chain().focus().setTextAlign('center').run() },
+    { key: 'alignRight', icon: 'format_align_right', title: (t) => t.alignRight, active: (e) => e.isActive({ textAlign: 'right' }), run: (e) => e.chain().focus().setTextAlign('right').run() },
+  ],
 ];
+
+const CLEAR_FORMAT: Tool = {
+  key: 'clearFormat',
+  icon: 'format_clear',
+  title: (t) => t.clearFormat,
+  active: () => false,
+  run: (e) => e.chain().focus().unsetAllMarks().clearNodes().run(),
+};
 
 /** `ecash.kz/...` → `https://ecash.kz/...`; опасные схемы отклоняются. */
 function normalizeHref(input: string): string | null {
@@ -57,59 +95,109 @@ function normalizeHref(input: string): string | null {
   return `https://${v}`;
 }
 
-/** Кнопка панели с выпадающей панелькой (цвет, шрифт) — закрывается по клику вовне и Esc. */
-function ToolbarPopover({
-  icon,
-  label,
-  active,
-  children,
-}: {
-  icon: string;
-  label: string;
-  active?: boolean;
-  children: (close: () => void) => React.ReactNode;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+/** Кружок-превью текущего цвета на кнопке — видно результат, не только иконку. */
+function Swatch({ color }: { color: string | null }) {
+  return (
+    <span
+      aria-hidden
+      className={clsx('absolute bottom-1 right-1 h-2 w-2 rounded-full ring-1 ring-surface-page-surf2', !color && 'bg-text-disabled')}
+      style={color ? { backgroundColor: color } : undefined}
+    />
+  );
+}
 
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
+function ColorGrid({
+  value,
+  onPick,
+  onCustom,
+  onReset,
+  resetLabel,
+  customLabel,
+}: {
+  value: string | null;
+  onPick: (hex: string) => void;
+  onCustom: (hex: string) => void;
+  onReset: () => void;
+  resetLabel: string;
+  customLabel: string;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-6 gap-2">
+        <button
+          type="button"
+          title={resetLabel}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onReset}
+          className={clsx(
+            'flex h-7 w-7 items-center justify-center rounded-full border border-stroke-surface3 bg-surface-page-surf2 text-text-disabled transition-transform hover:scale-110',
+            !value && 'ring-2 ring-stroke-brand ring-offset-1 ring-offset-surface-page-surf1',
+          )}
+        >
+          <Icon name="close" size={14} />
+        </button>
+        {COLORS.map((hex) => (
+          <button
+            key={hex}
+            type="button"
+            title={hex}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => onPick(hex)}
+            style={{ backgroundColor: hex }}
+            className={clsx(
+              'h-7 w-7 rounded-full border border-black/10 transition-transform hover:scale-110',
+              value === hex && 'ring-2 ring-stroke-brand ring-offset-1 ring-offset-surface-page-surf1',
+            )}
+          />
+        ))}
+      </div>
+      <label className="flex cursor-pointer items-center gap-2 text-xs text-text-disabled">
+        <span
+          className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full border border-stroke-surface3"
+          style={{
+            background:
+              'conic-gradient(from 0deg, #f15a25, #ffcc00, #009944, #0ea5e9, #6366f1, #ad33ad, #fa5050, #f15a25)',
+          }}
+        >
+          <input
+            type="color"
+            value={value ?? '#f15a25'}
+            onChange={(e) => onCustom(e.target.value)}
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          />
+        </span>
+        {customLabel}
+      </label>
+    </div>
+  );
+}
+
+function HighlightTool({ editor, t }: { editor: Editor; t: AdminStrings }) {
+  const color = useEditorState({
+    editor,
+    selector: ({ editor }) =>
+      editor.isActive('highlight') ? ((editor.getAttributes('highlight').color as string | undefined) ?? '#f15a25') : null,
+  });
 
   return (
-    <div ref={ref} className="relative shrink-0">
-      <button
-        type="button"
-        title={label}
-        aria-label={label}
-        aria-expanded={open}
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => setOpen((v) => !v)}
-        className={clsx(
-          'inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg transition-colors',
-          active || open ? 'bg-brand-hardsoft text-text-brand' : 'text-text-default hover:bg-comp-surface2-hover',
-        )}
-      >
-        <Icon name={icon} size={20} />
-      </button>
-      {open && (
-        <div className="absolute left-0 top-full z-10 mt-1 min-w-[176px] rounded-2xl border border-stroke-surface2 bg-surface-page-surf1 p-3 shadow-[0_16px_32px_-8px_rgba(12,12,13,0.4)]">
-          {children(() => setOpen(false))}
-        </div>
+    <ToolbarPopover icon="ink_highlighter" label={t.mark} active={color !== null}>
+      {(close) => (
+        <ColorGrid
+          value={color}
+          resetLabel={t.colorDefault}
+          customLabel={t.colorCustom}
+          onReset={() => {
+            editor.chain().focus().unsetHighlight().run();
+            close();
+          }}
+          onPick={(hex) => {
+            editor.chain().focus().setHighlight({ color: hex }).run();
+            close();
+          }}
+          onCustom={(hex) => editor.chain().focus().setHighlight({ color: hex }).run()}
+        />
       )}
-    </div>
+    </ToolbarPopover>
   );
 }
 
@@ -120,55 +208,27 @@ function ColorTool({ editor, t }: { editor: Editor; t: AdminStrings }) {
   });
 
   return (
-    <ToolbarPopover icon="format_color_text" label={t.textColor} active={Boolean(color)}>
-      {(close) => (
-        <div className="flex flex-col gap-3">
-          <div className="grid grid-cols-6 gap-2">
-            <button
-              type="button"
-              title={t.colorDefault}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => {
-                editor.chain().focus().unsetColor().run();
-                close();
-              }}
-              className={clsx(
-                'flex h-7 w-7 items-center justify-center rounded-full border border-stroke-surface3 bg-surface-page-surf2 text-text-disabled',
-                !color && 'ring-2 ring-stroke-brand ring-offset-1 ring-offset-surface-page-surf1',
-              )}
-            >
-              <Icon name="close" size={14} />
-            </button>
-            {COLORS.map((hex) => (
-              <button
-                key={hex}
-                type="button"
-                title={hex}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  editor.chain().focus().setColor(hex).run();
-                  close();
-                }}
-                style={{ backgroundColor: hex }}
-                className={clsx(
-                  'h-7 w-7 rounded-full border border-black/10',
-                  color === hex && 'ring-2 ring-stroke-brand ring-offset-1 ring-offset-surface-page-surf1',
-                )}
-              />
-            ))}
-          </div>
-          <label className="flex cursor-pointer items-center gap-2 text-xs text-text-disabled">
-            <input
-              type="color"
-              value={color ?? '#f15a25'}
-              onChange={(e) => editor.chain().focus().setColor(e.target.value).run()}
-              className="h-7 w-7 cursor-pointer rounded-full border border-stroke-surface3 bg-transparent p-0"
-            />
-            {t.colorCustom}
-          </label>
-        </div>
-      )}
-    </ToolbarPopover>
+    <div className="relative">
+      <ToolbarPopover icon="format_color_text" label={t.textColor} active={Boolean(color)}>
+        {(close) => (
+          <ColorGrid
+            value={color}
+            resetLabel={t.colorDefault}
+            customLabel={t.colorCustom}
+            onReset={() => {
+              editor.chain().focus().unsetColor().run();
+              close();
+            }}
+            onPick={(hex) => {
+              editor.chain().focus().setColor(hex).run();
+              close();
+            }}
+            onCustom={(hex) => editor.chain().focus().setColor(hex).run()}
+          />
+        )}
+      </ToolbarPopover>
+      <Swatch color={color} />
+    </div>
   );
 }
 
@@ -180,10 +240,16 @@ function FontTool({ editor, t }: { editor: Editor; t: AdminStrings }) {
     editor,
     selector: ({ editor }) => (editor.getAttributes('textStyle').fontFamily as string | undefined) ?? null,
   });
-  const FONT_LABEL: Record<FontKey, string> = { sans: t.fontSans, serif: t.fontSerif, mono: t.fontMono };
+  const LABEL: Record<FontKey, string> = {
+    sans: t.fontSans,
+    serif: t.fontSerif,
+    display: t.fontDisplay,
+    geometric: t.fontGeometric,
+    mono: t.fontMono,
+  };
 
   return (
-    <ToolbarPopover icon="font_download" label={t.fontFamily} active={Boolean(font)}>
+    <ToolbarPopover icon="font_download" label={t.fontFamily} active={Boolean(font)} panelClassName="min-w-[220px]">
       {(close) => (
         <div className="flex flex-col gap-1">
           {FONTS.map((key) => (
@@ -198,11 +264,50 @@ function FontTool({ editor, t }: { editor: Editor; t: AdminStrings }) {
               }}
               style={{ fontFamily: FONT_STACK[key] }}
               className={clsx(
-                'rounded-lg px-3 py-2 text-left text-sm text-text-default transition-colors hover:bg-comp-surface2-hover',
+                'rounded-lg px-3 py-2.5 text-left text-base text-text-default transition-colors hover:bg-comp-surface2-hover',
                 (font ?? FONT_STACK.sans) === FONT_STACK[key] && 'bg-brand-hardsoft text-text-brand',
               )}
             >
-              {FONT_LABEL[key]}
+              {LABEL[key]}
+            </button>
+          ))}
+        </div>
+      )}
+    </ToolbarPopover>
+  );
+}
+
+function FontSizeTool({ editor, t }: { editor: Editor; t: AdminStrings }) {
+  const size = useEditorState({
+    editor,
+    selector: ({ editor }) => (editor.getAttributes('textStyle').fontSize as string | undefined) ?? null,
+  });
+  const LABEL: Record<SizeKey, string> = { small: 'S', normal: 'M', large: 'L', huge: 'XL' };
+  const SCALE: Record<SizeKey, string> = { small: '0.8em', normal: '1em', large: '1.3em', huge: '1.8em' };
+
+  return (
+    <ToolbarPopover icon="format_size" label={t.fontSize} active={Boolean(size)} panelClassName="min-w-[180px]">
+      {(close) => (
+        <div className="flex items-end gap-1">
+          {SIZES.map((key) => (
+            <button
+              key={key}
+              type="button"
+              title={LABEL[key]}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                if (key === 'normal') editor.chain().focus().unsetFontSize().run();
+                else editor.chain().focus().setFontSize(SIZE_STACK[key as Exclude<SizeKey, 'normal'>]).run();
+                close();
+              }}
+              className={clsx(
+                'flex h-11 flex-1 items-center justify-center rounded-lg font-semibold text-text-default transition-colors hover:bg-comp-surface2-hover',
+                (size ? key !== 'normal' && SIZE_STACK[key as Exclude<SizeKey, 'normal'>] === size : key === 'normal') &&
+                  'bg-brand-hardsoft text-text-brand',
+              )}
+              style={{ fontSize: SCALE[key] }}
+            >
+              {LABEL[key]}
             </button>
           ))}
         </div>
@@ -212,29 +317,15 @@ function FontTool({ editor, t }: { editor: Editor; t: AdminStrings }) {
 }
 
 function LinkTool({ editor, t }: { editor: Editor; t: AdminStrings }) {
-  const [draft, setDraft] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
   const active = useEditorState({ editor, selector: ({ editor }) => editor.isActive('link') });
-  const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (draft !== null) inputRef.current?.focus();
-  }, [draft]);
-
-  useEffect(() => {
-    if (draft === null) return;
-    const onDown = (e: MouseEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setDraft(null);
-    };
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [draft]);
-
-  const apply = () => {
+  const apply = (close: () => void) => {
     const href = draft ? normalizeHref(draft) : null;
     if (!href) {
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
-      setDraft(null);
+      close();
       return;
     }
     if (editor.state.selection.empty) {
@@ -246,28 +337,22 @@ function LinkTool({ editor, t }: { editor: Editor; t: AdminStrings }) {
     } else {
       editor.chain().focus().extendMarkRange('link').setLink({ href }).run();
     }
-    setDraft(null);
+    close();
   };
 
   return (
-    <div ref={wrapRef} className="relative shrink-0">
-      <button
-        type="button"
-        title={t.link}
-        aria-label={t.link}
-        aria-keyshortcuts="Meta+K"
-        aria-pressed={active}
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => setDraft((editor.getAttributes('link').href as string | undefined) ?? '')}
-        className={clsx(
-          'inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg transition-colors',
-          active ? 'bg-brand-hardsoft text-text-brand' : 'text-text-default hover:bg-comp-surface2-hover',
-        )}
-      >
-        <Icon name="link" size={20} />
-      </button>
-      {draft !== null && (
-        <div className="absolute left-0 top-full z-10 mt-1 flex w-64 items-center gap-1 rounded-2xl border border-stroke-surface2 bg-surface-page-surf1 p-2 shadow-[0_16px_32px_-8px_rgba(12,12,13,0.4)]">
+    <ToolbarPopover
+      icon="link"
+      label={t.link}
+      active={active}
+      panelClassName="w-64"
+      onBeforeOpen={() => {
+        setDraft((editor.getAttributes('link').href as string | undefined) ?? '');
+        requestAnimationFrame(() => inputRef.current?.focus());
+      }}
+    >
+      {(close) => (
+        <div className="flex items-center gap-1">
           <input
             ref={inputRef}
             value={draft}
@@ -275,11 +360,11 @@ function LinkTool({ editor, t }: { editor: Editor; t: AdminStrings }) {
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
-                apply();
+                apply(close);
               }
               if (e.key === 'Escape') {
                 e.preventDefault();
-                setDraft(null);
+                close();
               }
             }}
             placeholder={t.linkPlaceholder}
@@ -289,7 +374,7 @@ function LinkTool({ editor, t }: { editor: Editor; t: AdminStrings }) {
             type="button"
             title={t.linkApply}
             onMouseDown={(e) => e.preventDefault()}
-            onClick={apply}
+            onClick={() => apply(close)}
             className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-text-brand hover:bg-comp-surface2-hover"
           >
             <Icon name="check" size={18} />
@@ -301,7 +386,7 @@ function LinkTool({ editor, t }: { editor: Editor; t: AdminStrings }) {
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
                 editor.chain().focus().extendMarkRange('link').unsetLink().run();
-                setDraft(null);
+                close();
               }}
               className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-text-negative hover:bg-comp-surface2-hover"
             >
@@ -310,15 +395,80 @@ function LinkTool({ editor, t }: { editor: Editor; t: AdminStrings }) {
           )}
         </div>
       )}
-    </div>
+    </ToolbarPopover>
+  );
+}
+
+/** Мини-панель на выделении текста — быстрые действия под рукой, как в Notion/Medium. */
+function SelectionBubble({ editor, t }: { editor: Editor; t: AdminStrings }) {
+  const QUICK: Tool[] = [
+    GROUPS[0][0],
+    GROUPS[0][1],
+    GROUPS[0][2],
+    { key: 'mark', icon: 'ink_highlighter', title: (t) => t.mark, active: 'highlight', run: (e) => e.chain().focus().toggleHighlight().run() },
+  ];
+  const active = useEditorState({
+    editor,
+    selector: ({ editor }) => Object.fromEntries(QUICK.map((tool) => [tool.key, typeof tool.active === 'function' ? tool.active(editor) : editor.isActive(tool.active)])),
+  });
+
+  return (
+    <BubbleMenu editor={editor} className="flex items-center gap-0.5 rounded-xl border border-stroke-surface2 bg-surface-page-surf1 p-1 shadow-[0_20px_48px_-12px_rgba(12,12,13,0.6)]">
+      {QUICK.map((tool) => (
+        <button
+          key={tool.key}
+          type="button"
+          title={tool.title(t)}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => tool.run(editor)}
+          className={clsx(
+            'inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg transition-colors',
+            active[tool.key] ? 'bg-brand-hardsoft text-text-brand' : 'text-text-default hover:bg-comp-surface2-hover',
+          )}
+        >
+          <Icon name={tool.icon} size={18} />
+        </button>
+      ))}
+    </BubbleMenu>
+  );
+}
+
+function ToolButton({
+  tool,
+  editor,
+  active,
+  t,
+}: {
+  tool: Tool;
+  editor: Editor;
+  active: Record<string, boolean>;
+  t: AdminStrings;
+}) {
+  const label = tool.title(t);
+  return (
+    <button
+      type="button"
+      title={tool.keys ? `${label} (${tool.keys.replace('Meta', '⌘')})` : label}
+      aria-label={label}
+      aria-keyshortcuts={tool.keys}
+      aria-pressed={active[tool.key] ?? false}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={() => tool.run(editor)}
+      className={clsx(
+        'inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-colors',
+        active[tool.key] ? 'bg-brand-hardsoft text-text-brand' : 'text-text-default hover:bg-comp-surface2-hover',
+      )}
+    >
+      <Icon name={tool.icon} size={20} />
+    </button>
   );
 }
 
 /**
- * WYSIWYG-редактор текста новости на Tiptap: панель форматирования правит
- * текст «как в Word», а не вставляет символы разметки в поле — прежний
- * RichTextArea был обычной textarea, показывавшей admin'у сырые `**`/`##`/
- * `~~`, что и выглядело как испорченный текст.
+ * WYSIWYG-редактор текста новости на Tiptap: панель правит текст «как в
+ * Word», а не вставляет символы разметки в поле — прежний RichTextArea был
+ * обычной textarea, показывавшей admin'у сырые `**`/`##`/`~~`, что и
+ * выглядело как испорченный текст.
  *
  * Хранимое значение — JSON-документ Tiptap (см. lib/richtext-doc.ts), не
  * строка. `value`/`onChange` читаются и пишутся только при монтировании и на
@@ -326,6 +476,13 @@ function LinkTool({ editor, t }: { editor: Editor; t: AdminStrings }) {
  * создании (так работает useEditor), а переключение между локалями в
  * NewsEditor размонтирует и создаёт редактор заново через key={locale} —
  * поэтому здесь нет ни setContent, ни риска затереть каретку чужим апдейтом.
+ *
+ * Все выпадающие панели (цвет/шрифт/размер/ссылка/выделение) — через
+ * ToolbarPopover, который выносит их порталом в document.body. Без этого их
+ * обрезал бы overflow-x-auto самой панели инструментов: если задать только
+ * overflow-x, оverflow-y по спецификации CSS молча становится auto — так
+ * палитра цвета и список шрифтов физически существовали в DOM, но не были
+ * видны НИ ПИКСЕЛЕМ (найдено и исправлено по прямой жалобе пользователя).
  */
 export function RichTextEditor({
   value,
@@ -353,8 +510,9 @@ export function RichTextEditor({
         link: { openOnClick: false, autolink: true, defaultProtocol: 'https' },
       }),
       Callout,
-      TextStyleKit.configure({ fontSize: false, lineHeight: false, backgroundColor: false }),
-      Highlight,
+      TextStyleKit.configure({ lineHeight: false, backgroundColor: false }),
+      Highlight.configure({ multicolor: true }),
+      TextAlign.configure({ types: ['heading', 'paragraph'], alignments: ['left', 'center', 'right'], defaultAlignment: 'left' }),
       Placeholder.configure({ placeholder: placeholder ?? '' }),
       CharacterCount.configure({ limit: null }),
     ],
@@ -382,15 +540,19 @@ export function RichTextEditor({
       return map;
     },
   });
-  const characters = useEditorState({
-    editor,
-    selector: ({ editor }) => editor?.storage.characterCount.characters() ?? 0,
-  });
-
   if (!editor) return null;
 
+  // Обычный проброс через useEditorState здесь не годится: его снимок
+  // остаётся нулевым, пока не пройдёт первая транзакция после создания
+  // редактора (переход editor null → Editor транзакцией не считается), из-за
+  // чего счётчик открытой существующей новости показывал «0 / 20000» до
+  // первого нажатия клавиши. Читаем значение прямо при рендере — activeMap
+  // выше уже перерисовывает компонент на каждую транзакцию, так что здесь
+  // достаточно всегда актуального чтения без своей подписки.
+  const characters = editor.storage.characterCount.characters();
+
   const active = activeMap ?? {};
-  const over = (characters ?? 0) > maxLength;
+  const over = characters > maxLength;
 
   return (
     <div
@@ -399,47 +561,32 @@ export function RichTextEditor({
         over ? 'border-negative' : focused ? 'border-stroke-brand' : 'border-transparent',
       )}
     >
-      <div className="scrollbar-hide flex items-center gap-1 overflow-x-auto border-b border-divider-additional px-2 py-2">
+      <div className="flex flex-wrap items-center gap-1 border-b border-divider-additional px-2 py-2">
         {GROUPS.map((group, gi) => (
           <div key={gi} className="flex shrink-0 items-center gap-1">
             {gi > 0 && <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-divider-additional" />}
-            {group.map((tool) => {
-              const label = tool.title(t);
-              return (
-                <button
-                  key={tool.key}
-                  type="button"
-                  title={tool.keys ? `${label} (${tool.keys.replace('Meta', '⌘')})` : label}
-                  aria-label={label}
-                  aria-keyshortcuts={tool.keys}
-                  aria-pressed={active[tool.key] ?? false}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => tool.run(editor)}
-                  className={clsx(
-                    'inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-colors',
-                    active[tool.key]
-                      ? 'bg-brand-hardsoft text-text-brand'
-                      : 'text-text-default hover:bg-comp-surface2-hover',
-                  )}
-                >
-                  <Icon name={tool.icon} size={20} />
-                </button>
-              );
-            })}
+            {group.map((tool) => (
+              <ToolButton key={tool.key} tool={tool} editor={editor} active={active} t={t} />
+            ))}
           </div>
         ))}
         <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-divider-additional" />
+        <HighlightTool editor={editor} t={t} />
         <LinkTool editor={editor} t={t} />
         <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-divider-additional" />
         <ColorTool editor={editor} t={t} />
         <FontTool editor={editor} t={t} />
+        <FontSizeTool editor={editor} t={t} />
+        <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-divider-additional" />
+        <ToolButton tool={CLEAR_FORMAT} editor={editor} active={active} t={t} />
       </div>
 
+      <SelectionBubble editor={editor} t={t} />
       <EditorContent editor={editor} />
 
       <div className="flex items-center justify-end px-4 pb-3 pt-1 text-xs text-text-disabled">
         <span className={clsx(over && 'text-text-negative')} role={over ? 'status' : undefined}>
-          {characters ?? 0} / {maxLength}
+          {characters} / {maxLength}
         </span>
       </div>
     </div>

@@ -113,7 +113,15 @@ export type AdminStrings = {
   fontFamily: string;
   fontSans: string;
   fontSerif: string;
+  fontDisplay: string;
+  fontGeometric: string;
   fontMono: string;
+  align: string;
+  alignLeft: string;
+  alignCenter: string;
+  alignRight: string;
+  clearFormat: string;
+  fontSize: string;
 
   // обложка
   wholeImage: string;
@@ -232,7 +240,15 @@ const ru: AdminStrings = {
   fontFamily: 'Шрифт',
   fontSans: 'Обычный',
   fontSerif: 'С засечками',
+  fontDisplay: 'Заголовочный',
+  fontGeometric: 'Геометрический',
   fontMono: 'Моноширинный',
+  align: 'Выравнивание',
+  alignLeft: 'По левому краю',
+  alignCenter: 'По центру',
+  alignRight: 'По правому краю',
+  clearFormat: 'Очистить форматирование',
+  fontSize: 'Размер текста',
 
   wholeImage: 'Вся картинка',
   showCrop: 'Показать кадр',
@@ -359,7 +375,15 @@ const en: AdminStrings = {
   fontFamily: 'Font',
   fontSans: 'Default',
   fontSerif: 'Serif',
+  fontDisplay: 'Display',
+  fontGeometric: 'Geometric',
   fontMono: 'Monospace',
+  align: 'Alignment',
+  alignLeft: 'Align left',
+  alignCenter: 'Align center',
+  alignRight: 'Align right',
+  clearFormat: 'Clear formatting',
+  fontSize: 'Text size',
 
   wholeImage: 'Whole image',
   showCrop: 'Show the crop',
@@ -486,7 +510,15 @@ const kk: AdminStrings = {
   fontFamily: 'Қаріп',
   fontSans: 'Әдепкі',
   fontSerif: 'Serif',
+  fontDisplay: 'Тақырыптық',
+  fontGeometric: 'Геометриялық',
   fontMono: 'Моноширинды',
+  align: 'Туралау',
+  alignLeft: 'Сол жаққа туралау',
+  alignCenter: 'Ортаға туралау',
+  alignRight: 'Оң жаққа туралау',
+  clearFormat: 'Пішімдеуді тазарту',
+  fontSize: 'Мәтін өлшемі',
 
   wholeImage: 'Толық сурет',
   showCrop: 'Кадрды көрсету',
@@ -611,7 +643,15 @@ const zh: AdminStrings = {
   fontFamily: '字体',
   fontSans: '默认',
   fontSerif: '衬线体',
+  fontDisplay: '标题体',
+  fontGeometric: '几何无衬线',
   fontMono: '等宽字体',
+  align: '对齐方式',
+  alignLeft: '左对齐',
+  alignCenter: '居中对齐',
+  alignRight: '右对齐',
+  clearFormat: '清除格式',
+  fontSize: '文字大小',
 
   wholeImage: '完整图片',
   showCrop: '显示取景',

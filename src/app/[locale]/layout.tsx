@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Lora, Roboto } from 'next/font/google';
+import { Lora, Manrope, Playfair_Display, Roboto } from 'next/font/google';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
@@ -18,11 +18,24 @@ const roboto = Roboto({
   weight: ['400', '500', '700'],
 });
 
-/** Второй шрифт — только для «шрифт» в редакторе текста новостей (RichTextEditor). */
+/**
+ * Ещё четыре шрифта — только для пикера «шрифт» в редакторе текста новостей
+ * (RichTextEditor), больше нигде на сайте не используются.
+ */
 const lora = Lora({
   variable: '--font-lora',
   subsets: ['latin', 'cyrillic'],
   weight: ['400', '500', '600', '700'],
+});
+const playfair = Playfair_Display({
+  variable: '--font-playfair',
+  subsets: ['latin', 'cyrillic'],
+  weight: ['500', '700', '800'],
+});
+const manrope = Manrope({
+  variable: '--font-manrope',
+  subsets: ['latin', 'cyrillic'],
+  weight: ['400', '500', '700', '800'],
 });
 
 export const metadata: Metadata = {
@@ -52,7 +65,7 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       data-theme={theme === 'light' ? 'light' : undefined}
-      className={`${roboto.variable} ${lora.variable} h-full antialiased`}
+      className={`${roboto.variable} ${lora.variable} ${playfair.variable} ${manrope.variable} h-full antialiased`}
     >
       <body className="min-h-full">
         <NextIntlClientProvider>
