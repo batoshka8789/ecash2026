@@ -21,8 +21,8 @@ const bytea = customType<{ data: Buffer; driverData: Buffer }>({
 /**
  * Наш слой данных — то, чего нет в API Ecash и что документация относит
  * «в мобильный слой»: анкета, аватар, избранное, подписки, новости,
- * накопленная история курсов. Ключ всюду — accountId из токена Ecash:
- * своих пользователей мы не заводим.
+ * конкуренты, накопленная история курсов. Ключ всюду — accountId из
+ * токена Ecash: своих пользователей мы не заводим.
  */
 
 export const profiles = pgTable('profiles', {
@@ -105,6 +105,20 @@ export const news = pgTable('news', {
   key: text('key'),
   authorAccountId: text('author_account_id'),
   publishedAt: timestamp('published_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Конкуренты для блока «Сравнить с конкурентами» на главной. Храним только
+ * имя (ключ перевода) и цвет обводки: реального источника курсов конкурентов
+ * нет ни в Ecash API, ни где-либо ещё, а числа в БД однажды уже превратились
+ * в «фиксированный курс, который никогда не обновлялся». Курсы теперь
+ * выводятся на лету из живого курса отделения — см. /api/rates.
+ */
+export const competitors = pgTable('competitors', {
+  id: text('id').primaryKey(),
+  nameKey: text('name_key').notNull(),
+  color: text('color').notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
