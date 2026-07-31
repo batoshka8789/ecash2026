@@ -1,12 +1,13 @@
 'use client';
 
 import { useId, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { clsx } from 'clsx';
 import { Icon } from '@/components/ui/Icon';
 import { CurrencyFlag } from '@/components/ui/CurrencyFlag';
 import { Select, type SelectOption } from '@/components/ui/Select';
-import { currencyFlagClass } from '@/lib/format';
+import { currencyFlagClass, formatNumber } from '@/lib/format';
+import { badgeStyles, type BadgeKind } from '@/lib/branch-status';
 import type { DepartmentInfo } from '@/lib/domain';
 
 /** Флаг валюты у опции селектора — «Currency» из макета: 40×32, r8. */
@@ -138,48 +139,122 @@ function InfoRow({ icon, children }: { icon: string; children: React.ReactNode }
   );
 }
 
+/** Точка-разделитель между частями строки (Ellipse 7 4×4 в макете). */
+function Dot() {
+  return <span aria-hidden className="h-1 w-1 shrink-0 rounded-full bg-current opacity-70" />;
+}
+
 /** Текст строки: 14/15.4 ниже 768, 16/21 SemiBold с трекингом −0.31 с 768. */
 const rowText =
   'text-sm leading-[15.4px] md:text-base md:font-semibold md:leading-[21px] md:tracking-[-0.31px]';
 
-/** Адрес выбранного отделения + бейдж и плашка «в другом отделении выгоднее». */
+/** Отделение для смены в списке «Изменить» — первым идёт ближайшее к «Моему адресу». */
+export type BranchOption = { depId: number; label: string; hint?: string };
+
+/** Адрес выбранного отделения + бейджи, расстояние, статус «Открыто/Закрыто»
+ *  и плашка «в другом отделении выгоднее». */
 export function BranchAddress({
   department,
-  nearest,
+  distanceKm,
+  open,
+  badges,
   betterOffer,
   onPickBetter,
+  departments,
+  depId,
+  onChangeDep,
 }: {
   department: DepartmentInfo | null;
-  nearest?: boolean;
+  /** км до отделения от «Моего адреса»; null — координат нет (гость без адреса) */
+  distanceKm?: number | null;
+  /** открыто ли сейчас по расписанию; null/undefined — расписания нет */
+  open?: boolean | null;
+  badges?: BadgeKind[];
   /** {depId, address, rate} из best-rate, если выгоднее текущего */
   betterOffer?: { depId: number; address: string; rate: number } | null;
   onPickBetter?: (depId: number) => void;
+  /** список всех отделений для ручной смены — без него «Изменить» не показывается */
+  departments?: BranchOption[];
+  depId?: number;
+  onChangeDep?: (depId: number) => void;
 }) {
   const t = useTranslations('flows.address');
   const tb = useTranslations('branches');
+  const tLoc = useTranslations('locations');
+  const locale = useLocale();
 
   return (
     <div>
-      <h2 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
-        {t('title')}
-      </h2>
-      {/* «Frame 1437255099» 511:17768 — бейдж и строки колонкой с зазором 8 */}
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+          {t('title')}
+        </h2>
+        {departments && departments.length > 1 && (
+          <Select
+            className="w-fit shrink-0 [&>span]:sr-only [&>ul]:right-auto [&>ul]:w-[289px] [&>ul]:max-w-[calc(100vw-32px)]"
+            buttonClassName="h-auto! w-auto! gap-1! rounded-none! border-0! bg-transparent! p-0! text-sm! font-medium! text-text-brand! hover:bg-transparent!"
+            label={t('title')}
+            value={String(depId)}
+            onChange={(v) => onChangeDep?.(Number(v))}
+            options={departments.map((d) => ({
+              value: String(d.depId),
+              label: d.label,
+              hint: d.hint,
+            }))}
+            renderButtonValue={() => t('change')}
+            arrow="chevron"
+          />
+        )}
+      </div>
+      {/* «Frame 1437255099» 511:17768 — бейджи и строки колонкой с зазором 8 */}
       <div className="mt-5 flex flex-col gap-2">
-        {nearest && (
-          <span className="inline-flex h-[18px] w-fit items-center rounded-lg bg-additional-3 px-2 text-xs font-bold leading-[18px] text-text-always-white">
-            {t('nearest')}
-          </span>
+        {badges && badges.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {badges.map((badge) => (
+              <span
+                key={badge}
+                className={clsx(
+                  'rounded-lg px-2 text-xs font-bold leading-[18px] text-text-always-white',
+                  badgeStyles[badge],
+                )}
+              >
+                {tLoc(`badges.${badge}`)}
+              </span>
+            ))}
+          </div>
         )}
         <InfoRow icon="account_balance">
           <span className={clsx('min-w-0 truncate text-text-default', rowText)}>
             {department?.address ?? '—'}
           </span>
+          {distanceKm != null && (
+            <>
+              <Dot />
+              <span className={clsx('shrink-0 whitespace-nowrap text-text-default', rowText)}>
+                {formatNumber(distanceKm, locale, 1)} {t('km')}
+              </span>
+            </>
+          )}
         </InfoRow>
         {department?.timetable && (
           <InfoRow icon="schedule">
-            <span className={clsx('text-text-default', rowText)}>
+            <span className={clsx('shrink-0 whitespace-nowrap text-text-default', rowText)}>
               {department.timetable.openTime} - {department.timetable.closeTime}
             </span>
+            {open != null && (
+              <>
+                <Dot />
+                <span
+                  className={clsx(
+                    'shrink-0 whitespace-nowrap',
+                    rowText,
+                    open ? 'text-text-positive' : 'text-text-negative',
+                  )}
+                >
+                  {open ? t('open') : t('closed')}
+                </span>
+              </>
+            )}
           </InfoRow>
         )}
       </div>

@@ -311,8 +311,10 @@
       "nearest": "Nearest",
       "km": "km",
       "open": "Open",
+      "closed": "Closed",
       "betterAt": "At the branch on",
-      "betterRate": "the rate is better"
+      "betterRate": "the rate is better",
+      "change": "Change"
     },
     "banknotes": {
       "choose": "Choose banknote type",

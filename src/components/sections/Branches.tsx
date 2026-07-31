@@ -12,61 +12,17 @@ import { BranchMap, type BranchMapMarker } from '@/components/ui/BranchMap';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import { canonicalCity, formatBranchAddress, formatBranchTitle } from '@/lib/branch-address';
+import {
+  almatyTime,
+  badgeStyles,
+  haversineKm,
+  isHappyHours,
+  isOpenNow,
+  type BadgeKind,
+  type GeoPoint,
+} from '@/lib/branch-status';
 import { currencySymbol, formatNumber } from '@/lib/format';
 import { useUserPlace } from '@/lib/user-place';
-
-/** Бейджи отделения: цвета из палитры макета (badge, 12/700, r8). */
-const badgeStyles = {
-  best: 'bg-brand',
-  happyHours: 'bg-additional-2',
-  nearest: 'bg-additional-3',
-} as const;
-
-type BadgeKind = keyof typeof badgeStyles;
-
-type GeoPoint = { lat: number; lon: number };
-
-/** Расстояние по большому кругу, км. */
-function haversineKm(a: GeoPoint, b: GeoPoint): number {
-  const R = 6371;
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(b.lat - a.lat);
-  const dLon = toRad(b.lon - a.lon);
-  const s =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLon / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(s));
-}
-
-/** Текущее время HH:mm в часовом поясе отделений (Asia/Almaty). */
-const almatyTime = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'Asia/Almaty',
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-});
-
-/** Открыто ли по расписанию: строки HH:mm сравниваются лексикографически;
- *  closeTime '23:59' означает «до полуночи», open > close — ночной график. */
-function isOpenNow(tt: { openTime: string; closeTime: string }, hhmm: string): boolean {
-  if (tt.openTime <= tt.closeTime) return hhmm >= tt.openTime && hhmm <= tt.closeTime;
-  return hhmm >= tt.openTime || hhmm <= tt.closeTime;
-}
-
-const toMinutes = (hhmm: string): number => {
-  const [h, m] = hhmm.split(':').map(Number);
-  return h * 60 + m;
-};
-
-/** «Happy hours» — последние 2 часа перед закрытием, пока отделение открыто:
- *  вечернее окно, когда обменники традиционно дают выгодный курс постоянным
- *  клиентам. Ночной график (open > close) учитывается через модуль суток.
- *  Это фронтовый дефолт до появления признака от бэкенда. */
-function isHappyHours(tt: { openTime: string; closeTime: string }, hhmm: string): boolean {
-  if (!isOpenNow(tt, hhmm)) return false;
-  const minutesToClose = (toMinutes(tt.closeTime) - toMinutes(hhmm) + 1440) % 1440;
-  return minutesToClose <= 120;
-}
 
 /** Точка-разделитель между частями строки (Ellipse 4×4 в макете). */
 function Dot() {

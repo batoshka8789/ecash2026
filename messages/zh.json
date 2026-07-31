@@ -311,8 +311,10 @@
       "nearest": "距离最近",
       "km": "公里",
       "open": "营业中",
+      "closed": "已打烊",
       "betterAt": "位于以下地址的网点",
-      "betterRate": "汇率更优"
+      "betterRate": "汇率更优",
+      "change": "更改"
     },
     "banknotes": {
       "choose": "选择钞票面额",

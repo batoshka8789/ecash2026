@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -9,17 +9,18 @@ import { useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { Toast } from '@/components/ui/Toast';
-import { Select } from '@/components/ui/Select';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useErrorText } from '@/lib/useErrorText';
-import { useNearestDepId } from '@/lib/user-place';
+import { useNearestDepId, useUserPlace } from '@/lib/user-place';
+import { almatyTime, haversineKm, isHappyHours, isOpenNow, type BadgeKind } from '@/lib/branch-status';
 import { currencyName, currencySymbol, formatNumber, formatPhoneInput } from '@/lib/format';
 import { counterAmount } from '@/lib/exchange';
 import { sortCurrencyCodes } from '@/lib/currency-order';
 import type { ExchangeRequest } from '@/lib/domain';
-import { AmountBox, BranchAddress, BanknotesPicker } from './PairFields';
+import { AmountBox, BranchAddress, BanknotesPicker, type BranchOption } from './PairFields';
+import { RateGraph, RateGraphToggle, type Period } from '@/components/sections/RateGraph';
 
 type Mode = 'booking' | 'individual';
 
@@ -66,6 +67,17 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   const [showErrors, setShowErrors] = useState(false);
   const [duplicate, setDuplicate] = useState<ExchangeRequest | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [graphOpen, setGraphOpen] = useState(false);
+  const [period, setPeriod] = useState<Period>('year');
+  const graphId = useId();
+  const { coords: userCoords } = useUserPlace();
+
+  // Статус «Открыто/Закрыто» не протухает на долго открытой вкладке.
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const depsQ = useQuery({
     queryKey: ['departments'],
@@ -96,13 +108,48 @@ export function BookingFlow({ mode }: { mode: Mode }) {
    *  (обменник продаёт дешевле = выгоднее клиенту), иначе — с bestBuy
    *  (обменник покупает дороже = выгоднее клиенту). Только если это другое
    *  отделение и оно реально выгоднее текущего курса. */
+  const bestOffer = kztGive ? bestQ.data?.best.bestSale : bestQ.data?.best.bestBuy;
   const betterOffer = useMemo(() => {
     if (rate <= 0) return null;
-    const offer = kztGive ? bestQ.data?.best.bestSale : bestQ.data?.best.bestBuy;
-    if (!offer || offer.depId === depId) return null;
-    const better = kztGive ? offer.rate < rate : offer.rate > rate;
-    return better ? offer : null;
-  }, [bestQ.data, kztGive, rate, depId]);
+    if (!bestOffer || bestOffer.depId === depId) return null;
+    const better = kztGive ? bestOffer.rate < rate : bestOffer.rate > rate;
+    return better ? bestOffer : null;
+  }, [bestOffer, kztGive, rate, depId]);
+
+  const department = depQ.data?.department ?? null;
+  const timetable = department?.timetable ?? null;
+  const hhmm = almatyTime.format(nowMs);
+
+  /** км до отделения от «Моего адреса» — та же формула, что и на /locations. */
+  const distanceKm = useMemo(
+    () => (userCoords && department?.coords ? haversineKm(userCoords, department.coords) : null),
+    [userCoords, department],
+  );
+  const open = timetable ? isOpenNow(timetable, hhmm) : null;
+
+  /** Бейджи карточки: «Ближе всего» — совпадает с гео-ближайшим отделением;
+   *  «Самый выгодный» — у него реально лучший курс по сети (нет better Offer
+   *  и bestQ указывает именно на него); «Happy hours» — по расписанию. */
+  const badges = useMemo(() => {
+    const list: BadgeKind[] = [];
+    if (bestOffer && bestOffer.depId === depId && rate > 0) list.push('best');
+    if (timetable && isHappyHours(timetable, hhmm)) list.push('happyHours');
+    if (depId === nearestDep) list.push('nearest');
+    return list;
+  }, [bestOffer, depId, rate, timetable, hhmm, nearestDep]);
+
+  /** Список для «Изменить» — первым идёт отделение, ближайшее к «Моему
+   *  адресу» (nearestDep), остальные следом в исходном порядке апстрима. */
+  const departmentOptions = useMemo<BranchOption[]>(() => {
+    const deps = depsQ.data?.departments ?? [];
+    const opts = deps.map((d) => ({ depId: d.depId, label: d.code || d.address, hint: d.address }));
+    const nearestIdx = opts.findIndex((o) => o.depId === nearestDep);
+    if (nearestIdx > 0) {
+      const [pinned] = opts.splice(nearestIdx, 1);
+      opts.unshift(pinned);
+    }
+    return opts;
+  }, [depsQ.data, nearestDep]);
 
   const amountNum = useMemo(
     () => parseFloat(give.replace(/[\s ]/g, '').replace(',', '.')),
@@ -254,27 +301,25 @@ export function BookingFlow({ mode }: { mode: Mode }) {
               </p>
             )}
           </div>
-          {/* «a-button-main» secondary (инстанс 1000:38461 на экране брони):
-              191×46 с 768, 163×34 ниже, r20, обводка surface-page-surf3
-              (#4C4C4C тёмная / #E5E4E3 светлая — дефолт Select), подпись
-              14/500 ОБЫЧНЫМ цветом #EEEEEE, брендовая только стрелка 12px —
-              ровно как у «Динамики курса» в калькуляторе. Брендовая подпись
-              здесь была отсебятиной и разошлась с макетом (замечание
-              заказчика). За кнопкой живёт выбор отделения (историческая
-              ближайшая, пока адрес не геокодирован). */}
-          <Select
-            className="w-[163px] shrink-0 md:w-[191px] [&>span]:sr-only [&>ul]:w-[289px] [&>ul]:max-w-[calc(100vw-32px)]"
-            buttonClassName="h-[34px]! justify-center! px-3! text-sm! md:h-[46px]! md:px-4! [&>span[aria-hidden]]:text-text-brand [&>span[aria-hidden]]:text-[12px]!"
-            label={t('address.title')}
-            value={String(depId)}
-            onChange={(v) => setDepId(Number(v))}
-            options={(depsQ.data?.departments ?? []).map((d) => ({
-              value: String(d.depId),
-              label: d.code || d.address,
-              hint: d.address,
-            }))}
+          {/* «a-button-main» secondary (инстанс 1000:38461 на экране брони) — та же
+              кнопка «Динамика курса», что и в калькуляторе (2003:133396):
+              рендер реального фрейма Figma показал, что здесь стоит не
+              выбор отделения, а именно переключатель графика; отделение
+              выбирается ниже, в блоке «Адрес» (историческое ближайшее +
+              плашка «в другом отделении выгоднее»). */}
+          <RateGraphToggle
+            open={graphOpen}
+            onToggle={() => setGraphOpen((v) => !v)}
+            graphId={graphId}
+            label={t('pair.dynamics')}
           />
         </div>
+
+        {graphOpen && (
+          <div id={graphId} className="anim-chart-panel overflow-hidden">
+            <RateGraph depId={depId} code={foreign} period={period} setPeriod={setPeriod} />
+          </div>
+        )}
 
         <div className="relative mt-6 flex flex-col gap-3 lg:flex-row lg:items-center">
           <AmountBox
@@ -349,9 +394,15 @@ export function BookingFlow({ mode }: { mode: Mode }) {
         {/* «Rectangle 555» 415:23783 — разделитель 1px divider/hole, отступы 24/28 */}
         <div className="mt-6 border-t border-divider-hole pt-6 md:mt-7 md:pt-7">
           <BranchAddress
-            department={depQ.data?.department ?? null}
+            department={department}
+            distanceKm={distanceKm}
+            open={open}
+            badges={badges}
             betterOffer={betterOffer}
             onPickBetter={setDepId}
+            departments={departmentOptions}
+            depId={depId}
+            onChangeDep={setDepId}
           />
         </div>
       </section>

@@ -52,6 +52,7 @@ export function Select({
   className,
   buttonClassName,
   renderValue,
+  renderButtonValue,
   renderLeading,
   searchable = false,
   searchPlaceholder,
@@ -67,6 +68,13 @@ export function Select({
   className?: string;
   buttonClassName?: string;
   renderValue?: (opt: SelectOption) => React.ReactNode;
+  /**
+   * Визуал ЗАКРЫТОЙ кнопки, если он должен отличаться от строки списка —
+   * например, статичная подпись «Изменить» вместо имени текущей опции
+   * (список при этом всё равно показывает реальные label/hint через
+   * renderValue или opt.label). Без него кнопка использует renderValue.
+   */
+  renderButtonValue?: (opt: SelectOption) => React.ReactNode;
   /**
    * Ведущий визуал строки списка (флаг валюты). В макете он стоит СЛЕВА от
    * пары «код / название», а не над ней — отсюда высота строки 56px.
@@ -352,7 +360,13 @@ export function Select({
             !selected && 'text-text-disabled',
           )}
         >
-          {selected ? (renderValue ? renderValue(selected) : selected.label) : (placeholder ?? '—')}
+          {selected
+            ? renderButtonValue
+              ? renderButtonValue(selected)
+              : renderValue
+                ? renderValue(selected)
+                : selected.label
+            : (placeholder ?? '—')}
         </span>
         {/* по умолчанию — заливной треугольник arrow_down (10.67×6) из макета;
             arrow="chevron" даёт «птичку» keyboard_arrow_down */}
