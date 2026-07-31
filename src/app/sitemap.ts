@@ -6,6 +6,13 @@ import { routing } from '@/i18n/routing';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://ecash.kz';
 
+/**
+ * Пересборка раз в час В РАНТАЙМЕ: без revalidate sitemap запекается на
+ * этапе next build, когда Postgres Railway недоступен сборщику, — блок
+ * новостей молча выпадал (try/catch), и на проде sitemap уходил без статей.
+ */
+export const revalidate = 3600;
+
 /** Публичные страницы × локали. Кабинет и авторизация не индексируются. */
 const PUBLIC_PATHS = [
   '',
