@@ -254,13 +254,17 @@ export function BookingFlow({ mode }: { mode: Mode }) {
               </p>
             )}
           </div>
-          {/* «a-button-main» 846:26418 — вторичная кнопка справа от заголовка:
-              191×46 с 768, 163×34 ниже, обводка #4C4C4C, подпись 14/20 брендом.
-              За кнопкой живёт выбор отделения (историческая ближайшая, пока адрес
-              не геокодирован, — то же значение, что и в остальном приложении). */}
+          {/* «a-button-main» secondary (инстанс 1000:38461 на экране брони):
+              191×46 с 768, 163×34 ниже, r20, обводка surface-page-surf3
+              (#4C4C4C тёмная / #E5E4E3 светлая — дефолт Select), подпись
+              14/500 ОБЫЧНЫМ цветом #EEEEEE, брендовая только стрелка 12px —
+              ровно как у «Динамики курса» в калькуляторе. Брендовая подпись
+              здесь была отсебятиной и разошлась с макетом (замечание
+              заказчика). За кнопкой живёт выбор отделения (историческая
+              ближайшая, пока адрес не геокодирован). */}
           <Select
             className="w-[163px] shrink-0 md:w-[191px] [&>span]:sr-only [&>ul]:w-[289px] [&>ul]:max-w-[calc(100vw-32px)]"
-            buttonClassName="h-[34px]! justify-center! px-3! text-sm! text-text-brand! md:h-[46px]! md:px-4!"
+            buttonClassName="h-[34px]! justify-center! px-3! text-sm! md:h-[46px]! md:px-4! [&>span[aria-hidden]]:text-text-brand [&>span[aria-hidden]]:text-[12px]!"
             label={t('address.title')}
             value={String(depId)}
             onChange={(v) => setDepId(Number(v))}
