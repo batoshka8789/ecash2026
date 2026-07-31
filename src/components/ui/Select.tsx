@@ -104,8 +104,15 @@ export function Select({
   const id = useId();
 
   const narrow = useSheetLayout();
-  /** Боттомшит вместо попапа: только у searchable-варианта и только ≤480. */
-  const sheet = searchable && narrow;
+  /**
+   * Боттомшит вместо попапа — единый стиль раскрытия ЛЮБОГО Select на узких
+   * экранах (валюта / дата / отделение и т.д.), не только у searchable-
+   * варианта: раньше не-searchable селекты (дата, смена отделения) на
+   * мобильном оставались обычным попапом рядом с кнопкой и визуально
+   * расходились с валютой — с точки зрения макета и заказчика это один
+   * и тот же компонент во всех трёх местах.
+   */
+  const sheet = narrow;
 
   const selected = options.find((o) => o.value === value) ?? null;
   /** В закрытом поле нарисован не текст, а свой визуал (флаг + код валюты). */
@@ -377,7 +384,7 @@ export function Select({
         />
       </button>
 
-      {open && !searchable && listbox}
+      {open && !searchable && !sheet && listbox}
 
       {open && searchable && !sheet && (
         // Попап с поиском: обёртка несёт стили списка, ul остаётся listbox.

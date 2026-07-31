@@ -137,16 +137,20 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   );
   const open = timetable ? isOpenNow(timetable, hhmm) : null;
 
-  /** Бейджи карточки: «Ближе всего» — совпадает с гео-ближайшим отделением;
-   *  «Самый выгодный» — у него реально лучший курс по сети (нет better Offer
-   *  и bestQ указывает именно на него); «Happy hours» — по расписанию. */
+  /** Бейджи карточки: «Ближе всего» — совпадает с гео-ближайшим отделением,
+   *  и только если координаты реально известны (иначе useNearestDepId молча
+   *  падает на историческое отделение №1, и бейдж врал бы про «рядом» тому,
+   *  у кого просто не указан адрес — та же защита, что и на /locations, где
+   *  бейдж не ставится без effectivePos); «Самый выгодный» — у него реально
+   *  лучший курс по сети (bestQ указывает именно на это отделение);
+   *  «Happy hours» — по расписанию. */
   const badges = useMemo(() => {
     const list: BadgeKind[] = [];
     if (bestOffer && bestOffer.depId === depId && rate > 0) list.push('best');
     if (timetable && isHappyHours(timetable, hhmm)) list.push('happyHours');
-    if (depId === nearestDep) list.push('nearest');
+    if (userCoords && depId === nearestDep) list.push('nearest');
     return list;
-  }, [bestOffer, depId, rate, timetable, hhmm, nearestDep]);
+  }, [bestOffer, depId, rate, timetable, hhmm, nearestDep, userCoords]);
 
   /** Список для «Изменить» — первым идёт отделение, ближайшее к «Моему
    *  адресу» (nearestDep), остальные следом в исходном порядке апстрима. */
