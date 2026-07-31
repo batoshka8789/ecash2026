@@ -22,6 +22,17 @@ const COMPETITOR_MARGIN: Record<string, number> = {
 };
 
 /**
+ * Те же три ряда, что кладёт сид, — фоллбэк на случай пустой таблицы.
+ * На Railway при деплое выполняются только миграции, сид не запускается —
+ * без фоллбэка блок «Сравнить с конкурентами» на проде просто исчезал.
+ */
+const DEFAULT_COMPETITORS = [
+  { id: 'c1', nameKey: 'blue', color: 'var(--color-competitor-3)' },
+  { id: 'c2', nameKey: 'green', color: 'var(--color-competitor-2)' },
+  { id: 'c3', nameKey: 'red', color: 'var(--color-competitor-1)' },
+];
+
+/**
  * Курсы отделения одним ответом: курсы Ecash + курс НБ РК + избранное сессии
  * + конкуренты.
  *
@@ -57,7 +68,8 @@ export async function GET(req: Request) {
       if (typeof v === 'number') marketRates[r.currencyCode] = v;
     }
 
-    const comps = compsResult.status === 'fulfilled' ? compsResult.value : [];
+    const compRows = compsResult.status === 'fulfilled' ? compsResult.value : [];
+    const comps = compRows.length ? compRows : DEFAULT_COMPETITORS;
     // Ряды конкурентов по каждой валюте отделения. Неквотируемые валюты
     // (API отдаёт их с нулевыми курсами) пропускаем: панель из трёх нулей
     // ничего не «сравнивает» — фронт для них кнопку не показывает.
