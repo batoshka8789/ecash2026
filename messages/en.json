@@ -12,9 +12,6 @@
   },
   "home": {
     "toast": {
-      "link": "Choose an address",
-      "rest": "we'll find the nearest exchange offices",
-      "close": "Close",
       "cta": "Set your address",
       "change": "Change"
     },
