@@ -573,15 +573,8 @@
     "scrollTop": "Scroll to top",
     "contactModal": {
       "title": "Please fill out the form",
-      "name": "Name",
+      "name": "Full name",
       "phone": "Phone number",
-      "funds": "Available capital and amount",
-      "experience": "Tell us about your business experience",
-      "tagsLabel": "Who are you?",
-      "tagsPlaceholder": "E.g.: I work in crypto",
-      "tagEntrepreneur": "Entrepreneur",
-      "tagInvestor": "Investor",
-      "tagDirector": "Director / Top manager",
       "submit": "Submit application",
       "done": "Application submitted! We'll contact you",
       "close": "Close"

@@ -15,8 +15,9 @@ const FOCUSABLE =
 
 /**
  * Модалка заявки для обеих кнопок «Связаться» лендинга франшизы (секции
- * «Ecash — это сеть…» и баннер «Свяжитесь…») — контакты плюс квалификация
- * (капитал, опыт, роль/роли), по референсу пользователя. Оболочка диалога —
+ * «Ecash — это сеть…» и баннер «Свяжитесь…»). По требованию заказчика анкета
+ * сокращена до обязательных полей — ФИО и номер телефона: она используется
+ * только для отправки заявки на франшизу. Оболочка диалога —
  * тот же паттерн, что и у FranchiseModal (фокус-ловушка, Esc, блокировка
  * скролла, клик по фону, CSS-анимация без framer-motion). Логотип сверху —
  * tone="onDark": лендинг форсирует тёмную тему классом .theme-dark, но
@@ -35,33 +36,25 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [funds, setFunds] = useState('');
-  const [experience, setExperience] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
   const [clientErr, setClientErr] = useState<{ name?: string; phone?: string }>({});
 
-  const presetTags = [t('tagEntrepreneur'), t('tagInvestor'), t('tagDirector')];
-
-  const addTag = (raw: string) => {
-    const value = raw.trim();
-    if (!value || tags.includes(value)) return;
-    setTags((prev) => [...prev, value]);
-  };
-  const removeTag = (value: string) => setTags((prev) => prev.filter((tag) => tag !== value));
-
   const send = useMutation({
-    mutationFn: () => api.franchiseLead({ name, phone, funds, experience, tags }),
+    mutationFn: () => api.franchiseLead({ fullName: name, phoneNumber: phone }),
   });
   const resetSend = send.reset;
   const sendError = send.error instanceof ApiError ? send.error : null;
 
+  // Локальный стейт остался name/phone, но сервер валидирует поля контракта
+  // Ecash — fullName/phoneNumber, поэтому ошибка поля приходит под этими именами.
+  const serverField = { name: 'fullName', phone: 'phoneNumber' } as const;
   const fieldError = (key: 'name' | 'phone') =>
-    clientErr[key] ?? (sendError?.field === key ? sendError.message : undefined);
+    clientErr[key] ?? (sendError?.field === serverField[key] ? sendError.message : undefined);
   const nameError = fieldError('name');
   const phoneError = fieldError('phone');
   const generalError =
-    sendError && sendError.field !== 'name' && sendError.field !== 'phone' ? sendError.message : null;
+    sendError && sendError.field !== 'fullName' && sendError.field !== 'phoneNumber'
+      ? sendError.message
+      : null;
 
   // Сброс полей при каждом открытии — та же схема, что и в FranchiseModal:
   // правка состояния во время рендера, без эффекта на локальные setState.
@@ -70,10 +63,6 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
     setSyncedFor(true);
     setName('');
     setPhone('');
-    setFunds('');
-    setExperience('');
-    setTags([]);
-    setTagInput('');
     setClientErr({});
   }
   if (!open && syncedFor) setSyncedFor(false);
@@ -248,95 +237,6 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
                       {errorText(phoneError)}
                     </p>
                   )}
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor={`${uid}-funds`} className="sr-only">
-                  {t('funds')}
-                </label>
-                <input
-                  id={`${uid}-funds`}
-                  value={funds}
-                  onChange={(e) => setFunds(e.target.value)}
-                  placeholder={t('funds')}
-                  className={inputCls(false)}
-                />
-              </div>
-
-              <div>
-                <label htmlFor={`${uid}-experience`} className="sr-only">
-                  {t('experience')}
-                </label>
-                <textarea
-                  id={`${uid}-experience`}
-                  value={experience}
-                  onChange={(e) => setExperience(e.target.value)}
-                  placeholder={t('experience')}
-                  rows={3}
-                  className="w-full resize-none rounded-[20px] border border-transparent bg-surface-page-surf2 px-4 py-3.5 text-base font-medium text-text-default outline-none transition-colors placeholder:text-text-disabled focus:border-stroke-brand"
-                />
-              </div>
-
-              {/* Тег-инпут «Кто вы?»: выбранные роли — снимаемые пилюли, плюс
-                  свободный ввод своего варианта (Enter/запятая добавляет тег). */}
-              <div>
-                {/* Колонка, а не общий flex-wrap: выбранные пилюли уходят
-                    отдельной строкой наверх, поле ввода — под ними, а не
-                    вплотную сбоку. justify-center держит одинокий инпут по
-                    центру плашки, пока теги не выбраны. */}
-                <div className="flex min-h-[54px] flex-col justify-center gap-2 rounded-[20px] border border-transparent bg-surface-page-surf2 px-3 py-2 transition-colors focus-within:border-stroke-brand">
-                  {tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="inline-flex items-center gap-1 rounded-full bg-surface-page-surf3 px-2 py-0.5 text-xs text-text-default"
-                        >
-                          {tag}
-                          {/* Крестик центрируем флексом в своей коробке:
-                              material-symbols — инлайновый шрифт, и глиф
-                              выравнивался по базовой линии текста, из-за чего
-                              сидел выше середины пилюли. */}
-                          <button
-                            type="button"
-                            onClick={() => removeTag(tag)}
-                            aria-label={tag}
-                            className="inline-flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center text-text-disabled transition-colors hover:text-text-default"
-                          >
-                            <Icon name="close" size={14} className="block" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  <input
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ',') {
-                        e.preventDefault();
-                        addTag(tagInput);
-                        setTagInput('');
-                      }
-                    }}
-                    placeholder={tags.length === 0 ? t('tagsLabel') : t('tagsPlaceholder')}
-                    className="w-full bg-transparent px-1 text-base text-text-default outline-none placeholder:text-text-disabled"
-                  />
-                </div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {presetTags
-                    .filter((preset) => !tags.includes(preset))
-                    .map((preset) => (
-                      <button
-                        key={preset}
-                        type="button"
-                        onClick={() => addTag(preset)}
-                        className="cursor-pointer rounded-full border border-stroke-surface3 px-2 py-0.5 text-xs text-text-disabled transition-colors hover:border-stroke-brand hover:text-text-default"
-                      >
-                        {preset}
-                      </button>
-                    ))}
                 </div>
               </div>
 

@@ -249,14 +249,20 @@ export const rateAlertBody = z
     path: ['currencyTo'],
   });
 
+/**
+ * Заявка на франшизу — контракт Ecash POST /mobile/franchise. По требованию
+ * заказчика анкета сокращена до обязательных ФИО и телефона; остальные поля
+ * контракта оставлены опциональными на случай, если появятся новые формы.
+ */
 export const franchiseLeadBody = z.object({
-  name: z.string().trim().min(1, 'errors.nameRequired').max(120),
-  phone: phoneSchema,
-  city: z.string().trim().max(80).optional(),
-  funds: z.string().trim().max(200).optional(),
-  experience: z.string().trim().max(2000).optional(),
-  tags: z.array(z.string().trim().min(1).max(60)).max(20).optional(),
+  fullName: z.string().trim().min(1, 'errors.nameRequired').max(120),
+  phoneNumber: phoneSchema,
+  businessDescription: z.string().trim().max(2000).optional(),
+  amount: z.number().nonnegative().finite().optional(),
+  comment: z.string().trim().max(500).optional(),
 });
+
+export type FranchiseLeadBody = z.infer<typeof franchiseLeadBody>;
 
 export type LoginBody = z.infer<typeof loginBody>;
 export type RegisterBody = z.infer<typeof registerBody>;

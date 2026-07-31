@@ -575,13 +575,6 @@
       "title": "请填写表单",
       "name": "姓名",
       "phone": "手机号码",
-      "funds": "可用资金及金额",
-      "experience": "请介绍您的从业经历",
-      "tagsLabel": "您的身份是？",
-      "tagsPlaceholder": "例如：我从事加密货币行业",
-      "tagEntrepreneur": "创业者",
-      "tagInvestor": "投资者",
-      "tagDirector": "董事 / 高管",
       "submit": "提交申请",
       "done": "申请已提交！我们会与您联系",
       "close": "关闭"

@@ -349,14 +349,18 @@ export const api = {
       { signal },
     ),
 
+  /**
+   * Заявка на франшизу — поля контракта Ecash /mobile/franchise. Анкета на
+   * сайте шлёт только обязательные fullName + phoneNumber; lead: null — Ecash
+   * заявку принял, но страховочная запись в нашей базе не создалась.
+   */
   franchiseLead: (payload: {
-    name: string;
-    phone: string;
-    city?: string;
-    funds?: string;
-    experience?: string;
-    tags?: string[];
-  }) => post<{ lead: { id: string; createdAt: string } }>('/franchise-leads', payload),
+    fullName: string;
+    phoneNumber: string;
+    businessDescription?: string;
+    amount?: number;
+    comment?: string;
+  }) => post<{ lead: { id: string; createdAt: string } | null }>('/franchise-leads', payload),
 };
 
 export type NotificationDto = {
