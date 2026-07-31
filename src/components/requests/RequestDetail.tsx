@@ -1,6 +1,6 @@
 'use client';
 
-import { use } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { clsx } from 'clsx';
@@ -11,7 +11,13 @@ import { Button } from '@/components/ui/Button';
 import { api, ApiError } from '@/lib/api';
 import { useCountdown } from '@/lib/hooks';
 import { useErrorText } from '@/lib/useErrorText';
-import { currencySymbol, formatDateTime, formatNumber, formatPhoneInput } from '@/lib/format';
+import {
+  currencySymbol,
+  formatDateTime,
+  formatNumber,
+  formatPhoneInput,
+  formatTime,
+} from '@/lib/format';
 import { AmountBox } from '@/components/flows/PairFields';
 import { useAuth } from '@/lib/auth';
 import { accountDisplayName, type ExchangeRequest } from '@/lib/domain';
@@ -49,6 +55,21 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
     void qc.invalidateQueries({ queryKey: ['requests'] });
     void qc.invalidateQueries({ queryKey: ['notifications'] });
   };
+
+  /**
+   * Модалка «курс забронирован» — показывается ОДИН раз, в момент, когда
+   * заявка на глазах у клиента переходит в бронь (ответ казначея приходит
+   * поллингом, экран меняется сам). Раньше подтверждения не было вовсе:
+   * страница молча превращалась в таймер.
+   */
+  const phase = q.data?.request.phase;
+  const [seenPhase, setSeenPhase] = useState<string | null>(null);
+  const [bookedOpen, setBookedOpen] = useState(false);
+  if (phase && phase !== seenPhase) {
+    // переход именно в бронь, а не первый показ уже забронированной заявки
+    if (seenPhase !== null && phase === 'held') setBookedOpen(true);
+    setSeenPhase(phase);
+  }
 
   const cancelMut = useMutation({
     mutationFn: () => api.requests.cancel(requestId),
@@ -95,35 +116,22 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <div className="container-page flex flex-col gap-5 pt-10">
+      {bookedOpen && <BookedModal onClose={() => setBookedOpen(false)} />}
+
       <StatusHead request={r} />
 
+      {/* Заголовок «Казначей предложил курс» убран по требованию заказчика:
+          статус уже сказан выше (StatusHead), а кнопки решения перенесены
+          в самый низ экрана — человек сначала смотрит детали заявки. */}
       {r.needsClientConfirmation && (
         <section className="rounded-2xl bg-surface-page-surf1 p-5 text-center sm:rounded-3xl sm:p-8">
-          <h2 className="text-lg font-bold text-text-default sm:text-2xl">{t('offerTitle')}</h2>
-          <p className="mt-2 text-sm text-text-disabled">
+          <p className="text-sm text-text-disabled">
             {t('offerText', { min: r.reserveMinutes })}
           </p>
           <p className="mt-4 text-2xl font-bold text-text-brand">
             {formatNumber(r.rate, locale)} ₸ = 1 {currencySymbol(foreign)}
           </p>
           {r.reservedUntil && <OfferCountdown until={r.reservedUntil} />}
-          <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-            <Button
-              onClick={() => confirmMut.mutate()}
-              disabled={confirmMut.isPending || rejectMut.isPending}
-              className="sm:min-w-44"
-            >
-              {t('accept')}
-            </Button>
-            <Button
-              variant="surf2"
-              onClick={() => rejectMut.mutate()}
-              disabled={confirmMut.isPending || rejectMut.isPending}
-              className="sm:min-w-44"
-            >
-              {t('decline')}
-            </Button>
-          </div>
         </section>
       )}
 
@@ -145,13 +153,12 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
             readOnly
             currency={r.currencyFrom}
           />
+          {/* Сумма показывается всегда, даже пока казначей не ответил: это
+              расчёт по курсу на момент заявки, и он полезнее заглушки
+              «На рассмотрении» — итоговый курс всё равно виден рядом. */}
           <AmountBox
             label={`${tf('pair.get')} (${currencySymbol(r.currencyTo)})`}
-            value={
-              r.status === 0 && r.isIndividual && !r.needsClientConfirmation
-                ? tf('pair.underReview')
-                : formatNumber(r.amount, locale)
-            }
+            value={formatNumber(r.amount, locale)}
             readOnly
             currency={r.currencyTo}
           />
@@ -168,9 +175,14 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
             {t('commentLabel')}: <span className="text-text-default">{r.comment}</span>
           </p>
         )}
-        {r.acceptComment && r.phase === 'cancelled' && (
+        {/* Комментарий казначея. Показывается на ЛЮБОЙ стадии, а не только при
+            отмене: им объясняют условия сделки (например, что нет мелких или
+            крупных купюр, заказанных клиентом) — это нужно видеть до решения
+            по курсу, а не после. При отмене та же строка — «Причина». */}
+        {r.acceptComment && (
           <p className="mt-4 text-sm text-text-disabled">
-            {t('reason')}: <span className="text-text-default">{r.acceptComment}</span>
+            {r.phase === 'cancelled' ? t('reason') : t('treasurerComment')}:{' '}
+            <span className="text-text-default">{r.acceptComment}</span>
           </p>
         )}
         {r.printedTicket && (
@@ -211,6 +223,27 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
         </p>
       )}
 
+      {/* Решение по индивидуальному курсу — внизу экрана, после всех деталей */}
+      {r.needsClientConfirmation && (
+        <div className="flex flex-col justify-center gap-3 sm:flex-row">
+          <Button
+            onClick={() => confirmMut.mutate()}
+            disabled={confirmMut.isPending || rejectMut.isPending}
+            className="sm:min-w-44"
+          >
+            {t('accept')}
+          </Button>
+          <Button
+            variant="surf2"
+            onClick={() => rejectMut.mutate()}
+            disabled={confirmMut.isPending || rejectMut.isPending}
+            className="sm:min-w-44"
+          >
+            {t('decline')}
+          </Button>
+        </div>
+      )}
+
       <div className="flex flex-col items-center gap-3 pb-6 sm:flex-row sm:justify-between">
         <Link
           href="/requests"
@@ -219,7 +252,10 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
           <Icon name="arrow_back" size={18} />
           {t('toList')}
         </Link>
-        {cancellable && !r.needsClientConfirmation && (
+        {/* Отмена недоступна, когда бронь уже действует (phase === 'held'):
+            и на экране таймера брони, и после согласования индивидуального
+            курса — согласованную сделку клиент отменить не может. */}
+        {cancellable && !r.needsClientConfirmation && r.phase !== 'held' && (
           <Button
             variant="surf2"
             onClick={() => cancelMut.mutate()}
@@ -321,6 +357,8 @@ function StatusHead({ request: r }: { request: ExchangeRequest }) {
   const tn = useTranslations('notifications');
   const { account } = useAuth();
 
+  // Отказ клиента от индивидуального курса — это «Отмена», а не «Снято с
+  // брони»: брони по такой заявке ещё не было, отменять было нечего.
   const title = r.needsClientConfirmation
     ? tn('titles.offerReviewed')
     : r.phase === 'held'
@@ -331,7 +369,9 @@ function StatusHead({ request: r }: { request: ExchangeRequest }) {
           : t('status0')
         : r.phase === 'done'
           ? t('status1')
-          : t('cancelled');
+          : r.isIndividual
+            ? t('status3')
+            : t('cancelled');
 
   const iconName =
     r.phase === 'held' || r.phase === 'done'
@@ -392,10 +432,46 @@ function StatusHead({ request: r }: { request: ExchangeRequest }) {
   );
 }
 
+/** Подтверждение брони — по образцу AuthModal: скрим + Esc + клик по подложке. */
+function BookedModal({ onClose }: { onClose: () => void }) {
+  const t = useTranslations('requests.bookedModal');
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+    <div
+      className="anim-modal-scrim fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+      role="dialog"
+      aria-modal="true"
+      aria-label={t('title')}
+    >
+      <div className="anim-modal-card w-full max-w-[420px] rounded-3xl bg-surface-page-surf1 p-6 text-center sm:p-8">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-hardsoft text-text-brand">
+          <Icon name="verified_user" size={28} filled />
+        </span>
+        <h2 className="mt-4 text-lg font-bold text-text-default sm:text-xl">{t('title')}</h2>
+        <p className="mt-2 text-sm text-text-disabled">{t('text')}</p>
+        <Button className="mt-6 w-full" onClick={onClose}>
+          {t('ok')}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 /** Таймер брони — от reservedUntil (60 мин с ответа казначея), по серверному времени. */
 function HoldCountdown({ until }: { until: string }) {
   const t = useTranslations('requests');
   const tf = useTranslations('flows.done');
+  const locale = useLocale();
   const left = useCountdown(until);
   const mm = String(Math.floor(left / 60));
   const ss = String(left % 60).padStart(2, '0');
@@ -408,21 +484,29 @@ function HoldCountdown({ until }: { until: string }) {
     );
   }
   return (
-    <div className="mt-3 flex items-center gap-1 text-lg text-text-default" role="timer">
-      <span className="sr-only">{t('timeLeft')}</span>
-      <span className="rounded-lg bg-surface-page-surf2 px-3 py-1.5">
-        {mm} {tf('min')}
-      </span>
-      :
-      <span className="rounded-lg bg-surface-page-surf2 px-3 py-1.5">
-        {ss} {tf('sec')}
-      </span>
-    </div>
+    <>
+      <div className="mt-3 flex items-center gap-1 text-lg text-text-default" role="timer">
+        <span className="sr-only">{t('timeLeft')}</span>
+        <span className="rounded-lg bg-surface-page-surf2 px-3 py-1.5">
+          {mm} {tf('min')}
+        </span>
+        :
+        <span className="rounded-lg bg-surface-page-surf2 px-3 py-1.5">
+          {ss} {tf('sec')}
+        </span>
+      </div>
+      {/* Обратный отсчёт не отвечает на вопрос «до скольки?» — показываем и
+          само время окончания брони (требование заказчика). */}
+      <p className="mt-2 text-sm text-text-disabled">
+        {t('bookedUntil')} {formatTime(until, locale)}
+      </p>
+    </>
   );
 }
 
 function OfferCountdown({ until }: { until: string }) {
   const t = useTranslations('requests');
+  const locale = useLocale();
   const left = useCountdown(until);
   if (left <= 0)
     return (
@@ -433,8 +517,10 @@ function OfferCountdown({ until }: { until: string }) {
   const mm = String(Math.floor(left / 60));
   const ss = String(left % 60).padStart(2, '0');
   return (
+    // «Бронь действует ещё» здесь было неверно: брони по предложению курса
+    // ещё нет, идёт срок на решение клиента.
     <p className="mt-2 text-sm text-text-disabled" role="timer">
-      {t('timeLeft')}: {mm}:{ss}
+      {t('offerTimeLeft')}: {mm}:{ss} ({formatTime(until, locale)})
     </p>
   );
 }

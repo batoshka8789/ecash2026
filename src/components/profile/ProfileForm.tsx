@@ -76,13 +76,14 @@ function Field({
   );
 }
 
-const tagKeys = ['entrepreneur', 'investor', 'director'] as const;
-
 /**
- * Анкета «Мои данные». ФИО, «о себе», занятость и теги человек правит сам —
- * всё это живёт в нашем слое профиля. Только для чтения остаются ИИН и
- * телефон: ИИН — проверяемый идентификатор из ядра Ecash, телефон — логин
- * аккаунта, и менять их можно лишь через отделение/смену номера.
+ * Анкета «Мои данные»: только ФИО (правится, живёт в нашем слое профиля) и
+ * номер телефона — он логин аккаунта Ecash, поэтому доступен лишь для
+ * чтения, сменить его можно в отделении.
+ *
+ * Поля франшизной анкеты («о себе», род деятельности, теги) и ИИН отсюда
+ * убраны по требованию заказчика: анкета франшизы существует отдельно и
+ * собирается своей формой на /franchise.
  */
 export function ProfileForm() {
   const t = useTranslations('profile.form');
@@ -98,17 +99,13 @@ export function ProfileForm() {
     firstName: '',
     lastName: '',
     middleName: '',
-    about: '',
-    occupation: '',
   });
-  const [tags, setTags] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
    * Заполняет форму значениями из аккаунта — и при первой загрузке сессии,
-   * и при отмене правок. `tags` защищаем от не-массива: анкета не должна
-   * ронять страницу из-за кривых данных (нормализация есть и на сервере).
+   * и при отмене правок.
    */
   const fillFrom = (a: NonNullable<typeof account>) => {
     setForm({
@@ -117,10 +114,7 @@ export function ProfileForm() {
       firstName: a.profile.firstName || a.firstName,
       lastName: a.profile.lastName || a.lastName,
       middleName: a.profile.middleName || a.middleName,
-      about: a.profile.about,
-      occupation: a.profile.occupation,
     });
-    setTags(Array.isArray(a.profile.tags) ? a.profile.tags : []);
   };
 
   // Подтягиваем данные пользователя, когда сессия загрузилась.
@@ -132,14 +126,8 @@ export function ProfileForm() {
   }
 
   const save = useMutation({
-    mutationFn: (patch: {
-      firstName: string;
-      lastName: string;
-      middleName: string;
-      about: string;
-      occupation: string;
-      tags: string[];
-    }) => api.profile.save(patch),
+    mutationFn: (patch: { firstName: string; lastName: string; middleName: string }) =>
+      api.profile.save(patch),
     onSuccess: async () => {
       await invalidate();
       setEditing(false);
@@ -160,13 +148,6 @@ export function ProfileForm() {
 
   const set = (key: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [key]: v }));
 
-  const toggleTag = (tag: string) =>
-    setTags((prev) => (prev.includes(tag) ? prev.filter((x) => x !== tag) : [...prev, tag]));
-
-  /** Неизвестный серверный тег показываем как есть — без «сырых» ключей перевода. */
-  const tagLabel = (tag: string) =>
-    (tagKeys as readonly string[]).includes(tag) ? t(`tags.${tag}`) : tag;
-
   const startEdit = () => {
     save.reset();
     setSaved(false);
@@ -181,7 +162,7 @@ export function ProfileForm() {
 
   const commit = () => {
     if (!editing || save.isPending) return;
-    save.mutate({ ...form, tags });
+    save.mutate(form);
   };
 
   /** Submit формы: Enter в любом поле в режиме редактирования сохраняет анкету. */
@@ -266,15 +247,10 @@ export function ProfileForm() {
           describedBy={errId}
         />
       </div>
-      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field
-          id={`${uid}-iin`}
-          label={t('iin')}
-          value={account?.iin ?? ''}
-          disabled
-          inputMode="numeric"
-          title={t('readonlyHint')}
-        />
+      {/* Только номер телефона: ИИН, «о себе», род деятельности и теги убраны —
+          это поля анкеты на франшизу, в профиле им не место (требование
+          заказчика). Данные франшизы собираются своей формой на /franchise. */}
+      <div className="mt-3">
         <Field
           id={`${uid}-phone`}
           label={t('contact')}
@@ -284,86 +260,6 @@ export function ProfileForm() {
         />
       </div>
       <p className="mt-2 pl-1 text-xs text-text-disabled">{t('readonlyHint')}</p>
-
-      <div className="mt-3 rounded-xl border border-transparent bg-surface-page-surf2 px-4 py-3 transition-colors focus-within:border-stroke-brand">
-        <label htmlFor={`${uid}-about`} className="sr-only">
-          {t('about')}
-        </label>
-        <textarea
-          id={`${uid}-about`}
-          value={form.about}
-          onChange={(e) => set('about')(e.target.value)}
-          readOnly={!editing}
-          placeholder={t('about')}
-          rows={3}
-          maxLength={1000}
-          aria-invalid={errField === 'about' || undefined}
-          aria-describedby={errField === 'about' ? errId : undefined}
-          className="w-full resize-none bg-transparent text-sm text-text-default outline-none placeholder:text-text-disabled"
-        />
-      </div>
-
-      <div className="mt-3 rounded-xl border border-transparent bg-surface-page-surf2 px-4 py-3 transition-colors focus-within:border-stroke-brand">
-        {tags.length > 0 && (
-          <div className="mb-2 flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex items-center gap-1 rounded-full bg-surface-modal-surf1 px-3 py-1 text-xs text-text-default"
-              >
-                {tagLabel(tag)}
-                {editing && (
-                  <button
-                    type="button"
-                    onClick={() => toggleTag(tag)}
-                    aria-label={t('removeTag')}
-                    className="cursor-pointer text-text-disabled hover:text-text-default"
-                  >
-                    <Icon name="close" size={12} />
-                  </button>
-                )}
-              </span>
-            ))}
-          </div>
-        )}
-        <label htmlFor={`${uid}-occupation`} className="sr-only">
-          {t('occupation')}
-        </label>
-        <input
-          id={`${uid}-occupation`}
-          value={form.occupation}
-          onChange={(e) => set('occupation')(e.target.value)}
-          readOnly={!editing}
-          placeholder={t('occupation')}
-          maxLength={120}
-          aria-invalid={errField === 'occupation' || undefined}
-          aria-describedby={errField === 'occupation' ? errId : undefined}
-          className="w-full bg-transparent text-sm text-text-default outline-none placeholder:text-text-disabled"
-        />
-      </div>
-
-      <div className="mt-3 flex flex-wrap gap-2">
-        {tagKeys.map((tag) => {
-          const selected = tags.includes(tag);
-          return (
-            <button
-              key={tag}
-              type="button"
-              disabled={!editing}
-              onClick={() => toggleTag(tag)}
-              className={clsx(
-                'rounded-full px-4 py-1.5 text-xs font-medium transition-colors',
-                selected
-                  ? 'bg-surface-modal-surf1 text-text-default'
-                  : 'bg-surface-page-surf2 text-text-disabled',
-                editing && 'cursor-pointer hover:bg-comp-surface2-hover',
-              )}
-            >
-              {t(`tags.${tag}`)}
-            </button>
-          );
-        })}
-      </div>
 
       <div aria-live="polite">
         {save.error && (

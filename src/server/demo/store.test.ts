@@ -91,7 +91,7 @@ describe('demoConfirmIndividual / demoRejectIndividual', () => {
   it('после подтверждения повторный confirm — REQUEST_NOT_ACTIVE', () => {
     const acc = 'acc-ind-twice';
     const req = store.demoCreate(acc, reserveBody(), true);
-    vi.advanceTimersByTime(9000); // казначей предложил курс
+    vi.advanceTimersByTime(store.TREASURER_DELAY_MS + 1000); // казначей предложил курс
     const confirmed = store.demoConfirmIndividual(acc, req.requestId);
     expect(confirmed?.status).toBe(8);
     const err = catchEcash(() => store.demoConfirmIndividual(acc, req.requestId));
@@ -102,7 +102,7 @@ describe('demoConfirmIndividual / demoRejectIndividual', () => {
   it('reject отменённой ранее заявки — REQUEST_NOT_ACTIVE', () => {
     const acc = 'acc-ind-reject-twice';
     const req = store.demoCreate(acc, reserveBody(), true);
-    vi.advanceTimersByTime(9000);
+    vi.advanceTimersByTime(store.TREASURER_DELAY_MS + 1000);
     const rejected = store.demoRejectIndividual(acc, req.requestId);
     expect(rejected?.status).toBe(3);
     const err = catchEcash(() => store.demoRejectIndividual(acc, req.requestId));
@@ -112,7 +112,7 @@ describe('demoConfirmIndividual / demoRejectIndividual', () => {
   it('просроченное предложение — RATE_EXPIRED', () => {
     const acc = 'acc-ind-expired';
     const req = store.demoCreate(acc, reserveBody(), true);
-    vi.advanceTimersByTime(9000); // предложение действует 60 минут
+    vi.advanceTimersByTime(store.TREASURER_DELAY_MS + 1000); // предложение действует 60 минут
     vi.advanceTimersByTime(61 * 60_000);
     const err = catchEcash(() => store.demoConfirmIndividual(acc, req.requestId));
     expect(err.code).toBe('RATE_EXPIRED');

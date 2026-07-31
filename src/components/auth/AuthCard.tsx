@@ -252,13 +252,14 @@ export function AuthCard({
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-1">
                     {loginStep === 'login' ? (
+                      /* inputMode="tel" убран: поле принимает и почту, а
+                         цифровая клавиатура на телефоне не даёт её набрать */
                       <Input
                         placeholder={t('loginLabel')}
                         value={loginValue}
                         onChange={(e) => setLoginValue(formatLoginInput(e.target.value))}
                         errors={err('login').concat(err('phoneNumber'))}
                         autoComplete="username"
-                        inputMode="tel"
                       />
                     ) : (
                       <Input

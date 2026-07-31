@@ -101,7 +101,9 @@ export function RequestsList() {
                         phaseStyles[r.phase],
                       )}
                     >
-                      {r.needsClientConfirmation ? t('offerTitle') : t(statusKey(r))}
+                      {/* короткий статус вместо фразы «Казначей предложил курс»:
+                          в списке нужен ярлык, а не предложение */}
+                      {r.needsClientConfirmation ? t('needsDecision') : t(statusKey(r))}
                     </span>
                   </span>
                   <span className="mt-1 block truncate text-sm text-text-disabled">

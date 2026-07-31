@@ -31,7 +31,7 @@
       "give": "I give",
       "get": "I get",
       "swap": "Swap",
-      "exchangeRate": "Exchange rate",
+      "exchangeRate": "Deal rate",
       "book": "Book",
       "periods": {
         "year": "Year",
@@ -127,7 +127,7 @@
       "devCode": "Test code: {code}",
       "phonePlaceholder": "Phone number"
     },
-    "loginLabel": "Phone number or IIN",
+    "loginLabel": "Phone number or email",
     "phoneLabel": "Phone number",
     "otpTitle": "Verify your number",
     "otpSent": "We sent an SMS code to {phone}. Enter it to continue",
@@ -185,7 +185,7 @@
       "middleName": "Middle name",
       "iin": "IIN",
       "contact": "Phone number / Email",
-      "readonlyHint": "Your IIN and phone number are linked to your Ecash account — they can only be changed at a branch",
+      "readonlyHint": "Your phone number is your Ecash account login — it can be changed at a branch",
       "about": "Tell us about your experience",
       "occupation": "What do you do at the moment?",
       "removeTag": "Remove",
@@ -229,7 +229,7 @@
       "alertsOff": "Notifications disabled",
       "rateReached": "The rate reached your mark",
       "offerReviewed": "Your offer has been reviewed",
-      "offerSent": "Your offer has been sent"
+      "offerSent": "Individual rate request sent"
     },
     "min": "min",
     "sec": "sec",
@@ -302,12 +302,10 @@
       "dynamics": "Rate dynamics",
       "give": "I give",
       "get": "I get",
-      "underReview": "Under review",
       "currentRate": "Current Ecash rate",
       "pickCurrency": "Choose currency",
       "searchCurrency": "Search by currency",
-      "swap": "Swap direction",
-      "desiredRate": "Desired rate"
+      "swap": "Swap direction"
     },
     "address": {
       "title": "Address",
@@ -331,7 +329,8 @@
       "book": "Book",
       "requestIndividualCta": "Request an individual rate",
       "phoneFromAccount": "Number from your account",
-      "loginToBook": "Sign in to reserve a rate"
+      "loginToBook": "Sign in to reserve a rate",
+      "amountRequired": "Enter an amount to continue"
     },
     "done": {
       "booking30": "Booking · 30min",
@@ -715,8 +714,7 @@
     "status8": "Reserved",
     "status1": "Completed",
     "status3": "Cancelled",
-    "awaiting": "Request sent to the treasurer. Expect an answer within a couple of minutes",
-    "offerTitle": "The treasurer offered a rate",
+    "awaiting": "Your request is under review. As soon as we review it, we will send you a notification with the answer",
     "offerText": "You have {min} minutes to decide",
     "accept": "Accept",
     "decline": "Decline",
@@ -739,14 +737,22 @@
     "branch": "Branch address",
     "yourData": "Your details",
     "commentLabel": "Comment",
-    "onMapBtn": "On map"
+    "onMapBtn": "On map",
+    "treasurerComment": "Treasurer comment",
+    "offerTimeLeft": "Time left to decide",
+    "bookedUntil": "Booking valid until",
+    "bookedModal": {
+      "title": "Rate booked",
+      "text": "The currency pair is booked. Please visit the branch before the booking expires.",
+      "ok": "Got it"
+    },
+    "needsDecision": "Needs your decision"
   },
   "rates": {
     "gold": "Gold bar {grams} g",
     "updatedAt": "Rates updated: {time}",
     "perUnit": "{rate} ₸ = 1 {code}",
     "noHistory": "Not enough data for this period yet",
-    "marketSource": "Official NBK rate",
     "currency": "Currency",
     "chart": {
       "group": "Chart period",

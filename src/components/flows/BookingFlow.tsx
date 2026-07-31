@@ -15,6 +15,8 @@ import { useAuth } from '@/lib/auth';
 import { useErrorText } from '@/lib/useErrorText';
 import { useNearestDepId } from '@/lib/user-place';
 import { currencyName, currencySymbol, formatNumber, formatPhoneInput } from '@/lib/format';
+import { counterAmount } from '@/lib/exchange';
+import { sortCurrencyCodes } from '@/lib/currency-order';
 import type { ExchangeRequest } from '@/lib/domain';
 import { AmountBox, BranchAddress, BanknotesPicker } from './PairFields';
 
@@ -59,7 +61,6 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   const setDepId = setPickedDep;
   const [banknotes, setBanknotes] = useState<string | null>(null);
   const [name, setName] = useState('');
-  const [desiredRate, setDesiredRate] = useState('');
   const [individual, setIndividual] = useState(mode === 'individual');
   const [showErrors, setShowErrors] = useState(false);
   const [duplicate, setDuplicate] = useState<ExchangeRequest | null>(null);
@@ -120,37 +121,44 @@ export function BookingFlow({ mode }: { mode: Mode }) {
    * уведомления показывала «19,72 (KZT)» вместо «10 000 (KZT)».
    */
   const amount = useMemo(() => {
-    if (!validAmount || rate <= 0) return 0;
-    return kztGive ? amountNum / rate : amountNum * rate;
-  }, [validAmount, rate, kztGive, amountNum]);
+    if (!validAmount) return 0;
+    return counterAmount(amountNum, rate, kztGive ? 'KZT' : foreign);
+  }, [validAmount, rate, kztGive, amountNum, foreign]);
 
+  /**
+   * Эквивалент считается ВСЕГДА, в том числе для индивидуального курса.
+   * Раньше здесь возвращалось «На рассмотрении», и человек не видел даже
+   * ориентировочной суммы: курс казначея действительно будет другим, но
+   * расчёт по текущему курсу — это оценка, а не пустой экран.
+   */
   const get = useMemo(() => {
-    if (mode === 'individual' || individual) return t('pair.underReview');
     if (!validAmount || rate <= 0) return '';
     return kztGive
       ? `${formatNumber(amount, locale)} ${currencySymbol(foreign)}`
       : `${formatNumber(amount, locale)} ₸`;
-  }, [mode, individual, validAmount, rate, kztGive, amount, foreign, locale, t]);
+  }, [validAmount, rate, kztGive, amount, foreign, locale]);
 
+  // Порядок общий с калькулятором: тенге сверху, золото в конце
   const currencyOptions = useMemo(
     () =>
-      (ratesQ.data?.rates ?? [])
-        .filter((r) => r.currencyCode !== 'KZT' && (r.buy > 0 || r.sell > 0))
-        .map((r) => ({
-          code: r.currencyCode,
-          name: currencyName(r.currencyCode, locale, (g) => tr('gold', { grams: g })),
-        })),
+      sortCurrencyCodes(
+        (ratesQ.data?.rates ?? [])
+          .filter((r) => r.currencyCode !== 'KZT' && (r.buy > 0 || r.sell > 0))
+          .map((r) => r.currencyCode),
+      ).map((code) => ({
+        code,
+        name: currencyName(code, locale, (g) => tr('gold', { grams: g })),
+      })),
     [ratesQ.data, locale, tr],
   );
 
   const create = useMutation({
     mutationFn: () => {
-      const desired = parseFloat(desiredRate.replace(/[\s ]/g, '').replace(',', '.'));
       const isInd = mode === 'individual' || individual;
-      const effRate = isInd && Number.isFinite(desired) && desired > 0 ? desired : rate;
       // value — currencyFrom (то, что отдаём), amount — currencyTo (что получаем)
+      const effRate = rate;
       const effValue = amountNum;
-      const effAmount = kztGive ? amountNum / effRate : amountNum * effRate;
+      const effAmount = counterAmount(amountNum, effRate, kztGive ? 'KZT' : foreign);
       const comment = banknotes ? t(`banknotes.${banknotes as 'small' | 'large'}`) : undefined;
       const payload = {
         currencyFrom: kztGive ? 'KZT' : foreign,
@@ -278,21 +286,9 @@ export function BookingFlow({ mode }: { mode: Mode }) {
           )}
         </div>
 
-        {(mode === 'individual' || individual) && (
-          <div className="mt-5 max-w-xs">
-            <label htmlFor="desired-rate" className="mb-1 block text-sm text-text-disabled">
-              {t('pair.desiredRate')}
-            </label>
-            <input
-              id="desired-rate"
-              value={desiredRate}
-              onChange={(e) => setDesiredRate(e.target.value.replace(/[^\d\s.,]/g, '').slice(0, 10))}
-              inputMode="decimal"
-              placeholder={rate > 0 ? formatNumber(rate, locale) : ''}
-              className="h-12 w-full rounded-2xl border border-stroke-modal bg-transparent px-4 text-base text-text-default outline-none placeholder:text-text-disabled focus:border-stroke-brand"
-            />
-          </div>
-        )}
+        {/* Поле «Желаемый курс» убрано по требованию заказчика: курс назначает
+            казначей, и запрошенное клиентом значение всё равно не влияло на
+            результат — только создавало ложное ожидание. */}
 
         <div className="mt-8">
           <div className="mb-3 max-w-md">
@@ -378,13 +374,19 @@ export function BookingFlow({ mode }: { mode: Mode }) {
           </p>
         )}
 
+        {/* Сумма обязательна: кнопка недоступна, пока её не ввели, — раньше
+            операцию можно было отправить с пустым полем и узнать об ошибке
+            только из тоста. Подпись объясняет, почему кнопка неактивна. */}
         <Button
           type="submit"
           className="mt-6 w-full sm:w-auto sm:min-w-52"
-          disabled={create.isPending}
+          disabled={create.isPending || !validAmount}
         >
           {mode === 'individual' || individual ? t('data.requestIndividualCta') : t('data.book')}
         </Button>
+        {!validAmount && (
+          <p className="mt-2 text-sm text-text-disabled">{t('data.amountRequired')}</p>
+        )}
       </section>
     </form>
     <AuthModal

@@ -31,7 +31,7 @@
       "give": "我支付",
       "get": "我获得",
       "swap": "对调",
-      "exchangeRate": "市场汇率",
+      "exchangeRate": "成交汇率",
       "book": "锁定汇率",
       "periods": {
         "year": "年",
@@ -127,7 +127,7 @@
       "devCode": "测试验证码：{code}",
       "phonePlaceholder": "手机号码"
     },
-    "loginLabel": "手机号码或个人识别号",
+    "loginLabel": "手机号或电子邮箱",
     "phoneLabel": "手机号码",
     "otpTitle": "验证手机号码",
     "otpSent": "我们已向 {phone} 发送短信验证码。请输入验证码以继续",
@@ -185,7 +185,7 @@
       "middleName": "父称",
       "iin": "个人识别号",
       "contact": "手机号码 / 电子邮箱",
-      "readonlyHint": "个人识别号与手机号码已绑定您的 Ecash 账户，仅可在网点修改",
+      "readonlyHint": "手机号是您的 Ecash 账户登录名，如需更改请前往网点办理",
       "about": "介绍一下您的经历",
       "occupation": "您目前从事什么工作？",
       "removeTag": "移除",
@@ -229,7 +229,7 @@
       "alertsOff": "通知已关闭",
       "rateReached": "汇率已达到您设定的目标",
       "offerReviewed": "您的申请已审核",
-      "offerSent": "您的申请已提交"
+      "offerSent": "个人汇率申请已发送"
     },
     "min": "分",
     "sec": "秒",
@@ -302,12 +302,10 @@
       "dynamics": "汇率走势",
       "give": "我支付",
       "get": "我获得",
-      "underReview": "审核中",
       "currentRate": "当前 Ecash 汇率",
       "pickCurrency": "选择货币",
       "searchCurrency": "搜索货币",
-      "swap": "对调方向",
-      "desiredRate": "期望汇率"
+      "swap": "对调方向"
     },
     "address": {
       "title": "地址",
@@ -331,7 +329,8 @@
       "book": "锁定汇率",
       "requestIndividualCta": "申请专属汇率",
       "phoneFromAccount": "来自您账户的号码",
-      "loginToBook": "登录后可锁定汇率"
+      "loginToBook": "登录后可锁定汇率",
+      "amountRequired": "请输入金额以继续"
     },
     "done": {
       "booking30": "预订 · 30分钟",
@@ -715,8 +714,7 @@
     "status8": "已锁定",
     "status1": "已完成",
     "status3": "已取消",
-    "awaiting": "申请已提交给资金专员，预计几分钟内答复",
-    "offerTitle": "资金专员给出了汇率",
+    "awaiting": "您的申请正在审核中。审核完成后，我们会通过通知告知结果",
     "offerText": "您有 {min} 分钟做出决定",
     "accept": "接受",
     "decline": "拒绝",
@@ -739,14 +737,22 @@
     "branch": "网点地址",
     "yourData": "您的信息",
     "commentLabel": "备注",
-    "onMapBtn": "在地图上查看"
+    "onMapBtn": "在地图上查看",
+    "treasurerComment": "司库备注",
+    "offerTimeLeft": "剩余决定时间",
+    "bookedUntil": "预订有效期至",
+    "bookedModal": {
+      "title": "汇率已锁定",
+      "text": "货币对已预订。请在预订到期前前往网点办理。",
+      "ok": "知道了"
+    },
+    "needsDecision": "待您确认"
   },
   "rates": {
     "gold": "金条 {grams} 克",
     "updatedAt": "汇率更新时间：{time}",
     "perUnit": "{rate} ₸ = 1 {code}",
     "noHistory": "该时间段的数据尚不足",
-    "marketSource": "哈萨克斯坦国家银行官方汇率",
     "currency": "货币",
     "chart": {
       "group": "图表周期",

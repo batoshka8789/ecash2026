@@ -26,6 +26,10 @@ RUN addgroup -S app && adduser -S app -G app
 COPY --from=build --chown=app:app /app/.next/standalone ./
 COPY --from=build --chown=app:app /app/.next/static ./.next/static
 COPY --from=build --chown=app:app /app/public ./public
+# SQL-миграции: их накатывает сам сервер при старте (src/instrumentation.ts).
+# Без этой копии прод-база остаётся на той версии схемы, до которой её
+# однажды довели руками, и запись в новые колонки молча падает.
+COPY --from=build --chown=app:app /app/drizzle ./drizzle
 USER app
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \

@@ -22,6 +22,7 @@ import {
   formatPointStamp,
   type TickGranularity,
 } from '@/lib/format';
+import { sortCurrencyCodes } from '@/lib/currency-order';
 import { useErrorText } from '@/lib/useErrorText';
 import { useNearestDepId } from '@/lib/user-place';
 import type { CurrencyCode } from '@/lib/domain';
@@ -129,7 +130,9 @@ export function Calculator({
     const codes = (ratesQuery.data?.rates ?? [])
       .map((r) => r.currencyCode)
       .filter((c) => c !== 'KZT');
-    return ['KZT' as CurrencyCode, ...codes].map((code) => ({
+    // Порядок задаём сами: у апстрима он свой в каждом отделении, и золотые
+    // слитки всплывали в начало списка сразу за тенге.
+    return sortCurrencyCodes(['KZT' as CurrencyCode, ...codes]).map((code) => ({
       value: code,
       label: code,
       hint: currencyName(code, locale, goldLabel),
@@ -140,8 +143,6 @@ export function Calculator({
 
   const stat = ratesQuery.data?.rates.find((r) => r.currencyCode === foreign);
   const rates = stat && stat.buy > 0 && stat.sell > 0 ? { buy: stat.buy, sell: stat.sell } : null;
-  /** «Курс на бирже» НБ РК по выбранной валюте (золота в фиде нет — null). */
-  const marketRate = ratesQuery.data?.marketRates?.[foreign] ?? null;
 
   /**
    * Правило направления: отдаю тенге → покупаю валюту по курсу ПРОДАЖИ
@@ -370,7 +371,11 @@ export function Calculator({
           )}
           {activeRate !== null && (
             <>
-              {/* «Курс на бирже» + badge — из макета: fill surf1-alt, текст брендовым цветом */}
+              {/* «Курс сделки» + badge — из макета: fill surf1-alt, текст брендовым
+                  цветом. Здесь показывается НАШ курс, по которому пройдёт обмен,
+                  поэтому подпись именно «сделки», а не «на бирже». Официальный
+                  курс НБ РК под калькулятором убран по требованию заказчика:
+                  клиенту важна цена сделки, а не справочная котировка. */}
               <span className="flex items-center gap-2 text-xs text-text-disabled sm:gap-3 sm:text-sm">
                 {t('exchangeRate')}
                 <span className="rounded-xl bg-surface-page-surf1-alt px-3 py-1 font-medium text-text-brand">
@@ -380,15 +385,6 @@ export function Calculator({
                   })}
                 </span>
               </span>
-              {marketRate !== null && (
-                <span className="text-xs text-text-disabled sm:text-sm">
-                  {tRates('marketSource')}:{' '}
-                  {tRates('perUnit', {
-                    rate: formatNumber(marketRate, locale, 2),
-                    code: currencySymbol(foreign),
-                  })}
-                </span>
-              )}
             </>
           )}
           <Button className="w-full sm:ml-auto sm:w-auto sm:min-w-44" onClick={goBooking}>

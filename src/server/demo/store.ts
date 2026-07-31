@@ -1,6 +1,7 @@
 import 'server-only';
 import { env } from '@/server/env';
 import type { Account, ExchangeRequest, OperationsPage, RequestAccept } from '@/lib/domain';
+import { counterAmount } from '@/lib/exchange';
 import { phaseOf, sideOf } from '@/shared/ecash/mappers';
 import { EcashError } from '@/server/ecash/errors';
 import type { ReserveBody } from '@/server/ecash/endpoints/reserve';
@@ -62,7 +63,13 @@ export function demoCheckPassword(login: string, password: string): boolean {
   return saved !== undefined && saved === password;
 }
 
-const TREASURER_DELAY_MS = 8000;
+/**
+ * Пауза перед «ответом казначея». 8 секунд выглядели мгновенным ответом:
+ * промежуточный экран «заявка на рассмотрении» успевал мелькнуть, и
+ * заказчик справедливо отметил, что курс появляется сразу — в жизни
+ * казначей отвечает не мгновенно. 30 секунд дают увидеть этот шаг.
+ */
+export const TREASURER_DELAY_MS = 30_000;
 const HOLD_MINUTES = 60;
 
 const list = (accountId: string) => {
@@ -161,11 +168,15 @@ export function demoCreate(accountId: string, body: ReserveBody, individual: boo
     const answeredAt = new Date();
     const until = new Date(answeredAt.getTime() + HOLD_MINUTES * 60_000).toISOString();
     if (individual) {
-      // индивидуальный курс: казначей предлагает курс чуть лучше запрошенного
+      // индивидуальный курс: казначей предлагает курс чуть лучше запрошенного.
+      // Сумма пересчитывается ТОЛЬКО через counterAmount: здесь стояло
+      // безусловное `r.value * offered`, и заявка «1 000 000 ₸ → $»
+      // показывала 541 680 000 $ вместо 1 846 $.
       const offered = Math.round(r.rate * 0.995 * 100) / 100;
-      r.accepts.push(treasurerAccept(2, offered, r.value, Math.round(r.value * offered)));
+      const offeredAmount = Math.round(counterAmount(r.value, offered, r.currencyFrom));
+      r.accepts.push(treasurerAccept(2, offered, r.value, offeredAmount));
       r.rate = offered;
-      r.amount = Math.round(r.value * offered);
+      r.amount = offeredAmount;
       r.needsClientConfirmation = true;
       r.reservedAt = answeredAt.toISOString();
       r.reservedUntil = until;

@@ -8,6 +8,12 @@ export async function register() {
     await import('./server/env');
     // снапшоттер курсов — только в живом сервере, не при сборке
     if (process.env.NEXT_PHASE !== 'phase-production-build') {
+      // Схему приводим к коду ДО первого запроса и до снапшоттера: он сам
+      // пишет в БД. Раньше миграции не запускал никто (в контейнере только
+      // `node server.js`), и прод-база отставала от схемы репозитория.
+      const { runMigrations } = await import('./server/db/migrate');
+      await runMigrations();
+
       const { startSnapshotter } = await import('./server/jobs/snapshots');
       startSnapshotter();
     }
