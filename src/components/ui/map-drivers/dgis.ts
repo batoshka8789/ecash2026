@@ -13,6 +13,14 @@ type DgisMap = InstanceType<Mapgl['Map']>;
 type DgisHtmlMarker = InstanceType<Mapgl['HtmlMarker']>;
 
 function createDgisMarker(mapglNS: Mapgl, map: DgisMap, m: MapDriverMarkerSpec): DgisHtmlMarker {
+  // В отличие от Yandex, HtmlMarker — настоящий DOM поверх канваса, поэтому
+  // клик здесь нативный (interactive: true ниже даёт pointer-events: auto).
+  // stopPropagation вместе с preventMapInteractions (true по умолчанию) не
+  // пускают этот же клик в map.on('click') — см. контракт onClick в types.ts.
+  m.el.addEventListener('click', (e) => {
+    e.stopPropagation();
+    m.onClick?.();
+  });
   // anchor — офсет «носика» маркера от его левого верхнего угла, а не
   // центрирование по ключевому слову, как у MapLibre; половина стороны
   // пина (24 = 48/2) центрирует его, спайдерфай-офсет вычитается из anchor
