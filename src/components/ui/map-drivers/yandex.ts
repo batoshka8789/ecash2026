@@ -1,3 +1,4 @@
+import { PIN_SIZE, USER_DOT_SIZE } from './pins';
 import type { DriverPoint, MapDriver, MapDriverMarkerSpec, MapDriverModule } from './types';
 
 /**
@@ -58,6 +59,16 @@ function loadYmaps(): Promise<YMapsNS> {
 }
 
 /**
+ * `iconShape` в рантайме 2.1 принимает JSON пиксельной геометрии с
+ * координатами, но в `@types/yandex-maps` описан лишь базовый `{ type }` —
+ * дописываем недостающие поля структурно совместимым локальным типом.
+ */
+type PixelRectShapeJson = {
+  type: 'Rectangle';
+  coordinates: [[number, number], [number, number]];
+};
+
+/**
  * Хост-обёртка под произвольный DOM-пин (см. pins.ts) — тот же приём, что
  * и у 2GIS: Yandex позиционирует layout своим top-left в точку координаты,
  * а «anchor» имитируем отрицательными margin (сдвигаем контейнер так, чтобы
@@ -69,6 +80,7 @@ function createHtmlPlacemark(
   el: HTMLElement,
   anchorX: number,
   anchorY: number,
+  sizePx: number,
   zIndex: number,
   interactive: boolean,
 ): YPlacemark {
@@ -89,10 +101,34 @@ function createHtmlPlacemark(
     },
   });
 
+  // Хит-область метки для событийной системы ymaps. У кастомного iconLayout
+  // API сам её вычислить не может: без iconShape метка «прозрачна» для
+  // кликов — событие проваливается в 'click' самой карты (у нас это
+  // onBackgroundClick), и пин выглядит некликабельным. Координаты — пиксели
+  // относительно геоточки; layout сдвинут margin'ами на (-anchorX, -anchorY).
+  const shape: PixelRectShapeJson | null = interactive
+    ? {
+        type: 'Rectangle',
+        coordinates: [
+          [-anchorX, -anchorY],
+          [-anchorX + sizePx, -anchorY + sizePx],
+        ],
+      }
+    : null;
+
   return new ns.Placemark(
     coordinates,
     {},
-    { iconLayout: HostLayout, zIndex, zIndexHover: zIndex, interactivityModel: 'default#opaque' },
+    {
+      iconLayout: HostLayout,
+      iconShape: shape,
+      zIndex,
+      zIndexHover: zIndex,
+      // opaque: событие, попавшее в хит-область метки, НЕ дублируется в
+      // события карты — иначе клик по пину открыл бы карточку и тут же
+      // закрыл её через onBackgroundClick.
+      interactivityModel: 'default#opaque',
+    },
   );
 }
 
@@ -138,11 +174,16 @@ function createYandexDriver(): MapDriver {
           ns!,
           [m.lat, m.lon],
           m.el,
-          24 - m.offsetX,
-          24 - m.offsetY,
+          PIN_SIZE / 2 - m.offsetX,
+          PIN_SIZE / 2 - m.offsetY,
+          PIN_SIZE,
           m.zIndex,
           true,
         );
+        // Клик — только через placemark.events: собственный прозрачный
+        // events-pane ymaps лежит ПОВЕРХ панов с метками и перехватывает все
+        // DOM-события, поэтому нативный listener на m.el не сработал бы никогда.
+        pin.events.add('click', () => m.onClick?.());
         map!.geoObjects.add(pin);
         return pin;
       });
@@ -154,7 +195,16 @@ function createYandexDriver(): MapDriver {
         userPin = null;
       }
       if (!map || !ns || !pos || !el) return;
-      userPin = createHtmlPlacemark(ns, [pos.lat, pos.lon], el, 8, 8, 0, false);
+      userPin = createHtmlPlacemark(
+        ns,
+        [pos.lat, pos.lon],
+        el,
+        USER_DOT_SIZE / 2,
+        USER_DOT_SIZE / 2,
+        USER_DOT_SIZE,
+        0,
+        false,
+      );
       map.geoObjects.add(userPin);
     },
 

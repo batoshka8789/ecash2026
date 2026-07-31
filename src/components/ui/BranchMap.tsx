@@ -241,12 +241,20 @@ export function BranchMap({
       driver.setMarkers(
         markers.map((m) => {
           const [dx, dy] = offsets.get(m.id) ?? [0, 0];
-          const el = makePin(m);
-          el.addEventListener('click', (e) => {
-            e.stopPropagation();
-            clickRef.current?.(m.id);
-          });
-          return { id: m.id, lat: m.lat, lon: m.lon, el, zIndex: m.active ? 2 : 1, offsetX: dx, offsetY: dy };
+          return {
+            id: m.id,
+            lat: m.lat,
+            lon: m.lon,
+            el: makePin(m),
+            zIndex: m.active ? 2 : 1,
+            offsetX: dx,
+            offsetY: dy,
+            // Подписку вешает сам драйвер (у Yandex нативный DOM-клик по el
+            // не работает — см. types.ts). Через ref, а не напрямую: пины
+            // пересоздаются только при смене markersSig, а колбэк родителя
+            // обновляется каждый ре-рендер — иначе застряло бы старое замыкание.
+            onClick: () => clickRef.current?.(m.id),
+          };
         }),
       );
     }

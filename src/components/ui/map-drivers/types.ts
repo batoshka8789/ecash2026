@@ -23,11 +23,15 @@ export type BranchMapMarker = {
 export type DriverPoint = { lat: number; lon: number };
 
 /**
- * DOM-элемент пина строится один раз в BranchMap.tsx (см. pins.ts) — сюда
- * приходит уже готовый, с навешанным onClick; драйвер только позиционирует.
+ * DOM-элемент пина строится один раз в BranchMap.tsx (см. pins.ts) — драйвер
+ * его позиционирует и САМ подписывает onClick своим механизмом. Единый
+ * нативный listener на el здесь невозможен: у 2GIS HtmlMarker — настоящий
+ * DOM поверх канваса и DOM-клик работает, а Yandex 2.1 накрывает все паны
+ * с метками собственным прозрачным events-паном, который съедает нативные
+ * события — клики там существуют только внутри событийной системы ymaps.
  * offsetX/offsetY — пиксельное смещение от истинной геоточки (спайдерфай
  * налезающих друг на друга отделений, см. pins.ts/spiderfy); каждый драйвер
- * реализует его своим механизмом (anchor у 2GIS, CSS-transform у Yandex).
+ * реализует его своим механизмом (anchor у 2GIS, CSS-margin у Yandex).
  */
 export type MapDriverMarkerSpec = {
   id: number;
@@ -37,6 +41,12 @@ export type MapDriverMarkerSpec = {
   zIndex: number;
   offsetX: number;
   offsetY: number;
+  /**
+   * Клик по пину. Контракт: драйвер обязан НЕ пропускать этот же клик в
+   * onBackgroundClick — иначе карточка отделения закрывалась бы тем же
+   * кликом, которым открылась.
+   */
+  onClick?: () => void;
 };
 
 export interface MapDriver {
