@@ -99,6 +99,7 @@ export function ProfileForm() {
     firstName: '',
     lastName: '',
     middleName: '',
+    phoneNumber: '',
   });
   const [saved, setSaved] = useState(false);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -114,6 +115,7 @@ export function ProfileForm() {
       firstName: a.profile.firstName || a.firstName,
       lastName: a.profile.lastName || a.lastName,
       middleName: a.profile.middleName || a.middleName,
+      phoneNumber: a.phoneNumber ? formatPhoneInput(a.phoneNumber) : '',
     });
   };
 
@@ -125,9 +127,26 @@ export function ProfileForm() {
     fillFrom(account);
   }
 
+  /**
+   * ФИО живёт в нашей анкете, а телефон — логин аккаунта Ecash, и меняется
+   * только через ядро (PUT /mobile/account/update-client). Поэтому одно
+   * сохранение затрагивает два хранилища; номер трогаем, лишь когда он
+   * действительно изменился, чтобы не дёргать ядро на каждой правке имени.
+   */
   const save = useMutation({
-    mutationFn: (patch: { firstName: string; lastName: string; middleName: string }) =>
-      api.profile.save(patch),
+    mutationFn: async (patch: {
+      firstName: string;
+      lastName: string;
+      middleName: string;
+      phoneNumber: string;
+    }) => {
+      const { phoneNumber, ...profile } = patch;
+      const digits = (s: string) => s.replace(/\D/g, '');
+      if (account && digits(phoneNumber) && digits(phoneNumber) !== digits(account.phoneNumber)) {
+        await api.account.save({ phoneNumber });
+      }
+      return api.profile.save(profile);
+    },
     onSuccess: async () => {
       await invalidate();
       setEditing(false);
@@ -249,17 +268,23 @@ export function ProfileForm() {
       </div>
       {/* Только номер телефона: ИИН, «о себе», род деятельности и теги убраны —
           это поля анкеты на франшизу, в профиле им не место (требование
-          заказчика). Данные франшизы собираются своей формой на /franchise. */}
+          заказчика). Данные франшизы собираются своей формой на /franchise.
+
+          Телефон редактируемый: ядро Ecash умеет его менять
+          (PUT /mobile/account/update-client), просто эту ручку раньше никто
+          не вызывал — отсюда и жалоба «не изменяется номер телефона». */}
       <div className="mt-3">
         <Field
           id={`${uid}-phone`}
           label={t('contact')}
-          value={account?.phoneNumber ? formatPhoneInput(account.phoneNumber) : ''}
-          disabled
-          title={t('readonlyHint')}
+          value={form.phoneNumber}
+          editing={editing}
+          onChange={(v) => set('phoneNumber')(formatPhoneInput(v))}
+          invalid={errField === 'phoneNumber'}
+          describedBy={errId}
         />
       </div>
-      <p className="mt-2 pl-1 text-xs text-text-disabled">{t('readonlyHint')}</p>
+      <p className="mt-2 pl-1 text-xs text-text-disabled">{t('phoneHint')}</p>
 
       <div aria-live="polite">
         {save.error && (

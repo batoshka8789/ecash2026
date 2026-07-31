@@ -246,6 +246,18 @@ export const api = {
     },
   },
 
+  /**
+   * Контакты аккаунта Ecash (телефон/почта) — это НЕ наша анкета: телефон
+   * является логином, поэтому пишется только через ядро.
+   */
+  account: {
+    save: (patch: { phoneNumber?: string; email?: string }) =>
+      request<{ account: AccountWithProfile }>('/account', {
+        method: 'PATCH',
+        body: JSON.stringify(patch),
+      }),
+  },
+
   profile: {
     save: (patch: {
       avatar?: string | null;

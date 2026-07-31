@@ -17,10 +17,20 @@ export const DEMO_OTP = '000000';
 
 export const isDemoToken = (token: string) => env.ECASH_OTP_MOCK && token === DEMO_TOKEN;
 
+/**
+ * Смена номера в демо-режиме. accountId выведен из телефона при входе и
+ * менять его нельзя — на нём висят заявки и сессия. Поэтому новый номер
+ * держим оверрайдом: аккаунт тот же, показывается новый телефон.
+ */
+export function demoSetPhone(accountId: string, phone: string): void {
+  phoneOverrides.set(accountId, phone);
+}
+
 export function demoAccount(phone: string): Account {
+  const accountId = `demo-${phone.replace(/\D/g, '')}`;
   return {
-    accountId: `demo-${phone.replace(/\D/g, '')}`,
-    phoneNumber: phone,
+    accountId,
+    phoneNumber: phoneOverrides.get(accountId) ?? phone,
     isLinkedToClient: true,
     clientId: 5512,
     iin: null,
@@ -36,8 +46,12 @@ type DemoDb = { requests: Map<string, ExchangeRequest[]>; nextId: number };
 const g = globalThis as unknown as {
   __ecashDemo?: DemoDb;
   __ecashDemoPasswords?: Map<string, string>;
+  __ecashDemoPhones?: Map<string, string>;
 };
 const store: DemoDb = (g.__ecashDemo ??= { requests: new Map(), nextId: 10432 });
+
+/** accountId → показываемый номер, если его сменили (см. demoSetPhone). */
+const phoneOverrides = (g.__ecashDemoPhones ??= new Map<string, string>());
 
 /**
  * Пароли демо-аккаунтов (только ECASH_OTP_MOCK=1). Раньше вход в демо-режиме
@@ -178,6 +192,14 @@ export function demoCreate(accountId: string, body: ReserveBody, individual: boo
       r.rate = offered;
       r.amount = offeredAmount;
       r.needsClientConfirmation = true;
+      // Пояснение казначея к предложению: в реальном Ecash его пишет казначей
+      // (например, когда нужных купюр нет в кассе). В демо подставляем такой
+      // же ответ на выбранный клиентом тип купюр — иначе поле «Комментарий
+      // казначея» на карточке заявки нечем показать.
+      r.acceptComment =
+        r.comment === 'Мелкими купюрами'
+          ? 'Мелких купюр нет — выдача крупными'
+          : 'Купюры в наличии, курс подтверждаю';
       r.reservedAt = answeredAt.toISOString();
       r.reservedUntil = until;
     } else {

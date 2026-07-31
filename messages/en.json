@@ -186,7 +186,8 @@
         "entrepreneur": "Entrepreneur",
         "investor": "Investor",
         "director": "Director / Top manager"
-      }
+      },
+      "phoneHint": "Your phone number is your Ecash account login — after changing it, sign in with the new number"
     },
     "address": {
       "title": "Enter your address",
@@ -658,7 +659,8 @@
     "newsRuRequired": "To publish, fill in the Russian version: title and text",
     "conflict": "The record was changed in another window — reload the page",
     "translateUnavailable": "The translator is unavailable right now. Try again later or fill the language in by hand.",
-    "translateQuota": "The translator’s daily quota is used up. Try tomorrow or fill the language in by hand."
+    "translateQuota": "The translator’s daily quota is used up. Try tomorrow or fill the language in by hand.",
+    "emailInvalid": "Check the email address"
   },
   "addressModal": {
     "title": "Enter your address",
@@ -742,7 +744,17 @@
       "text": "The currency pair is booked. Please visit the branch before the booking expires.",
       "ok": "Got it"
     },
-    "needsDecision": "Needs your decision"
+    "needsDecision": "Needs your decision",
+    "waitingModal": {
+      "title": "Individual rate request sent",
+      "text": "Your request is under review. As soon as we review it, we will send you a notification with the answer",
+      "ok": "Got it"
+    },
+    "offerModal": {
+      "title": "The treasurer has responded",
+      "text": "Check the proposed rate and make a decision — you have {min} minutes",
+      "ok": "View"
+    }
   },
   "rates": {
     "gold": "Gold bar {grams} g",

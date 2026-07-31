@@ -21,6 +21,17 @@ export const phoneSchema = z
 
 export const iinSchema = z.string().regex(/^\d{12}$/, 'errors.iinInvalid');
 
+/**
+ * Смена контактов аккаунта Ecash (PUT /mobile/account/update-client).
+ * Оба поля необязательны по отдельности, но пустой запрос смысла не имеет.
+ */
+export const accountPatchBody = z
+  .object({
+    phoneNumber: phoneSchema.optional(),
+    email: z.email('errors.emailInvalid').optional(),
+  })
+  .refine((v) => v.phoneNumber !== undefined || v.email !== undefined, 'errors.required');
+
 /** Логин: телефон или ИИН (12 цифр — это и валидный ИИН, и валидный телефон без кода). */
 export const loginValueSchema = z
   .string()

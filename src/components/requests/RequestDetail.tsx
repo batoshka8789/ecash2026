@@ -57,18 +57,39 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
   };
 
   /**
-   * Модалка «курс забронирован» — показывается ОДИН раз, в момент, когда
-   * заявка на глазах у клиента переходит в бронь (ответ казначея приходит
-   * поллингом, экран меняется сам). Раньше подтверждения не было вовсе:
-   * страница молча превращалась в таймер.
+   * Модальные уведомления о ходе заявки. Экран меняется сам (поллинг), и без
+   * них человек не понимал, что произошло: страница молча превращалась то в
+   * таймер брони, то в предложение курса.
+   *
+   * Три момента:
+   *  — 'waiting' — заявка индивидуального курса отправлена и ждёт казначея
+   *    (показывается сразу при входе на карточку — это и есть промежуточное
+   *    окно ожидания из макета);
+   *  — 'offer'   — казначей ответил, нужно решение клиента;
+   *  — 'booked'  — бронь оформлена.
+   *
+   * Ключ состояния — не только phase: переход «ждём → предложение» происходит
+   * внутри одной фазы pending, и по одной фазе его не поймать.
    */
-  const phase = q.data?.request.phase;
-  const [seenPhase, setSeenPhase] = useState<string | null>(null);
-  const [bookedOpen, setBookedOpen] = useState(false);
-  if (phase && phase !== seenPhase) {
-    // переход именно в бронь, а не первый показ уже забронированной заявки
-    if (seenPhase !== null && phase === 'held') setBookedOpen(true);
-    setSeenPhase(phase);
+  const req = q.data?.request;
+  const stage = !req
+    ? null
+    : req.needsClientConfirmation
+      ? 'offer'
+      : req.phase === 'held'
+        ? 'booked'
+        : req.phase === 'pending' && req.isIndividual
+          ? 'waiting'
+          : 'other';
+
+  const [seenStage, setSeenStage] = useState<string | null>(null);
+  const [modal, setModal] = useState<'waiting' | 'offer' | 'booked' | null>(null);
+  if (stage && stage !== seenStage) {
+    // «ожидание» показываем и при первом заходе — клиент только что отправил
+    // заявку; «предложение» и «бронь» — только когда они наступают на глазах
+    if (stage === 'waiting' && seenStage === null) setModal('waiting');
+    if (seenStage !== null && (stage === 'offer' || stage === 'booked')) setModal(stage);
+    setSeenStage(stage);
   }
 
   const cancelMut = useMutation({
@@ -116,7 +137,34 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <div className="container-page flex flex-col gap-5 pt-10">
-      {bookedOpen && <BookedModal onClose={() => setBookedOpen(false)} />}
+      {modal === 'waiting' && (
+        <StatusModal
+          icon="hourglass_top"
+          title={t('waitingModal.title')}
+          text={t('waitingModal.text')}
+          ok={t('waitingModal.ok')}
+          onClose={() => setModal(null)}
+        />
+      )}
+      {modal === 'offer' && (
+        <StatusModal
+          icon="hourglass_top"
+          title={t('offerModal.title')}
+          text={t('offerModal.text', { min: r.reserveMinutes })}
+          note={r.acceptComment}
+          ok={t('offerModal.ok')}
+          onClose={() => setModal(null)}
+        />
+      )}
+      {modal === 'booked' && (
+        <StatusModal
+          icon="verified_user"
+          title={t('bookedModal.title')}
+          text={t('bookedModal.text')}
+          ok={t('bookedModal.ok')}
+          onClose={() => setModal(null)}
+        />
+      )}
 
       <StatusHead request={r} />
 
@@ -432,10 +480,28 @@ function StatusHead({ request: r }: { request: ExchangeRequest }) {
   );
 }
 
-/** Подтверждение брони — по образцу AuthModal: скрим + Esc + клик по подложке. */
-function BookedModal({ onClose }: { onClose: () => void }) {
-  const t = useTranslations('requests.bookedModal');
-
+/**
+ * Модальное уведомление о смене состояния заявки — по образцу AuthModal:
+ * скрим + Esc + клик по подложке. Один компонент на три случая (отправлена
+ * заявка, ответил казначей, бронь оформлена): различаются только иконка и
+ * тексты, дублировать разметку смысла нет.
+ */
+function StatusModal({
+  icon,
+  title,
+  text,
+  note,
+  ok,
+  onClose,
+}: {
+  icon: string;
+  title: string;
+  text: string;
+  /** дополнительная строка — напр. комментарий казначея */
+  note?: string | null;
+  ok: string;
+  onClose: () => void;
+}) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -451,16 +517,21 @@ function BookedModal({ onClose }: { onClose: () => void }) {
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
       role="dialog"
       aria-modal="true"
-      aria-label={t('title')}
+      aria-label={title}
     >
       <div className="anim-modal-card w-full max-w-[420px] rounded-3xl bg-surface-page-surf1 p-6 text-center sm:p-8">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-hardsoft text-text-brand">
-          <Icon name="verified_user" size={28} filled />
+          <Icon name={icon} size={28} filled />
         </span>
-        <h2 className="mt-4 text-lg font-bold text-text-default sm:text-xl">{t('title')}</h2>
-        <p className="mt-2 text-sm text-text-disabled">{t('text')}</p>
+        <h2 className="mt-4 text-lg font-bold text-text-default sm:text-xl">{title}</h2>
+        <p className="mt-2 text-sm text-text-disabled">{text}</p>
+        {note && (
+          <p className="mt-3 rounded-2xl bg-surface-page-surf2 px-4 py-3 text-sm text-text-default">
+            {note}
+          </p>
+        )}
         <Button className="mt-6 w-full" onClick={onClose}>
-          {t('ok')}
+          {ok}
         </Button>
       </div>
     </div>
