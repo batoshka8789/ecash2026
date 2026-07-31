@@ -27,7 +27,12 @@ export function demoSetPhone(accountId: string, phone: string): void {
 }
 
 export function demoAccount(phone: string): Account {
-  const accountId = `demo-${phone.replace(/\D/g, '')}`;
+  const digits = phone.replace(/\D/g, '');
+  // Вход по НОВОМУ номеру должен вести в тот же аккаунт: иначе после смены
+  // телефона человек логинится и попадает в пустой профиль без своих заявок
+  // (в демо accountId выведен из номера — в настоящем ядре он постоянный).
+  const owner = [...phoneOverrides.entries()].find(([, p]) => p.replace(/\D/g, '') === digits);
+  const accountId = owner?.[0] ?? `demo-${digits}`;
   return {
     accountId,
     phoneNumber: phoneOverrides.get(accountId) ?? phone,

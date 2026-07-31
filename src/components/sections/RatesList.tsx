@@ -12,7 +12,7 @@ import { CurrencyFlag } from '@/components/ui/CurrencyFlag';
 import { Link, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { currencyFlagClass, currencyName, currencySymbol, formatNumber } from '@/lib/format';
+import { currencyFlagClass, currencyName, formatNumber } from '@/lib/format';
 import { useErrorText } from '@/lib/useErrorText';
 import { useNearestDepId } from '@/lib/user-place';
 import type { CurrencyCode, RateStat } from '@/lib/domain';
@@ -142,7 +142,6 @@ export function RatesList() {
                 <div key={stat.currencyCode} className="anim-row-in">
                   <RateRow
                     stat={stat}
-                    marketRate={data.marketRates?.[stat.currencyCode] ?? null}
                     favorite={data.favorites.includes(stat.currencyCode)}
                     showBookmark={authed}
                     onToggleFavorite={() => favMutation.mutate(stat.currencyCode)}
@@ -179,14 +178,11 @@ export function RatesList() {
 
 function RateRow({
   stat,
-  marketRate,
   favorite,
   showBookmark,
   onToggleFavorite,
 }: {
   stat: RateStat;
-  /** биржевой курс НБ РК — приходит только для строки USD */
-  marketRate: number | null;
   favorite: boolean;
   showBookmark: boolean;
   onToggleFavorite: () => void;
@@ -299,17 +295,9 @@ function RateRow({
         </div>
       </div>
 
-      {marketRate !== null && (
-        <div className="mt-2 flex items-center gap-2 text-xs text-text-disabled sm:gap-3 sm:pl-12 sm:text-sm">
-          {t('exchangeRate')}
-          <span className="rounded-xl bg-surface-modal-surf1 px-3 py-1 font-medium text-text-default">
-            {tRates('perUnit', {
-              rate: formatNumber(marketRate, locale, 2),
-              code: currencySymbol(code),
-            })}
-          </span>
-        </div>
-      )}
+      {/* Строка «Курс на бирже» (курс НБ РК) убрана по требованию заказчика:
+          «Убрать отображение официального курса НБРК» — клиенту показываем
+          только курсы самого обменника, справочная котировка его путала. */}
     </div>
   );
 }
