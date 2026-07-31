@@ -23,13 +23,25 @@ declare global {
  *  3.0 ключ уже требует. Если Yandex когда-нибудь закроет и 2.1 — mount()
  *  здесь упадёт как обычная сетевая/скриптовая ошибка, драйвер и его кнопка
  *  в переключателе провайдера сами уйдут в unavailable, ничего не сломав. */
-const SCRIPT_URL = 'https://api-maps.yandex.ru/2.1/?lang=ru_RU';
+
+/**
+ * Язык подписей карты из локали приложения. API 2.1 поддерживает только
+ * ru_RU/en_US/en_RU/ru_UA/uk_UA/tr_TR — казахского и китайского нет,
+ * поэтому kk → ru_RU (привычнее для Казахстана), zh → en_US.
+ */
+function scriptUrl(lang?: string): string {
+  const mapped = lang === 'en' || lang === 'zh' ? 'en_US' : 'ru_RU';
+  return `https://api-maps.yandex.ru/2.1/?lang=${mapped}`;
+}
 
 /** Скрипт грузим один раз на вкладку — второй BranchMap на той же странице
- *  переиспользует тот же промис, а не вставляет второй <script>. */
+ *  переиспользует тот же промис, а не вставляет второй <script>. Язык
+ *  фиксируется ПЕРВОЙ загрузкой: у 2.1 нет смены языка без перезагрузки
+ *  страницы (один глобальный window.ymaps), поэтому клиентская смена локали
+ *  подхватится только при следующем полном открытии страницы. */
 let loaderPromise: Promise<YMapsNS> | null = null;
 
-function loadYmaps(): Promise<YMapsNS> {
+function loadYmaps(lang?: string): Promise<YMapsNS> {
   if (loaderPromise) return loaderPromise;
   loaderPromise = new Promise<YMapsNS>((resolve, reject) => {
     const existing = window.ymaps;
@@ -38,7 +50,7 @@ function loadYmaps(): Promise<YMapsNS> {
       return;
     }
     const script = document.createElement('script');
-    script.src = SCRIPT_URL;
+    script.src = scriptUrl(lang);
     script.async = true;
     script.onload = () => {
       if (!window.ymaps) {
@@ -140,7 +152,7 @@ function createYandexDriver(): MapDriver {
 
   return {
     async mount(container, opts) {
-      const yns = await loadYmaps();
+      const yns = await loadYmaps(opts.lang);
       ns = yns;
       map = new yns.Map(
         container,

@@ -103,7 +103,14 @@ export function LangSwitcher() {
               onKeyDown={onOptionKeyDown}
               onClick={() => {
                 setOpen(false);
-                router.replace(pathname, { locale: l });
+                // usePathname() из next-intl отдаёт путь БЕЗ query и хэша —
+                // без явного добавления смена языка теряла ?view=map,
+                // ?currency=, ?amount= и т.п. (напр., карта отделений
+                // сбрасывалась в список). Читаем из location в момент клика.
+                router.replace(
+                  `${pathname}${window.location.search}${window.location.hash}`,
+                  { locale: l },
+                );
               }}
               className={clsx(
                 'block w-full cursor-pointer px-4 py-2.5 text-left text-base transition-colors hover:bg-surface-modal-surf1-hover',

@@ -130,8 +130,8 @@
     "otpPlaceholder": "SMS code",
     "resend": "Resend code",
     "resendIn": "Resend available in {sec} s",
-    "byOtp": "Sign in with SMS code",
-    "byPassword": "Sign in with password",
+    "byOtp": "Log in with SMS code",
+    "byPassword": "Log in with password",
     "devCodeHint": "Demo mode: code {code}",
     "iinOptional": "IIN (optional)",
     "register": "Sign up",
@@ -154,12 +154,12 @@
     "phoneStep": "Enter your phone number — we will send an SMS code",
     "newPassword": "New password",
     "newPassword2": "Repeat new password",
-    "done": "Password changed. Sign in with the new password",
+    "done": "Password changed. Log in with the new password",
     "phonePlaceholder": "Phone number",
     "resend": "Resend code",
     "resendIn": "Resend available in {sec} s",
     "devCode": "Demo mode: code {code}",
-    "toLogin": "To sign in"
+    "toLogin": "Back to log in"
   },
   "sidebar": {
     "profile": "My profile",
@@ -190,7 +190,7 @@
         "investor": "Investor",
         "director": "Director / Top manager"
       },
-      "phoneHint": "Your phone number is your Ecash account login — after changing it, sign in with the new number"
+      "phoneHint": "Your phone number is your Ecash account login — after changing it, log in with the new number"
     },
     "address": {
       "title": "Enter your address",
@@ -253,8 +253,8 @@
   },
   "locations": {
     "title": "Ecash branches",
-    "asList": "As list",
-    "onMap": "On map",
+    "asList": "List",
+    "onMap": "Map",
     "breadcrumbHome": "Home",
     "breadcrumbCalc": "Calculator",
     "badges": {
@@ -330,7 +330,7 @@
       "book": "Book",
       "requestIndividualCta": "Request an individual rate",
       "phoneFromAccount": "Number from your account",
-      "loginToBook": "Sign in to reserve a rate",
+      "loginToBook": "Log in to book a rate",
       "amountRequired": "Enter an amount to continue"
     },
     "done": {
@@ -343,7 +343,7 @@
       "yourRequest": "Your request",
       "sentAt": "Request sent",
       "rateAtSubmit": "Ecash rate at the time of request",
-      "onMap": "On map",
+      "onMap": "On the map",
       "yourData": "Your details",
       "yourNumberValue": "Your number: {value}"
     },
@@ -356,11 +356,11 @@
     "rateLabel": "Rate",
     "currentRate": "Current Ecash rate",
     "dateTitle": "Date and time",
-    "notifyUntil": "Send notifications until",
+    "notifyUntil": "Notify me until",
     "day": "Day",
     "month": "Month",
     "year": "Year",
-    "cta": "Send notifications",
+    "cta": "Notify me",
     "fillRequired": "Please fill in the required fields",
     "doneToast": "Notifications enabled",
     "close": "Close",
@@ -381,7 +381,7 @@
     "targetLabel": "Notify at rate (₸)",
     "perOneLabel": "Per unit",
     "untilTitle": "Notify until",
-    "loginToSubscribe": "Sign in to subscribe to rate alerts",
+    "loginToSubscribe": "Log in to subscribe to rate alerts",
     "successTitle": "Rate notifications enabled",
     "sentAtLabel": "Request sent",
     "ecashRateAtCreation": "Ecash rate at the time of the request:",
@@ -610,7 +610,7 @@
     "passwordDigit": "At least one digit",
     "passwordMatch": "Passwords do not match",
     "INVALID_CREDENTIALS": "Wrong login or password",
-    "INVALID_TOKEN": "Session expired. Sign in again",
+    "INVALID_TOKEN": "Session expired. Log in again",
     "INVALID_OTP": "Wrong code",
     "OTP_EXPIRED": "Code expired — more than 5 minutes passed",
     "OTP_COOLDOWN": "You can request a new code in a minute",
@@ -705,9 +705,9 @@
   "requests": {
     "title": "My requests",
     "empty": "No requests yet",
-    "needLogin": "Sign in to see your requests",
+    "needLogin": "Log in to see your requests",
     "status0": "Under review",
-    "status8": "Reserved",
+    "status8": "Booked",
     "status1": "Completed",
     "status3": "Cancelled",
     "awaiting": "Your request is under review. As soon as we review it, we will send you a notification with the answer",
@@ -719,8 +719,8 @@
     "reason": "Reason",
     "ticket": "Ticket",
     "history": "Change history",
-    "timeLeft": "Reservation valid for",
-    "expired": "Reservation expired",
+    "timeLeft": "Booking valid for",
+    "expired": "Booking expired",
     "pair": "Currency pair",
     "details": "Details",
     "rate": "Rate",
@@ -733,7 +733,7 @@
     "branch": "Branch address",
     "yourData": "Your details",
     "commentLabel": "Comment",
-    "onMapBtn": "On map",
+    "onMapBtn": "On the map",
     "treasurerComment": "Treasurer comment",
     "offerTimeLeft": "Time left to decide",
     "bookedUntil": "Booking valid until",
@@ -774,7 +774,7 @@
     "menu": "Menu",
     "home": "Home",
     "locations": "Branches",
-    "booking": "Reserve a rate",
+    "booking": "Book a rate",
     "individualRate": "Individual rate",
     "subscribe": "Rate alerts",
     "requests": "My requests",
@@ -803,14 +803,14 @@
     "siteName": "ecash — currency exchange",
     "home": {
       "title": "ecash — currency exchange in Kazakhstan",
-      "description": "Live exchange rates, 60-minute rate reservation, individual rates and exchange offices near you"
+      "description": "Live exchange rates, 60-minute rate booking, individual rates and exchange offices near you"
     },
     "locations": {
       "title": "ecash branches — rates and addresses",
       "description": "All ecash branches on the map: addresses, opening hours, live rates and the best rate in town"
     },
     "booking": {
-      "title": "Reserve a rate — ecash",
+      "title": "Book a rate — ecash",
       "description": "Lock the exchange rate for 60 minutes: the amount is reserved at the chosen branch"
     },
     "individualRate": {
@@ -826,7 +826,7 @@
       "description": "Open an exchange office with the ecash franchise: technology, support and a recognizable brand"
     },
     "login": {
-      "title": "Sign in — ecash"
+      "title": "Log in — ecash"
     },
     "signup": {
       "title": "Sign up — ecash"

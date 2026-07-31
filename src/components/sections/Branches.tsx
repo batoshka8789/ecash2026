@@ -709,6 +709,9 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                   emptyText={t('nothingFound')}
                   unavailableText={t('mapUnavailable')}
                   labels={mapLabels}
+                  /* до 768 кнопка «Развернуть на весь экран» (низ по центру,
+                     из макета) наезжала на пилюлю провайдера — поднимаем её */
+                  providerClassName="max-md:bottom-[72px]"
                   className={mapFull ? 'h-full' : 'h-[420px] md:h-[517px] lg:h-[717px]'}
                 />
 
@@ -716,7 +719,9 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                   type="button"
                   onClick={() => setMapFull((v) => !v)}
                   className={clsx(
-                    'absolute bottom-4 left-1/2 z-10 inline-flex h-11 -translate-x-1/2 cursor-pointer items-center gap-2 rounded-[20px] bg-surface-inverted pl-4 pr-6 text-sm font-medium text-text-inverted shadow-lg transition-opacity hover:opacity-90 md:h-[38px]',
+                    // whitespace-nowrap: «Развернуть на весь экран» на 375px
+                    // переносилась на две строки и вылезала из h-11
+                    'absolute bottom-4 left-1/2 z-10 inline-flex h-11 -translate-x-1/2 cursor-pointer items-center gap-2 whitespace-nowrap rounded-[20px] bg-surface-inverted pl-4 pr-6 text-sm font-medium text-text-inverted shadow-lg transition-opacity hover:opacity-90 md:h-[38px]',
                     mapSelected && 'max-md:hidden',
                   )}
                 >

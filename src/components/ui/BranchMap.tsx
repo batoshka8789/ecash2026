@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocale } from 'next-intl';
 import { clsx } from 'clsx';
 import { Icon } from './Icon';
 import { dgisDriverModule } from './map-drivers/dgis';
@@ -47,6 +48,12 @@ type BranchMapProps = {
   emptyText?: string;
   /** Подпись состояния «карта недоступна» (оба провайдера не смогли загрузиться); фоллбэк — emptyText. */
   unavailableText?: string;
+  /**
+   * Доп. классы переключателя провайдера (левый нижний угол). На /locations
+   * по центру низа лежит кнопка «Развернуть на весь экран» из макета — на
+   * узких экранах пилюли сталкивались, вызывающий поднимает переключатель.
+   */
+  providerClassName?: string;
   labels?: {
     zoomIn?: string;
     zoomOut?: string;
@@ -103,6 +110,7 @@ export function BranchMap({
   label,
   emptyText,
   unavailableText,
+  providerClassName,
   labels,
   className,
 }: BranchMapProps) {
@@ -110,11 +118,15 @@ export function BranchMap({
   const driverRef = useRef<MapDriver | null>(null);
   const fittedIdsRef = useRef('');
   const drawnSigRef = useRef<string | null>(null);
+  const locale = useLocale();
 
   /** null — авто-режим (перебор PROVIDERS по порядку с каскадом на отказе);
    *  конкретный id — пользователь явно выбрал этот провайдер пилюлей внизу
    *  слева, каскада на другой в этом режиме нет — уважаем явный выбор. */
   const [manualProvider, setManualProvider] = useState<MapProviderId | null>(null);
+  /** Счётчик повторов: клик по упавшему провайдеру перезапускает mount-эффект
+   *  даже когда manualProvider не меняется (тот же провайдер второй раз). */
+  const [retryNonce, setRetryNonce] = useState(0);
   const [providerState, setProviderState] = useState<ProviderState>(() => ({
     activeId: null,
     status: 'loading',
@@ -128,11 +140,13 @@ export function BranchMap({
   const bgClickRef = useRef(onBackgroundClick);
   const cooperativeRef = useRef(cooperative);
   const centerRef = useRef(center);
+  const localeRef = useRef(locale);
   useEffect(() => {
     clickRef.current = onMarkerClick;
     bgClickRef.current = onBackgroundClick;
     cooperativeRef.current = cooperative;
     centerRef.current = center;
+    localeRef.current = locale;
   });
 
   // Монтирование: в авто-режиме перебираем PROVIDERS по порядку и на отказе
@@ -162,6 +176,7 @@ export function BranchMap({
             center: centerRef.current ?? FALLBACK_CENTER,
             zoom: 11,
             disableScrollZoom: cooperativeRef.current,
+            lang: localeRef.current,
             onBackgroundClick: () => bgClickRef.current?.(),
           });
           if (cancelled) {
@@ -200,7 +215,7 @@ export function BranchMap({
       if (driverRef.current === mountedDriver) driverRef.current = null;
       mountedDriver?.destroy();
     };
-  }, [manualProvider]);
+  }, [manualProvider, retryNonce]);
 
   // Контейнер меняет размер (разворот на весь экран, resize окна) — драйвер
   // должен пересчитать канвас/вьюпорт сам, эффект тут был бы недостаточен:
@@ -330,17 +345,34 @@ export function BranchMap({
         </div>
       )}
 
-      {/* Переключатель провайдера — левый нижний угол. Недоступный (нет
-          ключа 2GIS, либо не смог смонтироваться ни разу) — задизейблен,
-          а не спрятан: явно видно, что вариант есть, но сейчас не работает. */}
+      {/* Лоадер при первом монтировании и при переключении провайдера:
+          иначе пользователь видел просто пустой блок без обратной связи. */}
+      {providerState.status === 'loading' && (
+        <div
+          role="status"
+          className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+        >
+          <span className="sr-only">…</span>
+          <div aria-hidden className="h-full w-full animate-pulse rounded-[inherit] bg-surface-page-surf2" />
+        </div>
+      )}
+
+      {/* Переключатель провайдера — левый нижний угол. Задизейблен только
+          ненастроенный вариант (нет ключа 2GIS); упавший из-за сетевой
+          ошибки остаётся кликабельным — клик повторяет попытку монтирования
+          (транзиентный сбой скрипта не должен хоронить провайдер до
+          перезагрузки страницы). */}
       <div
         role="radiogroup"
         aria-label={l.provider ?? 'Map provider'}
-        className="absolute bottom-3 left-3 z-10 inline-flex gap-1 rounded-2xl border border-surface-page-surf3 bg-surface-page-surf1/95 p-1 shadow-lg backdrop-blur-md"
+        className={clsx(
+          'absolute bottom-3 left-3 z-10 inline-flex gap-1 rounded-2xl border border-surface-page-surf3 bg-surface-page-surf1/95 p-1 shadow-lg backdrop-blur-md',
+          providerClassName,
+        )}
       >
         {PROVIDERS.map((p) => {
           const isActive = p.id === (providerState.activeId ?? manualProvider ?? DEFAULT_PROVIDER_ID);
-          const isDisabled = Boolean(providerState.failed[p.id]);
+          const isDisabled = !p.isConfigured();
           return (
             <button
               key={p.id}
@@ -349,12 +381,20 @@ export function BranchMap({
               aria-checked={isActive}
               disabled={isDisabled}
               onClick={() => {
-                if (isDisabled || isActive) return;
+                if (isDisabled || (isActive && providerState.status === 'ready')) return;
                 // setState здесь — в обработчике клика, не в теле эффекта:
                 // можно сбросить status синхронно, лоадер покажется без
-                // задержки на «карта только что переключилась»
-                setProviderState((prev) => ({ ...prev, status: 'loading' }));
+                // задержки на «карта только что переключилась». Отметку
+                // failed снимаем — это и есть повторная попытка.
+                setProviderState((prev) => ({
+                  ...prev,
+                  status: 'loading',
+                  failed: Object.fromEntries(
+                    Object.entries(prev.failed).filter(([id]) => id !== p.id),
+                  ),
+                }));
                 setManualProvider(p.id);
+                setRetryNonce((n) => n + 1);
               }}
               className={clsx(
                 'rounded-xl px-3 py-1.5 text-xs font-medium transition-colors',

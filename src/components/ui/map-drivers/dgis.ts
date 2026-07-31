@@ -53,6 +53,9 @@ function createDgisDriver(): MapDriver {
         center: opts.center ? [opts.center.lon, opts.center.lat] : FALLBACK_CENTER,
         zoom: opts.zoom,
         key: DGIS_KEY,
+        // язык подписей карты: у MapGL короткие коды ('ru', 'en', …);
+        // казахского нет — kk остаётся на ru, zh — на en
+        lang: opts.lang === 'en' || opts.lang === 'zh' ? 'en' : 'ru',
         // свои кнопки зума рисуются в BranchMap, встроенные не нужны
         zoomControl: false,
         // единственное приближение «кооперативных жестов» — константа на

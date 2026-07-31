@@ -58,6 +58,12 @@ export interface MapDriver {
       zoom: number;
       /** Лучшее доступное приближение «кооперативных жестов» — см. проп cooperative в BranchMap. */
       disableScrollZoom: boolean;
+      /**
+       * Локаль приложения (ru/en/kk/zh) — язык подписей самой карты.
+       * Каждый драйвер мапит её на то, что поддерживает его API; без неё
+       * карта всегда грузилась с lang=ru_RU и на en/zh оставалась русской.
+       */
+      lang?: string;
       onBackgroundClick: () => void;
     },
   ): Promise<void>;

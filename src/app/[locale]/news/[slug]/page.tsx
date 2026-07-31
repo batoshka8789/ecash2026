@@ -94,12 +94,16 @@ export async function generateMetadata({
     description: post.excerpt,
     alternates: {
       canonical: `${SITE_URL}${canonical}`,
-      languages: Object.fromEntries(
-        routing.locales.map((l) => [
-          l,
-          `${SITE_URL}${l === routing.defaultLocale ? path : `/${l}${path}`}`,
-        ]),
-      ),
+      languages: {
+        ...Object.fromEntries(
+          routing.locales.map((l) => [
+            l,
+            `${SITE_URL}${l === routing.defaultLocale ? path : `/${l}${path}`}`,
+          ]),
+        ),
+        // x-default — как у остальных страниц (pageMetadata в lib/metadata.ts)
+        'x-default': `${SITE_URL}${path}`,
+      },
     },
     openGraph: {
       title: post.title,

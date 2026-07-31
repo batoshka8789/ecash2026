@@ -222,12 +222,12 @@
       "numberValue": "您的号码：{value}"
     },
     "titles": {
-      "bookedPair": "您已锁定一组货币兑换",
+      "bookedPair": "您已预订货币对",
       "alertsOn": "汇率通知已开启",
       "alertsOff": "通知已关闭",
       "rateReached": "汇率已达到您设定的目标",
       "offerReviewed": "您的申请已审核",
-      "offerSent": "个人汇率申请已发送"
+      "offerSent": "专属汇率申请已发送"
     },
     "min": "分",
     "sec": "秒",
@@ -296,7 +296,7 @@
     "fillRequired": "请填写必填项",
     "close": "关闭",
     "pair": {
-      "title": "货币兑换",
+      "title": "货币对",
       "individualHint": "请输入您希望兑换的金额，我们会审核您的申请并提供专属汇率",
       "dynamics": "汇率走势",
       "give": "我支付",
@@ -336,7 +336,7 @@
     "done": {
       "booking30": "预订 · 30分钟",
       "yourNumber": "您的号码：7 704 *** ** 84",
-      "titleBooking": "您已锁定一组货币兑换",
+      "titleBooking": "您已预订货币对",
       "titleIndividual": "您的申请正在审核中",
       "min": "分",
       "sec": "秒",
@@ -350,7 +350,7 @@
     "openExisting": "查看申请"
   },
   "subscribe": {
-    "pairTitle": "货币兑换",
+    "pairTitle": "货币对",
     "dynamics": "汇率走势",
     "desiredRate": "请输入期望汇率",
     "rateLabel": "汇率",
@@ -360,7 +360,7 @@
     "day": "日",
     "month": "月",
     "year": "年",
-    "cta": "发送通知",
+    "cta": "订阅通知",
     "fillRequired": "请填写必填项",
     "doneToast": "通知已开启",
     "close": "关闭",
@@ -707,7 +707,7 @@
     "empty": "暂无申请",
     "needLogin": "登录后可查看您的申请",
     "status0": "审核中",
-    "status8": "已锁定",
+    "status8": "已预订",
     "status1": "已完成",
     "status3": "已取消",
     "awaiting": "您的申请正在审核中。审核完成后，我们会通过通知告知结果",
@@ -719,9 +719,9 @@
     "reason": "原因",
     "ticket": "凭条",
     "history": "变更记录",
-    "timeLeft": "锁定有效期",
-    "expired": "锁定已过期",
-    "pair": "货币兑换",
+    "timeLeft": "预订有效期",
+    "expired": "预订已过期",
+    "pair": "货币对",
     "details": "详情",
     "rate": "汇率",
     "sentAt": "申请提交时间",
@@ -734,22 +734,22 @@
     "yourData": "您的信息",
     "commentLabel": "备注",
     "onMapBtn": "在地图上查看",
-    "treasurerComment": "司库备注",
+    "treasurerComment": "资金专员备注",
     "offerTimeLeft": "剩余决定时间",
     "bookedUntil": "预订有效期至",
     "bookedModal": {
-      "title": "汇率已锁定",
+      "title": "汇率已预订",
       "text": "货币对已预订。请在预订到期前前往网点办理。",
       "ok": "知道了"
     },
     "needsDecision": "待您确认",
     "waitingModal": {
-      "title": "个人汇率申请已发送",
+      "title": "专属汇率申请已发送",
       "text": "您的申请正在审核中。审核完成后，我们会通过通知告知结果",
       "ok": "知道了"
     },
     "offerModal": {
-      "title": "司库已答复申请",
+      "title": "资金专员已答复申请",
       "text": "请查看建议汇率并作出决定——您有 {min} 分钟",
       "ok": "查看"
     }
