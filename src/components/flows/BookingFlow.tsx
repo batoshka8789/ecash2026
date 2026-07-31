@@ -18,7 +18,7 @@ import { almatyTime, haversineKm, isHappyHours, isOpenNow, type BadgeKind } from
 import { currencyName, currencySymbol, formatNumber, formatPhoneInput } from '@/lib/format';
 import { counterAmount } from '@/lib/exchange';
 import { sortCurrencyCodes } from '@/lib/currency-order';
-import type { ExchangeRequest } from '@/lib/domain';
+import { accountDisplayName, type ExchangeRequest } from '@/lib/domain';
 import { AmountBox, BranchAddress, BanknotesPicker, type BranchOption } from './PairFields';
 import { RateGraph, RateGraphToggle, type Period } from '@/components/sections/RateGraph';
 
@@ -63,6 +63,16 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   const setDepId = setPickedDep;
   const [banknotes, setBanknotes] = useState<string | null>(null);
   const [name, setName] = useState('');
+  // Заполняем ФИО из аккаунта один раз на сессию (см. ProfileForm.tsx —
+  // тот же приём с syncedFor по accountId): поле остаётся обычным
+  // редактируемым input, значение можно стереть/поправить, форма при этом
+  // не отправляется сама — только заполнение.
+  const [nameSyncedFor, setNameSyncedFor] = useState<string | null>(null);
+  if (account && nameSyncedFor !== account.accountId) {
+    setNameSyncedFor(account.accountId);
+    const display = accountDisplayName(account);
+    if (display) setName(display);
+  }
   const [individual, setIndividual] = useState(mode === 'individual');
   const [showErrors, setShowErrors] = useState(false);
   const [duplicate, setDuplicate] = useState<ExchangeRequest | null>(null);

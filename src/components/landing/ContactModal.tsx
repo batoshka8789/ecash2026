@@ -7,6 +7,8 @@ import { clsx } from 'clsx';
 import { Icon } from '@/components/ui/Icon';
 import { Logo } from '@/components/ui/Logo';
 import { api, ApiError } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { accountDisplayName } from '@/lib/domain';
 import { formatPhoneInput } from '@/lib/format';
 import { useErrorText } from '@/lib/useErrorText';
 
@@ -27,6 +29,7 @@ const FOCUSABLE =
 export function ContactModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const t = useTranslations('landing.contactModal');
   const errorText = useErrorText();
+  const { account, authed, loading: authLoading } = useAuth();
   const titleId = useId();
   const uid = useId();
 
@@ -56,13 +59,18 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
       ? sendError.message
       : null;
 
-  // Сброс полей при каждом открытии — та же схема, что и в FranchiseModal:
+  // Заполнение полей при каждом открытии — та же схема, что и в FranchiseModal:
   // правка состояния во время рендера, без эффекта на локальные setState.
+  // Авторизованный клиент уже назвал нам ФИО и телефон — заявку на франшизу
+  // не имеет смысла заставлять печатать их заново; поля при этом остаются
+  // обычными редактируемыми input — заполнение не отправляет форму само.
   const [syncedFor, setSyncedFor] = useState(false);
-  if (open && !syncedFor) {
+  // authLoading: сессия ещё проверяется — ждём её, иначе успевший открыть
+  // модалку до ответа /account клиент навсегда останется с пустыми полями.
+  if (open && !syncedFor && !authLoading) {
     setSyncedFor(true);
-    setName('');
-    setPhone('');
+    setName(authed && account ? accountDisplayName(account) : '');
+    setPhone(authed && account ? formatPhoneInput(account.phoneNumber) : '');
     setClientErr({});
   }
   if (!open && syncedFor) setSyncedFor(false);
