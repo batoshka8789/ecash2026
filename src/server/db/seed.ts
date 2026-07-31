@@ -1,10 +1,10 @@
 import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { news } from './schema';
+import { competitors, news } from './schema';
 
 /**
- * Идемпотентный сид справочного контента (новости).
+ * Идемпотентный сид справочного контента (новости, конкуренты).
  * Запуск: npx tsx src/server/db/seed.ts — или npm run db:seed.
  */
 async function main() {
@@ -12,6 +12,17 @@ async function main() {
     max: 1,
   });
   const db = drizzle(client);
+
+  // Только имя и цвет: курсы конкурентов НЕ хранятся — /api/rates выводит их
+  // из живого курса отделения, чтобы они обновлялись вместе с нашими.
+  await db
+    .insert(competitors)
+    .values([
+      { id: 'c1', nameKey: 'blue', color: 'var(--color-competitor-3)' },
+      { id: 'c2', nameKey: 'green', color: 'var(--color-competitor-2)' },
+      { id: 'c3', nameKey: 'red', color: 'var(--color-competitor-1)' },
+    ])
+    .onConflictDoNothing();
 
   const day = 86_400_000;
   await db

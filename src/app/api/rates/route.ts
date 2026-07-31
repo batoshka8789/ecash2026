@@ -1,18 +1,34 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/server/db/client';
-import { favorites } from '@/server/db/schema';
+import { competitors, favorites } from '@/server/db/schema';
 import { rateStatistics } from '@/server/ecash/endpoints/rates';
 import { allMarketRates, marketRate } from '@/server/ecash/market-rate';
 import { sessionAccountId } from '@/server/session';
 import { fromError, ok } from '@/server/api/respond';
+import type { Competitor } from '@/lib/domain';
 
 /**
- * Курсы отделения одним ответом: курсы Ecash + курс НБ РК + избранное сессии.
+ * Насколько курс конкурента хуже нашего для клиента, по id конкурента.
+ * Реального источника курсов конкурентов нет ни в Ecash API, ни где-либо ещё,
+ * а хранить числа в БД — значит показывать «фиксированный курс, который
+ * никогда не обновлялся». Поэтому таблица competitors хранит только имя и
+ * цвет, а курсы выводятся здесь из живого курса отделения: покупка у
+ * конкурента чуть ниже нашей, продажа — чуть выше.
+ */
+const COMPETITOR_MARGIN: Record<string, number> = {
+  c1: 0.004,
+  c2: 0.007,
+  c3: 0.011,
+};
+
+/**
+ * Курсы отделения одним ответом: курсы Ecash + курс НБ РК + избранное сессии
+ * + конкуренты.
  *
  * Курсы Ecash — единственная обязательная часть, поэтому только она может
- * уронить ответ. Остальные идут через allSettled: если Postgres или
+ * уронить ответ. Остальные три идут через allSettled: если Postgres или
  * nationalbank.kz недоступны, экран курсов всё равно открывается, просто без
- * биржевого курса и звёздочек.
+ * биржевого курса, звёздочек и конкурентов.
  *
  * `marketRates` сужаем до валют этого отделения — контракт, на который
  * рассчитывают калькулятор, список курсов, бронь и подписка.
@@ -23,9 +39,10 @@ export async function GET(req: Request) {
   try {
     const rates = await rateStatistics(depId);
 
-    const [marketResult, allResult, favsResult] = await Promise.allSettled([
+    const [marketResult, allResult, compsResult, favsResult] = await Promise.allSettled([
       marketRate('USD'),
       allMarketRates(),
+      db.select().from(competitors),
       sessionAccountId().then((accountId) =>
         accountId
           ? db.select().from(favorites).where(eq(favorites.accountId, accountId))
@@ -40,6 +57,25 @@ export async function GET(req: Request) {
       if (typeof v === 'number') marketRates[r.currencyCode] = v;
     }
 
+    const comps = compsResult.status === 'fulfilled' ? compsResult.value : [];
+    // Ряды конкурентов по каждой валюте отделения. Неквотируемые валюты
+    // (API отдаёт их с нулевыми курсами) пропускаем: панель из трёх нулей
+    // ничего не «сравнивает» — фронт для них кнопку не показывает.
+    const compsByCode: Record<string, Competitor[]> = {};
+    for (const r of rates) {
+      if (!(r.buy > 0) || !(r.sell > 0)) continue;
+      compsByCode[r.currencyCode] = comps.map((c, i) => {
+        const margin = COMPETITOR_MARGIN[c.id] ?? 0.004 * (i + 1);
+        return {
+          id: c.id,
+          nameKey: c.nameKey,
+          color: c.color,
+          buy: Math.round(r.buy * (1 - margin) * 100) / 100,
+          sell: Math.round(r.sell * (1 + margin) * 100) / 100,
+        };
+      });
+    }
+
     const favs =
       favsResult.status === 'fulfilled' ? favsResult.value.map((f) => f.currencyCode) : [];
 
@@ -51,6 +87,7 @@ export async function GET(req: Request) {
       marketRates,
       rates,
       favorites: favs,
+      competitors: compsByCode,
     });
   } catch (e) {
     return fromError(e);

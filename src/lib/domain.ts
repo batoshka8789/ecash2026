@@ -312,3 +312,17 @@ export type NewsAdminPost = {
   updatedAt: string;
 };
 
+/**
+ * Ряд «Сравнить с конкурентами». buy/sell не лежат в БД — сервер выводит их
+ * из живого курса отделения по этой валюте (см. /api/rates), поэтому они
+ * всегда «дышат» вместе с нашим курсом.
+ */
+export type Competitor = {
+  id: string;
+  nameKey: string;
+  /** CSS-переменная цвета обводки: competitor 1/2/3 из палитры */
+  color: string;
+  buy: number;
+  sell: number;
+};
+

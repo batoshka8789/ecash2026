@@ -61,6 +61,8 @@
       "book": "Book",
       "bookmark": "Bookmark",
       "compareIcon": "Compare rates",
+      "compare": "Compare with competitors",
+      "collapse": "Collapse",
       "showAll": "Show all currencies",
       "hideAll": "Collapse",
       "currencies": {
@@ -74,6 +76,11 @@
         "try": "Turkish Lira",
         "uzs": "Uzbek Som",
         "kgs": "Kyrgyz Som"
+      },
+      "competitors": {
+        "blue": "Blue exchange",
+        "green": "Green exchange",
+        "red": "Red exchange"
       },
       "allBranches": "All branches",
       "showOnMap": "Show on map"

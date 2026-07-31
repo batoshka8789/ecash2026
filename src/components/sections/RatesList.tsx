@@ -15,7 +15,7 @@ import { useAuth } from '@/lib/auth';
 import { currencyFlagClass, currencyName, formatNumber } from '@/lib/format';
 import { useErrorText } from '@/lib/useErrorText';
 import { useNearestDepId } from '@/lib/user-place';
-import type { CurrencyCode, RateStat } from '@/lib/domain';
+import type { Competitor, CurrencyCode, RateStat } from '@/lib/domain';
 
 /** Fallback-отделение, пока «Мой адрес» не указан/не геокодирован. */
 const DEFAULT_DEP_ID = 1;
@@ -25,7 +25,7 @@ const PRIMARY_CODES: readonly CurrencyCode[] = ['USD', 'EUR', 'RUB', 'CNY', 'GOL
 
 type RatesResponse = Awaited<ReturnType<typeof api.rates.forDep>>;
 
-/** Блок «Курсы валют»: живые курсы отделения и избранное из BFF. */
+/** Блок «Курсы валют»: живые курсы отделения, избранное и конкуренты из BFF. */
 export function RatesList() {
   const t = useTranslations('home.rates');
   const tRoot = useTranslations();
@@ -138,13 +138,15 @@ export function RatesList() {
         {data && (
           <>
             <div id={listId} className="mt-5 flex flex-col gap-1 sm:mt-10">
-              {list.map((stat) => (
+              {list.map((stat, i) => (
                 <div key={stat.currencyCode} className="anim-row-in">
                   <RateRow
                     stat={stat}
+                    competitors={data.competitors?.[stat.currencyCode] ?? []}
                     favorite={data.favorites.includes(stat.currencyCode)}
                     showBookmark={authed}
                     onToggleFavorite={() => favMutation.mutate(stat.currencyCode)}
+                    defaultOpen={i === 0}
                   />
                 </div>
               ))}
@@ -178,19 +180,25 @@ export function RatesList() {
 
 function RateRow({
   stat,
+  competitors,
   favorite,
   showBookmark,
   onToggleFavorite,
+  defaultOpen,
 }: {
   stat: RateStat;
+  competitors: Competitor[];
   favorite: boolean;
   showBookmark: boolean;
   onToggleFavorite: () => void;
+  defaultOpen?: boolean;
 }) {
   const t = useTranslations('home.rates');
   const tRates = useTranslations('rates');
   const locale = useLocale();
   const router = useRouter();
+  const [open, setOpen] = useState(Boolean(defaultOpen));
+  const panelId = useId();
 
   const code = stat.currencyCode;
   const flag = code.startsWith('GOLD') ? 'gold' : currencyFlagClass(code);
@@ -199,9 +207,12 @@ function RateRow({
 
   return (
     <div
-      // «Component 14»/«Component 21»: r20 на surf2, БЕЗ обводки в макете;
-      // паддинги 24/24/12/24
-      className="rounded-[20px] bg-surface-page-surf2 px-4 pb-3 pt-4 transition-colors sm:px-6 sm:pt-6"
+      className={clsx(
+        // «Component 14»/«Component 21»: r20 на surf2, БЕЗ обводки в макете;
+        // паддинги 24/24/12/24 закрыт, 24 со всех сторон открыт
+        'rounded-[20px] bg-surface-page-surf2 px-4 pb-3 pt-4 transition-colors sm:px-6 sm:pt-6',
+        open && 'sm:pb-6',
+      )}
     >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-3 sm:flex-nowrap sm:gap-4">
         {showBookmark && (
@@ -297,7 +308,65 @@ function RateRow({
 
       {/* Строка «Курс на бирже» (курс НБ РК) убрана по требованию заказчика:
           «Убрать отображение официального курса НБРК» — клиенту показываем
-          только курсы самого обменника, справочная котировка его путала. */}
+          только курсы самого обменника, справочная котировка его путала.
+          Поэтому кнопка сравнения стоит одна, прижатая вправо. Для
+          неквотируемых валют (нулевой курс) конкурентов нет — кнопку не
+          рисуем, панель из трёх нулей ничего не «сравнивает». */}
+      {competitors.length > 0 && (
+        <div className="mt-2 flex items-center">
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-controls={open ? panelId : undefined}
+            onClick={() => setOpen((v) => !v)}
+            className="ml-auto flex cursor-pointer items-center gap-1 text-xs text-text-disabled transition-colors hover:text-text-default"
+          >
+            {open ? t('collapse') : t('compare')}
+            <motion.span
+              animate={{ rotate: open ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex"
+            >
+              <Icon name="arrow_drop_down" size={12} />
+            </motion.span>
+          </button>
+        </div>
+      )}
+
+      {open && competitors.length > 0 && (
+        <div id={panelId} className="anim-panel-in overflow-hidden">
+          {/* «Rectangle 555» — разделитель цветом divider-hole, затем строки конкурентов */}
+          <div className="mt-4 border-t border-divider-hole pt-4 sm:mt-8 sm:pt-8">
+            <div className="flex flex-col gap-4 sm:gap-6">
+              {competitors.map((comp) => (
+                <div key={comp.id} className="flex items-center gap-3 sm:gap-4">
+                  {/* «logo»: 50×42 r14 на modal-surf1, обводка цветом конкурента,
+                      перечёркнутый глаз — курс конкурента скрыт/недоступен напрямую */}
+                  <span
+                    aria-hidden
+                    className="inline-flex h-9 w-11 shrink-0 items-center justify-center rounded-xl border bg-surface-modal-surf1 sm:h-[42px] sm:w-[50px] sm:rounded-[14px]"
+                    style={{ borderColor: comp.color }}
+                  >
+                    <Icon name="visibility_off" size={24} className="text-text-default" />
+                  </span>
+                  <span className="min-w-0 truncate text-sm text-text-disabled sm:text-base">
+                    {t(`competitors.${comp.nameKey}`)}
+                  </span>
+                  <div className="ml-auto grid shrink-0 grid-cols-2 gap-6 text-center sm:gap-10">
+                    <span className="w-16 text-base text-text-default sm:w-20">
+                      {formatNumber(comp.buy, locale, 2)}
+                    </span>
+                    <span className="w-16 text-base text-text-default sm:w-20">
+                      {formatNumber(comp.sell, locale, 2)}
+                    </span>
+                  </div>
+                  <span className="hidden sm:block sm:min-w-40" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
