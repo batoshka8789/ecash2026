@@ -11,15 +11,27 @@ const isProd = process.env.NODE_ENV === 'production';
  */
 const csp = [
   `default-src 'self'`,
-  `script-src 'self' 'unsafe-inline'${isProd ? '' : " 'unsafe-eval'"}`,
+  // mapgl.2gis.com — загрузчик @2gis/mapgl инжектит его скриптом на лету;
+  // api-maps.yandex.ru — второй провайдер карты отделений (BranchMap умеет
+  // переключаться между обоими, см. map-drivers/); yastatic.net — CDN, с
+  // которого api-maps.yandex.ru сам подгружает свой основной бандл
+  // (full.js) уже ПОСЛЕ инициализации — без него скрипт грузится, но сама
+  // карта падает с «Failed to bundle "full"», проверено вживую. Домен нужен
+  // ДВАЖДЫ — голый apex (реальный src бандла) и *.yastatic.net (поддомены
+  // статики) — `*.` в CSP матчит только поддомены, apex сам по себе нет.
+  `script-src 'self' 'unsafe-inline' https://mapgl.2gis.com https://api-maps.yandex.ru https://yastatic.net https://*.yastatic.net${isProd ? '' : " 'unsafe-eval'"}`,
   `style-src 'self' 'unsafe-inline'`,
-  // OSM-тайлы карты отделений и флаги валют с ecash.kz
-  `img-src 'self' data: blob: https://ecash.kz https://tile.openstreetmap.org`,
-  `font-src 'self'`,
+  // Тайлы, иконки и шрифты карты расползаются по поддоменам провайдеров
+  // (2GIS: mapgl., tile*.maps., disk.; Yandex: vec*/sat*.maps.yandex.net,
+  // статика с yastatic.net) — конкретный набор не документирован и может
+  // меняться, поэтому разрешаем весь поддомен, а не перечисляем хосты.
+  // apex-домены (без поддомена) добавлены отдельно — см. комментарий у script-src.
+  `img-src 'self' data: blob: https://ecash.kz https://*.2gis.com https://*.yandex.ru https://*.yandex.net https://yastatic.net https://*.yastatic.net`,
+  `font-src 'self' https://*.2gis.com https://yastatic.net https://*.yastatic.net`,
   // Апстрима Ecash здесь нет намеренно: в api-dev.quiq.kz ходит только сервер,
-  // браузеру достаточно своего origin. Из тайлов карты — OSM.
-  `connect-src 'self' https://tile.openstreetmap.org${isProd ? '' : ' ws:'}`,
-  // MapLibre поднимает воркеры из blob-URL.
+  // браузеру достаточно своего origin. Из тайлов карты — 2GIS и Yandex.
+  `connect-src 'self' https://*.2gis.com https://*.yandex.ru https://*.yandex.net https://yastatic.net https://*.yastatic.net${isProd ? '' : ' ws:'}`,
+  // MapGL (как и MapLibre раньше) поднимает воркеры из blob-URL.
   // child-src обязателен рядом с worker-src: Safari worker-src не понимает
   // и откатывается по цепочке child-src → default-src ('self'), из-за чего
   // blob-воркер карты блокировался и карта отделений в Safari не работала.

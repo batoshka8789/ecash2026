@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import { useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
@@ -212,7 +213,11 @@ export function BookingFlow({ mode }: { mode: Mode }) {
     // AuthModal рендерится вне <form> — иначе её собственная форма входа
     // окажется вложенной в эту, а вложенные <form> — невалидный HTML
     <>
-    <form onSubmit={submit} className="container-page flex flex-col gap-5 pt-6" noValidate>
+    <form
+      onSubmit={submit}
+      className="container-page bleed-mobile flex flex-col gap-1 pt-8"
+      noValidate
+    >
       <Toast
         open={showErrors}
         tone="negative"
@@ -235,17 +240,39 @@ export function BookingFlow({ mode }: { mode: Mode }) {
         {errorText('errors.REQUEST_ALREADY_EXISTS')}
       </Toast>
 
-      <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+      <section className="rounded-[22px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:rounded-[28px] md:p-8">
+        {/* «Frame 1437255029» 486:17941 — заголовок и вторичная кнопка в строку
+            46px с 768; ниже — колонкой с зазором 12 («Frame 1437255032») */}
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
           <div className="min-w-0">
-            <h1 className="text-xl font-bold text-text-default sm:text-[28px]">{t('pair.title')}</h1>
+            <h1 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+              {t('pair.title')}
+            </h1>
             {mode === 'individual' && (
-              <p className="mt-1 max-w-md text-sm text-text-disabled">{t('pair.individualHint')}</p>
+              <p className="mt-2 max-w-[576px] text-xs leading-[1.3] text-text-disabled md:mt-4 md:text-base md:font-medium md:leading-5">
+                {t('pair.individualHint')}
+              </p>
             )}
           </div>
+          {/* «a-button-main» 846:26418 — вторичная кнопка справа от заголовка:
+              191×46 с 768, 163×34 ниже, обводка #4C4C4C, подпись 14/20 брендом.
+              За кнопкой живёт выбор отделения (историческая ближайшая, пока адрес
+              не геокодирован, — то же значение, что и в остальном приложении). */}
+          <Select
+            className="w-[163px] shrink-0 md:w-[191px] [&>span]:sr-only [&>ul]:w-[289px] [&>ul]:max-w-[calc(100vw-32px)]"
+            buttonClassName="h-[34px]! justify-center! px-3! text-sm! text-text-brand! md:h-[46px]! md:px-4!"
+            label={t('address.title')}
+            value={String(depId)}
+            onChange={(v) => setDepId(Number(v))}
+            options={(depsQ.data?.departments ?? []).map((d) => ({
+              value: String(d.depId),
+              label: d.code || d.address,
+              hint: d.address,
+            }))}
+          />
         </div>
 
-        <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="relative mt-6 flex flex-col gap-3 lg:flex-row lg:items-center">
           <AmountBox
             label={`${t('pair.give')} (${kztGive ? '₸' : currencySymbol(foreign)})`}
             value={give}
@@ -259,9 +286,21 @@ export function BookingFlow({ mode }: { mode: Mode }) {
             type="button"
             onClick={() => setKztGive((v) => !v)}
             aria-label={t('pair.swap')}
-            className="mx-auto cursor-pointer rounded-full p-2 text-text-disabled transition-colors hover:bg-comp-surface1-hover hover:text-text-default"
+            /* поля стоят колонкой до lg — кнопка чипом ложится на стык полей;
+               с lg поля в ряд, и она превращается в голую иконку */
+            className="absolute left-1/2 top-1/2 z-10 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-stroke-modal bg-surface-page-surf2 text-text-default shadow-[0_1px_4px_rgb(12_12_13/0.05),0_1px_4px_rgb(12_12_13/0.1)] transition-colors hover:bg-comp-surface2-hover lg:static lg:mx-auto lg:h-10 lg:w-10 lg:translate-x-0 lg:translate-y-0 lg:rounded-full lg:border-0 lg:bg-transparent lg:shadow-none lg:hover:bg-comp-surface1-hover"
           >
-            <Icon name={mode === 'individual' ? 'arrow_forward' : 'sync_alt'} size={22} />
+            <motion.span
+              animate={{ rotate: kztGive ? 0 : 180 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              className="flex"
+            >
+              {/* material-symbols-rounded подключён без @layer в layout.tsx —
+                  его display:inline-block перебивает hidden/lg:block той же
+                  специфичности, нужен важность-модификатор (см. CurrencyFlag) */}
+              <Icon name="swap_vert" size={18} className="lg:hidden!" />
+              <Icon name="sync_alt" size={20} className="max-lg:hidden!" />
+            </motion.span>
           </button>
           <AmountBox
             label={`${t('pair.get')} (${kztGive ? currencySymbol(foreign) : '₸'})`}
@@ -273,16 +312,29 @@ export function BookingFlow({ mode }: { mode: Mode }) {
           />
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-text-default">
-          {t('pair.currentRate')}
+        {/* «Frame 1437254966» — строка курса 23px: подпись и бейдж с зазором 12.
+            Подпись: 12/1.3 Medium ниже 768; с 768 — 14, в брони 20, в индив.
+            курсе Regular 15.4 (486:22393 против 1004:45486) */}
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-text-default">
+          <span
+            className={
+              'text-xs font-medium leading-[15.6px] md:text-sm ' +
+              (mode === 'individual' ? 'md:font-normal md:leading-[15.4px]' : 'md:leading-5')
+            }
+          >
+            {`${t('pair.currentRate')}:`}
+          </span>
           {ratesQ.isPending ? (
-            <span className="h-7 w-32 animate-pulse rounded-full bg-surface-page-surf2" />
+            <span className="h-[23px] w-32 animate-pulse rounded-xl bg-surface-page-surf2" />
           ) : rate > 0 ? (
-            <span className="rounded-full bg-brand-hardsoft px-3 py-1.5 font-medium text-text-brand">
+            /* «badge» 828:32967 — 4/12, r12, текст 14/15.4 цветом #878787 */
+            <span className="rounded-xl bg-surface-page-surf2 px-3 py-1 text-sm leading-[15.4px] text-[#878787]">
               {tr('perUnit', { rate: formatNumber(rate, locale), code: currencySymbol(foreign) })}
             </span>
           ) : (
-            <span className="text-text-disabled">{errorText('errors.RATES_NOT_FOUND')}</span>
+            <span className="text-sm leading-[15.4px] text-text-disabled">
+              {errorText('errors.RATES_NOT_FOUND')}
+            </span>
           )}
         </div>
 
@@ -290,19 +342,8 @@ export function BookingFlow({ mode }: { mode: Mode }) {
             казначей, и запрошенное клиентом значение всё равно не влияло на
             результат — только создавало ложное ожидание. */}
 
-        <div className="mt-8">
-          <div className="mb-3 max-w-md">
-            <Select
-              label={t('address.title')}
-              value={String(depId)}
-              onChange={(v) => setDepId(Number(v))}
-              options={(depsQ.data?.departments ?? []).map((d) => ({
-                value: String(d.depId),
-                label: d.code || d.address,
-                hint: d.address,
-              }))}
-            />
-          </div>
+        {/* «Rectangle 555» 415:23783 — разделитель 1px divider/hole, отступы 24/28 */}
+        <div className="mt-6 border-t border-divider-hole pt-6 md:mt-7 md:pt-7">
           <BranchAddress
             department={depQ.data?.department ?? null}
             betterOffer={betterOffer}
@@ -313,10 +354,20 @@ export function BookingFlow({ mode }: { mode: Mode }) {
 
       <BanknotesPicker value={banknotes} onChange={setBanknotes} />
 
-      <section className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
-        <h2 className="text-lg font-bold text-text-default sm:text-2xl">{t('data.title')}</h2>
-        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-          <div className="flex-1">
+      <section className="rounded-[22px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:rounded-[28px] md:p-8">
+        <h2 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+          {t('data.title')}
+        </h2>
+        {/* «Frame 1437255410»: в брони поля встают в строку с 480 (1783:128506),
+            в индивидуальном курсе — только с 768 (1784:142488 — колонка) */}
+        <div
+          className={
+            'mt-6 flex flex-col gap-2 md:mt-10 md:flex-row ' +
+            (mode === 'booking' ? 'min-[480px]:flex-row' : '')
+          }
+        >
+          {/* «Input» 898:34257 — 280×54 на десктопе, растяжка на мобиле */}
+          <div className="flex-1 md:max-w-[280px]">
             <label htmlFor="bf-phone" className="sr-only">
               {t('data.phone')}
             </label>
@@ -327,11 +378,12 @@ export function BookingFlow({ mode }: { mode: Mode }) {
               placeholder={t('data.phone')}
               inputMode="tel"
               title={t('data.phoneFromAccount')}
-              className="h-12 w-full rounded-2xl border border-stroke-modal bg-transparent px-4 text-base text-text-disabled outline-none transition-colors focus:border-stroke-brand"
+              className={inputCls}
             />
             <p className="mt-1 pl-1 text-xs text-text-disabled">{t('data.phoneFromAccount')}</p>
           </div>
-          <div className="flex-1">
+          {/* «Input» 898:34257 — 280×54 на десктопе, растяжка на мобиле */}
+          <div className="flex-1 md:max-w-[280px]">
             <label htmlFor="bf-name" className="sr-only">
               {t('data.name')}
             </label>
@@ -341,13 +393,13 @@ export function BookingFlow({ mode }: { mode: Mode }) {
               onChange={(e) => setName(e.target.value.slice(0, 120))}
               placeholder={t('data.name')}
               autoComplete="name"
-              className="h-12 w-full rounded-2xl border border-stroke-modal bg-transparent px-4 text-base text-text-default outline-none placeholder:text-text-disabled focus:border-stroke-brand"
+              className={inputCls}
             />
           </div>
         </div>
 
         {mode === 'booking' && (
-          <label className="mt-4 flex cursor-pointer items-center gap-3 text-sm text-text-disabled">
+          <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm leading-[15.4px] text-text-disabled md:mt-3 md:leading-5">
             <input
               type="checkbox"
               checked={individual}
@@ -356,13 +408,13 @@ export function BookingFlow({ mode }: { mode: Mode }) {
             />
             <span
               className={
-                'flex h-5 w-5 items-center justify-center rounded-md border transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand ' +
+                'flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand ' +
                 (individual
                   ? 'border-transparent bg-brand text-text-always-white'
-                  : 'border-stroke-surface3 text-transparent')
+                  : 'border-surface-page-surf3 text-transparent')
               }
             >
-              <Icon name="check" size={14} />
+              <Icon name="check" size={16} />
             </span>
             {t('data.requestIndividual')}
           </label>
@@ -376,10 +428,10 @@ export function BookingFlow({ mode }: { mode: Mode }) {
 
         {/* Сумма обязательна: кнопка недоступна, пока её не ввели, — раньше
             операцию можно было отправить с пустым полем и узнать об ошибке
-            только из тоста. Подпись объясняет, почему кнопка неактивна. */}
+            только из тоста. Подпись ниже объясняет, почему кнопка неактивна. */}
         <Button
           type="submit"
-          className="mt-6 w-full sm:w-auto sm:min-w-52"
+          className="mt-6 w-full md:mt-8 md:w-auto"
           disabled={create.isPending || !validAmount}
         >
           {mode === 'individual' || individual ? t('data.requestIndividualCta') : t('data.book')}
@@ -404,3 +456,15 @@ export function BookingFlow({ mode }: { mode: Mode }) {
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * «Input» 883:33235 — 54×r20, обводка #4C4C4C; плейсхолдер Inter Semi Bold
+ * 16/21 #6B6B6B, заполненное значение Roboto SemiBold 16/20 #EEEEEE.
+ * Состояния из набора 885:33279/33285: hover — заливка surf2 и обводка
+ * #616161, focus — обводка #EEEEEE (варианта disabled в макете нет).
+ */
+const inputCls =
+  'h-[54px] w-full rounded-[20px] border border-surface-page-surf3 bg-transparent px-4 text-base' +
+  ' font-semibold leading-5 text-text-default outline-none transition-colors' +
+  ' placeholder:font-inter placeholder:font-semibold placeholder:leading-[21px] placeholder:text-text-disabled' +
+  ' hover:border-stroke-input-hover hover:bg-surface-page-surf2 focus:border-text-default';

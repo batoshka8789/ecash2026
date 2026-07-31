@@ -25,15 +25,6 @@ export type Currency = {
   marketRate: number;
 };
 
-export type Competitor = {
-  id: string;
-  nameKey: string;
-  /** CSS-переменная цвета обводки: competitor 1/2/3 из палитры */
-  color: string;
-  buy: number;
-  sell: number;
-};
-
 // --------------------------------------------------------------- отделения
 
 export type BranchBadge = 'best' | 'happyHours' | 'nearest';

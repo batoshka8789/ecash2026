@@ -22,6 +22,9 @@
   /* Моноширинный — чисто системный стек, догружать нечего. */
   --font-editor-mono:
     ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+  /* Букинг-флоу и хлебные крошки (макет ecash-beta): плейсхолдеры полей,
+   * подпись поиска в Select, пункт «Главная» в крошках. */
+  --font-inter: var(--font-inter-src), system-ui, sans-serif;
 
   /* Градиент обводок лендинга (макет: linear #F6844B → #BF5AF5) */
   --gradient-accent: linear-gradient(135deg, #f6844b, #bf5af5);
@@ -33,6 +36,17 @@
   width: 100%;
   max-width: 1232px;
   padding-inline: calc(var(--spacing) * 4);
+}
+
+/**
+ * Карточки букинг-флоу на 360/480 в макете идут в край экрана — боковые
+ * поля несёт только их собственный padding. Гасим отступы колонки ниже
+ * 768 у формы BookingFlow, остальные страницы контейнер не трогает.
+ */
+@utility bleed-mobile {
+  @media (width < 48rem) {
+    padding-inline: 0;
+  }
 }
 
 /**

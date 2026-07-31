@@ -62,8 +62,6 @@
       "bookmark": "Bookmark",
       "compareIcon": "Compare rates",
       "exchangeRate": "Exchange rate",
-      "compare": "Compare with competitors",
-      "collapse": "Collapse",
       "showAll": "Show all currencies",
       "hideAll": "Collapse",
       "currencies": {
@@ -77,11 +75,6 @@
         "try": "Turkish Lira",
         "uzs": "Uzbek Som",
         "kgs": "Kyrgyz Som"
-      },
-      "competitors": {
-        "blue": "Blue exchange",
-        "green": "Green exchange",
-        "red": "Red exchange"
       },
       "allBranches": "All branches",
       "showOnMap": "Show on map"
@@ -204,6 +197,7 @@
       "mapAlt": "Map",
       "saved": "Saved",
       "mapEmpty": "No branches found",
+      "mapUnavailable": "Map temporarily unavailable",
       "locate": "Near me",
       "locating": "Detecting your location…",
       "locateDenied": "Could not detect your location — enter the address manually",
@@ -276,6 +270,7 @@
     "clearSearch": "Clear search",
     "allCities": "All cities",
     "nothingFound": "No branches found",
+    "mapUnavailable": "Map temporarily unavailable",
     "resetFilters": "Reset filters",
     "close": "Close",
     "route": "Get directions",
@@ -674,6 +669,7 @@
     "close": "Close",
     "mapAlt": "Branch map",
     "mapEmpty": "No branches found",
+    "mapUnavailable": "Map temporarily unavailable",
     "locate": "Near me",
     "locating": "Detecting your location…",
     "locateDenied": "Could not detect your location — enter the address manually",

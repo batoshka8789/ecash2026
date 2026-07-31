@@ -27,19 +27,35 @@ export function PageShell({
     <div className="flex min-h-screen flex-col">
       <Header />
       <main id="main" className="flex-1 pb-4">
-        <nav aria-label="Breadcrumb" className="container-page pt-6 text-sm">
-          <ol className="flex items-center gap-2">
+        {/*
+         * Крошки «Navs, bread crumbs» (363:27570). Зазор от низа шапки в макете
+         * везде 12: y=95 при шапке 83 (≥768) и y=85 при шапке 73 (≤480) —
+         * отсюда pt-3, а не pt-6.
+         *
+         * Строка ровно 44 с 768 и 40 ниже: пункт — padding 12 сверху и снизу
+         * вокруг строки 20 (≥768) или 16 (≤480). Подчёркивание активного пункта
+         * в макете лежит ВНУТРИ блока, поэтому border-bottom забирает 2px
+         * у нижнего паддинга, а не добавляет.
+         *
+         * Начертания: «Главная» — Inter Medium 16/20 на всех ширинах,
+         * активный пункт — тот же Inter Medium с 768 и Roboto Regular 16 ниже.
+         */}
+        <nav aria-label="Breadcrumb" className="container-page pt-3 text-base">
+          <ol className="flex items-center gap-3">
             <li>
               <Link
                 href="/"
-                className="text-text-disabled transition-colors hover:text-text-default"
+                className="block py-3 font-inter font-medium leading-4 text-text-disabled transition-colors hover:text-text-default md:leading-5"
               >
                 {t('home')}
               </Link>
             </li>
-            <li className="flex items-center gap-2">
+            <li className="flex items-center gap-3">
               <Icon name="chevron_right" size={16} className="text-text-disabled" />
-              <span aria-current="page" className="border-b-2 border-brand pb-0.5 text-text-default">
+              <span
+                aria-current="page"
+                className="block border-b-2 border-brand pb-[10px] pt-3 leading-4 text-text-default md:font-inter md:font-medium md:leading-5"
+              >
                 {label}
               </span>
             </li>
