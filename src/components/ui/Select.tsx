@@ -243,16 +243,20 @@ export function Select({
       aria-labelledby={`${id}-label`}
       className={
         sheet
-          ? // «Frame 1437254947» боттомшита — 336 видимой высоты (6 строк по 56)
-            'max-h-[336px] overflow-auto'
+          ? // «Frame 1437254947» боттомшита — 336 видимой высоты (6 строк по 56);
+            // overscroll-contain: докрутка до края не утаскивает страницу за шторкой
+            'max-h-[336px] overflow-auto overscroll-contain'
           : searchable
             ? // «Frame 1437254947» попапа: 376 − 8 − 52 − 16 − 8 − 2 = 290
-              'max-h-[290px] overflow-auto'
+              'max-h-[290px] overflow-auto overscroll-contain'
             : // попап «Frame 1437254896»: r20, p8, обводка stroke/modal, тень 0 0 6px 12%
-              'absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-[20px] border border-stroke-modal bg-surface-modal-bg p-2 shadow-[0_0_6px_rgb(0_0_0/0.12)]'
+              'absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto overscroll-contain rounded-[20px] border border-stroke-modal bg-surface-modal-bg p-2 shadow-[0_0_6px_rgb(0_0_0/0.12)]'
       }
     >
       {visible.map((opt, idx) => (
+        // клавиатура обслуживается на корне комбобокса (onKeyDown обёртки:
+        // стрелки/Enter/Space/Esc) — у отдельной опции своего listener не нужно
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events
         <li
           key={opt.value}
           id={`${id}-opt-${idx}`}
@@ -260,10 +264,27 @@ export function Select({
           role="option"
           aria-selected={opt.value === value}
           onPointerDown={(e) => {
-            e.preventDefault();
+            // Только мышь: выбор сразу на нажатии (без ожидания click), а
+            // preventDefault не даёт увести фокус с кнопки/поля поиска.
+            // Для пальца здесь было то же самое — и это ломало ПРОКРУТКУ:
+            // жест скролла начинается с касания опции, pointerdown мгновенно
+            // выбирал её и закрывал шторку — список было не пролистать.
+            if (e.pointerType === 'mouse') {
+              e.preventDefault();
+              commit(idx);
+            }
+          }}
+          onClick={() => {
+            // Палец/перо: браузер порождает click только у тапа без сдвига —
+            // скролл-жест сюда не попадает. После мышиного commit список уже
+            // размонтирован, повторного вызова не будет.
             commit(idx);
           }}
-          onPointerMove={() => setActive(idx)}
+          onPointerMove={(e) => {
+            // подсветка под курсором — только мышь: на таче это лишние
+            // ре-рендеры прямо во время прокрутки
+            if (e.pointerType === 'mouse') setActive(idx);
+          }}
           className={clsx(
             'flex cursor-pointer items-center justify-between gap-4 rounded-xl py-2 text-base text-text-default transition-colors',
             // с флагом — «dropdown currency item list» 56×r12, паддинг 8/16/8/8;
