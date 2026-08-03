@@ -14,6 +14,7 @@ import { useErrorText } from '@/lib/useErrorText';
 import {
   currencySymbol,
   formatDateTime,
+  formatMoney,
   formatNumber,
   formatPhoneInput,
   formatTime,
@@ -197,7 +198,7 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
               раздел 4.3) — прямо, без ветвления по типу валюты */}
           <AmountBox
             label={`${tf('pair.give')} (${currencySymbol(r.currencyFrom)})`}
-            value={formatNumber(r.value, locale)}
+            value={formatMoney(r.value, locale)}
             readOnly
             currency={r.currencyFrom}
           />
@@ -206,7 +207,7 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
               «На рассмотрении» — итоговый курс всё равно виден рядом. */}
           <AmountBox
             label={`${tf('pair.get')} (${currencySymbol(r.currencyTo)})`}
-            value={formatNumber(r.amount, locale)}
+            value={formatMoney(r.amount, locale)}
             readOnly
             currency={r.currencyTo}
           />

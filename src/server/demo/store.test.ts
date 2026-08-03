@@ -122,3 +122,45 @@ describe('demoConfirmIndividual / demoRejectIndividual', () => {
     expect(store.demoConfirmIndividual('acc-ind-none', 987654)).toBeNull();
   });
 });
+
+describe('demoSetPhone — смена номера в демо-режиме', () => {
+  const OLD = '+7 (777) 111 11 11';
+  const NEW = '+7 (777) 222 22 22';
+  const PASSWORD = 'my-secret-1';
+
+  it('после смены номера вход идёт по НОВОМУ номеру, старый больше не логин', () => {
+    // регистрация: пароль ложится под ключ-номер
+    store.demoSetPassword(OLD, PASSWORD);
+    expect(store.demoCheckPassword(OLD, PASSWORD)).toBe(true);
+
+    const accountId = store.demoAccount(OLD).accountId;
+    store.demoSetPhone(accountId, NEW);
+
+    // ровно то, на что жаловался заказчик: по новому номеру вход не выполнялся
+    expect(store.demoCheckPassword(NEW, PASSWORD)).toBe(true);
+    // телефон — это логин: после смены прежний номер входом быть перестаёт
+    expect(store.demoCheckPassword(OLD, PASSWORD)).toBe(false);
+  });
+
+  it('аккаунт остаётся тем же и показывает новый номер', () => {
+    const acc = store.demoAccount('+7 (700) 333 33 33');
+    store.demoSetPhone(acc.accountId, '+7 (700) 444 44 44');
+
+    // вход по новому номеру ведёт в ТОТ ЖЕ аккаунт (заявки не теряются)
+    const after = store.demoAccount('+7 (700) 444 44 44');
+    expect(after.accountId).toBe(acc.accountId);
+    expect(after.phoneNumber).toBe('+7 (700) 444 44 44');
+  });
+
+  it('повторная смена переносит пароль дальше по цепочке', () => {
+    const THIRD = '+7 (701) 999 99 99';
+    store.demoSetPassword('+7 (701) 555 55 55', 'pw-2');
+    const id = store.demoAccount('+7 (701) 555 55 55').accountId;
+    store.demoSetPhone(id, '+7 (701) 777 77 77');
+    store.demoSetPhone(id, THIRD);
+
+    expect(store.demoCheckPassword(THIRD, 'pw-2')).toBe(true);
+    expect(store.demoCheckPassword('+7 (701) 777 77 77', 'pw-2')).toBe(false);
+    expect(store.demoCheckPassword('+7 (701) 555 55 55', 'pw-2')).toBe(false);
+  });
+});

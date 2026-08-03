@@ -21,16 +21,27 @@ export const phoneSchema = z
 
 export const iinSchema = z.string().regex(/^\d{12}$/, 'errors.iinInvalid');
 
+export const otpSchema = z.string().regex(/^\d{6}$/, 'errors.codeInvalid');
+
 /**
  * Смена контактов аккаунта Ecash (PUT /mobile/account/update-client).
  * Оба поля необязательны по отдельности, но пустой запрос смысла не имеет.
+ *
+ * Телефон — логин аккаунта, поэтому смена номера подтверждается SMS-кодом на
+ * НОВЫЙ номер: иначе достаточно было угнать активную сессию, чтобы увести
+ * аккаунт на чужой телефон. Код проверяется на сервере в том же запросе.
  */
 export const accountPatchBody = z
   .object({
     phoneNumber: phoneSchema.optional(),
     email: z.email('errors.emailInvalid').optional(),
+    otp: otpSchema.optional(),
   })
-  .refine((v) => v.phoneNumber !== undefined || v.email !== undefined, 'errors.required');
+  .refine((v) => v.phoneNumber !== undefined || v.email !== undefined, 'errors.required')
+  .refine((v) => v.phoneNumber === undefined || v.otp !== undefined, {
+    message: 'errors.codeRequired',
+    path: ['otp'],
+  });
 
 /** Логин: телефон или ИИН (12 цифр — это и валидный ИИН, и валидный телефон без кода). */
 export const loginValueSchema = z
@@ -43,8 +54,6 @@ export const passwordSchema = z
   .string()
   .min(8, 'errors.passwordMin')
   .regex(/\d/, 'errors.passwordDigit');
-
-export const otpSchema = z.string().regex(/^\d{6}$/, 'errors.codeInvalid');
 
 // --------------------------------------------------------------------- auth
 

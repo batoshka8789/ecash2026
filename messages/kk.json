@@ -330,7 +330,8 @@
       "book": "Брондау",
       "requestIndividualCta": "Жеке бағам сұрату",
       "phoneFromAccount": "Аккаунтыңыздағы нөмір",
-      "loginToBook": "Бағамды брондау үшін кіріңіз",
+      "guestTitle": "Брондау үшін кіріңіз",
+      "guestCta": "Кіру немесе тіркелу",
       "amountRequired": "Жалғастыру үшін соманы енгізіңіз"
     },
     "done": {
@@ -379,6 +380,7 @@
       "11": "Желтоқсан"
     },
     "targetLabel": "Бағам жеткенде хабарлау (₸)",
+    "rateImplausible": "Бұл — 1 {code} үшін бағам, айырбас сомасы емес. Қазір 1 {code} үшін {rate} ₸",
     "perOneLabel": "Бір бірлікке",
     "untilTitle": "Осы күнге дейін хабарлау",
     "loginToSubscribe": "Бағамға жазылу үшін кіріңіз",
@@ -588,6 +590,7 @@
     "wrongPassword": "Құпиясөз қате",
     "emailTaken": "Бұл пошта тіркелген",
     "codeInvalid": "Код қате",
+    "codeRequired": "SMS кодын енгізіңіз",
     "codeExpired": "Код ескірді, жаңасын сұраңыз",
     "unauthorized": "Кіру қажет",
     "phoneRequired": "Телефон нөмірін енгізіңіз",

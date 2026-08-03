@@ -15,11 +15,16 @@ import { useAuth } from '@/lib/auth';
 import { useErrorText } from '@/lib/useErrorText';
 import { currencyName, currencySymbol, formatDateTime, formatNumber, intlLocale } from '@/lib/format';
 import type { RateAlert } from '@/lib/domain';
+import { isPlausibleTargetRate } from '@/lib/exchange';
 import { AmountBox } from './PairFields';
 
 const DEFAULT_DEP = 1;
 
 const parseRate = (v: string) => parseFloat(v.replace(/[\s ]/g, '').replace(',', '.'));
+
+/** Дата уже прошла. Вне компонента: Date.now() в его теле запрещает
+ *  react-hooks/purity — обработчик отправки формы тут ни при чём. */
+const isPast = (d: Date) => d.getTime() <= Date.now();
 
 /**
  * «dropdown date»: та же плитка surf2, что у полей суммы — обычный Select
@@ -164,12 +169,24 @@ export function SubscribeFlow() {
   // валидность целевого курса — по числовому разбору, не по truthiness строки
   const parsedRate = parseRate(rate);
   const rateValid = Number.isFinite(parsedRate) && parsedRate > 0;
+  // курс за единицу, а не сумма обмена — правило и его причина в lib/exchange
+  const ratePlausible = !rateValid || isPlausibleTargetRate(parsedRate, currentRate);
   const dateMissing = day === null || month === null || year === null;
 
   /** здесь пользователь уже гарантированно авторизован */
   const tryCreate = () => {
     if (!rateValid || dateMissing) {
       setFormError(null);
+      setShowErrors(true);
+      return;
+    }
+    if (!ratePlausible) {
+      setFormError(
+        t('rateImplausible', {
+          rate: formatNumber(currentRate, locale),
+          code: currencySymbol(foreign),
+        }),
+      );
       setShowErrors(true);
       return;
     }
@@ -180,7 +197,7 @@ export function SubscribeFlow() {
       setShowErrors(true);
       return;
     }
-    if (until.getTime() <= Date.now()) {
+    if (isPast(until)) {
       setFormError(errorText('errors.dateInPast'));
       setShowErrors(true);
       return;
@@ -359,7 +376,7 @@ export function SubscribeFlow() {
             value={rate}
             onChange={(v) => setRate(v.replace(/[^\d\s.,]/g, '').slice(0, 10))}
             currency="KZT"
-            invalid={showErrors && !rateValid}
+            invalid={showErrors && (!rateValid || !ratePlausible)}
           />
           <span className="mx-auto flex h-6 w-6 items-center justify-center text-text-disabled">
             <Icon name="notifications_active" size={22} />
@@ -401,7 +418,9 @@ export function SubscribeFlow() {
             {`${t('notifyUntil')}:`}
           </p>
           {/* подписи полей скрыты визуально: над группой уже стоит общая */}
-          <div className="mt-2 grid grid-cols-3 gap-1 md:w-[404px] [&_[id$='-label']]:sr-only">
+          {/* Месяцу — колонка шире: «сентябрь»/«қыркүйек» в равной трети (132px)
+              не помещались в кнопку и обрезались многоточием. */}
+          <div className="mt-2 grid grid-cols-[1fr_1.5fr_1fr] gap-1 md:w-[404px] [&_[id$='-label']]:sr-only">
             <Select
               buttonClassName={dateSelectBtn(showErrors && day === null)}
               label={t('day')}

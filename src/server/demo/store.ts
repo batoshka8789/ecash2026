@@ -23,7 +23,22 @@ export const isDemoToken = (token: string) => env.ECASH_OTP_MOCK && token === DE
  * держим оверрайдом: аккаунт тот же, показывается новый телефон.
  */
 export function demoSetPhone(accountId: string, phone: string): void {
+  const prev = phoneOverrides.get(accountId);
   phoneOverrides.set(accountId, phone);
+
+  /**
+   * Пароль лежит под ключом-номером (см. passwords ниже), а при смене телефона
+   * его никто не переносил — отсюда жалоба «после смены номера вход возможен
+   * только по старому, по новому не выполняется». Переносим вместе с номером и
+   * снимаем со старого ключа: сменив номер, входить по прежнему уже нельзя —
+   * ровно как в настоящем ядре, где телефон и есть логин.
+   */
+  const from = prev ?? accountId.replace(/^demo-/, '');
+  const saved = passwords.get(phoneKey(from));
+  if (saved !== undefined && phoneKey(from) !== phoneKey(phone)) {
+    passwords.set(phoneKey(phone), saved);
+    passwords.delete(phoneKey(from));
+  }
 }
 
 export function demoAccount(phone: string): Account {

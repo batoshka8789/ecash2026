@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  accountPatchBody,
   createRequestBody,
   loginBody,
   otpSendBody,
@@ -119,5 +120,36 @@ describe('rateAlertBody', () => {
       expect(r.error.issues[0].message).toBe('errors.CURRENCY_INVALID');
       expect(r.error.issues[0].path).toEqual(['currencyTo']);
     }
+  });
+});
+
+describe('accountPatchBody — смена контактов', () => {
+  const PHONE = '+7 777 123-45-67';
+
+  it('смена телефона без кода из SMS не проходит', () => {
+    // телефон = логин аккаунта: без подтверждения нового номера открытая
+    // сессия могла бы увести аккаунт на чужой телефон
+    const r = accountPatchBody.safeParse({ phoneNumber: PHONE });
+    expect(r.success).toBe(false);
+    expect(r.error?.issues[0].path).toEqual(['otp']);
+  });
+
+  it('смена телефона с кодом проходит', () => {
+    const r = accountPatchBody.safeParse({ phoneNumber: PHONE, otp: '123456' });
+    expect(r.success).toBe(true);
+    expect(r.data?.otp).toBe('123456');
+  });
+
+  it('код неверной длины отклоняется', () => {
+    expect(accountPatchBody.safeParse({ phoneNumber: PHONE, otp: '12345' }).success).toBe(false);
+    expect(accountPatchBody.safeParse({ phoneNumber: PHONE, otp: 'abcdef' }).success).toBe(false);
+  });
+
+  it('смена только почты кода не требует', () => {
+    expect(accountPatchBody.safeParse({ email: 'a@b.kz' }).success).toBe(true);
+  });
+
+  it('пустой запрос отклоняется', () => {
+    expect(accountPatchBody.safeParse({}).success).toBe(false);
   });
 });

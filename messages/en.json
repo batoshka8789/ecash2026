@@ -330,7 +330,8 @@
       "book": "Book",
       "requestIndividualCta": "Request an individual rate",
       "phoneFromAccount": "Number from your account",
-      "loginToBook": "Log in to book a rate",
+      "guestTitle": "Log in to book",
+      "guestCta": "Log in or sign up",
       "amountRequired": "Enter an amount to continue"
     },
     "done": {
@@ -379,6 +380,7 @@
       "11": "December"
     },
     "targetLabel": "Notify at rate (₸)",
+    "rateImplausible": "This is the rate per 1 {code}, not the exchange amount. It is currently {rate} ₸ per 1 {code}",
     "perOneLabel": "Per unit",
     "untilTitle": "Notify until",
     "loginToSubscribe": "Log in to subscribe to rate alerts",
@@ -588,6 +590,7 @@
     "wrongPassword": "Wrong password",
     "emailTaken": "This email is already registered",
     "codeInvalid": "Invalid code",
+    "codeRequired": "Enter the code from the SMS",
     "codeExpired": "The code has expired, request a new one",
     "unauthorized": "Please log in",
     "phoneRequired": "Enter a phone number",

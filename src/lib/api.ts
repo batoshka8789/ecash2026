@@ -255,7 +255,8 @@ export const api = {
    * является логином, поэтому пишется только через ядро.
    */
   account: {
-    save: (patch: { phoneNumber?: string; email?: string }) =>
+    /** При смене телефона `otp` обязателен — код с НОВОГО номера. */
+    save: (patch: { phoneNumber?: string; email?: string; otp?: string }) =>
       request<{ account: AccountWithProfile }>('/account', {
         method: 'PATCH',
         body: JSON.stringify(patch),

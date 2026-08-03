@@ -15,7 +15,13 @@ import { useAuth } from '@/lib/auth';
 import { useErrorText } from '@/lib/useErrorText';
 import { useNearestDepId, useUserPlace } from '@/lib/user-place';
 import { almatyTime, haversineKm, isHappyHours, isOpenNow, type BadgeKind } from '@/lib/branch-status';
-import { currencyName, currencySymbol, formatNumber, formatPhoneInput } from '@/lib/format';
+import {
+  currencyName,
+  currencySymbol,
+  formatMoney,
+  formatNumber,
+  formatPhoneInput,
+} from '@/lib/format';
 import { counterAmount } from '@/lib/exchange';
 import { sortCurrencyCodes } from '@/lib/currency-order';
 import { accountDisplayName, type ExchangeRequest } from '@/lib/domain';
@@ -196,8 +202,8 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   const get = useMemo(() => {
     if (!validAmount || rate <= 0) return '';
     return kztGive
-      ? `${formatNumber(amount, locale)} ${currencySymbol(foreign)}`
-      : `${formatNumber(amount, locale)} ₸`;
+      ? `${formatMoney(amount, locale)} ${currencySymbol(foreign)}`
+      : `${formatMoney(amount, locale)} ₸`;
   }, [validAmount, rate, kztGive, amount, foreign, locale]);
 
   // Порядок общий с калькулятором: тенге сверху, золото в конце
@@ -424,89 +430,107 @@ export function BookingFlow({ mode }: { mode: Mode }) {
       <BanknotesPicker value={banknotes} onChange={setBanknotes} />
 
       <section className="rounded-[22px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:rounded-[28px] md:p-8">
-        <h2 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
-          {t('data.title')}
-        </h2>
-        {/* «Frame 1437255410»: в брони поля встают в строку с 480 (1783:128506),
-            в индивидуальном курсе — только с 768 (1784:142488 — колонка) */}
-        <div
-          className={
-            'mt-6 flex flex-col gap-2 md:mt-10 md:flex-row ' +
-            (mode === 'booking' ? 'min-[480px]:flex-row' : '')
-          }
-        >
-          {/* «Input» 898:34257 — 280×54 на десктопе, растяжка на мобиле */}
-          <div className="flex-1 md:max-w-[280px]">
-            <label htmlFor="bf-phone" className="sr-only">
-              {t('data.phone')}
-            </label>
-            <input
-              id="bf-phone"
-              value={account?.phoneNumber ? formatPhoneInput(account.phoneNumber) : ''}
-              readOnly
-              placeholder={t('data.phone')}
-              inputMode="tel"
-              title={t('data.phoneFromAccount')}
-              className={inputCls}
-            />
-            <p className="mt-1 pl-1 text-xs text-text-disabled">{t('data.phoneFromAccount')}</p>
-          </div>
-          {/* «Input» 898:34257 — 280×54 на десктопе, растяжка на мобиле */}
-          <div className="flex-1 md:max-w-[280px]">
-            <label htmlFor="bf-name" className="sr-only">
-              {t('data.name')}
-            </label>
-            <input
-              id="bf-name"
-              value={name}
-              onChange={(e) => setName(e.target.value.slice(0, 120))}
-              placeholder={t('data.name')}
-              autoComplete="name"
-              className={inputCls}
-            />
-          </div>
-        </div>
-
-        {mode === 'booking' && (
-          <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm leading-[15.4px] text-text-disabled md:mt-3 md:leading-5">
-            <input
-              type="checkbox"
-              checked={individual}
-              onChange={(e) => setIndividual(e.target.checked)}
-              className="peer sr-only"
-            />
-            <span
-              className={
-                'flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand ' +
-                (individual
-                  ? 'border-transparent bg-brand text-text-always-white'
-                  : 'border-surface-page-surf3 text-transparent')
-              }
-            >
-              <Icon name="check" size={16} />
+        {!authed ? (
+          /* Гостю в этом блоке заполнять нечего: телефон приходит из аккаунта
+             (владелец брони у Ecash — accountId из токена), поэтому пустое
+             нередактируемое поле и остальные элементы только мешали. Вместо
+             них — один понятный шаг: вход или регистрация. */
+          <div className="flex flex-col items-center gap-5 py-2 text-center md:gap-6 md:py-4">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-page-surf2 text-text-brand md:h-16 md:w-16">
+              <Icon name="lock" size={30} />
             </span>
-            {t('data.requestIndividual')}
-          </label>
-        )}
+            <h2 className="text-lg font-medium leading-[1.2] text-text-default md:text-[26px]">
+              {t('data.guestTitle')}
+            </h2>
+            <Button
+              type="button"
+              onClick={() => setAuthModalOpen(true)}
+              className="w-full md:w-auto md:min-w-[300px]"
+            >
+              {t('data.guestCta')}
+            </Button>
+          </div>
+        ) : (
+          <>
+          <h2 className="text-lg font-medium leading-[1.2] text-text-default md:text-[32px]">
+            {t('data.title')}
+          </h2>
+          {/* «Frame 1437255410»: в брони поля встают в строку с 480 (1783:128506),
+              в индивидуальном курсе — только с 768 (1784:142488 — колонка) */}
+          <div
+            className={
+              'mt-6 flex flex-col gap-2 md:mt-10 md:flex-row ' +
+              (mode === 'booking' ? 'min-[480px]:flex-row' : '')
+            }
+          >
+            {/* «Input» 898:34257 — 280×54 на десктопе, растяжка на мобиле */}
+            <div className="flex-1 md:max-w-[280px]">
+              <label htmlFor="bf-phone" className="sr-only">
+                {t('data.phone')}
+              </label>
+              <input
+                id="bf-phone"
+                value={account?.phoneNumber ? formatPhoneInput(account.phoneNumber) : ''}
+                readOnly
+                placeholder={t('data.phone')}
+                inputMode="tel"
+                title={t('data.phoneFromAccount')}
+                className={inputCls}
+              />
+              <p className="mt-1 pl-1 text-xs text-text-disabled">{t('data.phoneFromAccount')}</p>
+            </div>
+            {/* «Input» 898:34257 — 280×54 на десктопе, растяжка на мобиле */}
+            <div className="flex-1 md:max-w-[280px]">
+              <label htmlFor="bf-name" className="sr-only">
+                {t('data.name')}
+              </label>
+              <input
+                id="bf-name"
+                value={name}
+                onChange={(e) => setName(e.target.value.slice(0, 120))}
+                placeholder={t('data.name')}
+                autoComplete="name"
+                className={inputCls}
+              />
+            </div>
+          </div>
 
-        {!authed && (
-          <p className="mt-4 text-sm text-text-disabled" role="note">
-            {t('data.loginToBook')}
-          </p>
-        )}
+          {mode === 'booking' && (
+            <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm leading-[15.4px] text-text-disabled md:mt-3 md:leading-5">
+              <input
+                type="checkbox"
+                checked={individual}
+                onChange={(e) => setIndividual(e.target.checked)}
+                className="peer sr-only"
+              />
+              <span
+                className={
+                  'flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand ' +
+                  (individual
+                    ? 'border-transparent bg-brand text-text-always-white'
+                    : 'border-surface-page-surf3 text-transparent')
+                }
+              >
+                <Icon name="check" size={16} />
+              </span>
+              {t('data.requestIndividual')}
+            </label>
+          )}
 
-        {/* Сумма обязательна: кнопка недоступна, пока её не ввели, — раньше
-            операцию можно было отправить с пустым полем и узнать об ошибке
-            только из тоста. Подпись ниже объясняет, почему кнопка неактивна. */}
-        <Button
-          type="submit"
-          className="mt-6 w-full md:mt-8 md:w-auto"
-          disabled={create.isPending || !validAmount}
-        >
-          {mode === 'individual' || individual ? t('data.requestIndividualCta') : t('data.book')}
-        </Button>
-        {!validAmount && (
-          <p className="mt-2 text-sm text-text-disabled">{t('data.amountRequired')}</p>
+          {/* Сумма обязательна: кнопка недоступна, пока её не ввели, — раньше
+              операцию можно было отправить с пустым полем и узнать об ошибке
+              только из тоста. Подпись ниже объясняет, почему кнопка неактивна. */}
+          <Button
+            type="submit"
+            className="mt-6 w-full md:mt-8 md:w-auto"
+            disabled={create.isPending || !validAmount}
+          >
+            {mode === 'individual' || individual ? t('data.requestIndividualCta') : t('data.book')}
+          </Button>
+          {!validAmount && (
+            <p className="mt-2 text-sm text-text-disabled">{t('data.amountRequired')}</p>
+          )}
+          </>
         )}
       </section>
     </form>
@@ -517,7 +541,10 @@ export function BookingFlow({ mode }: { mode: Mode }) {
         // сессионная кука уже настоящая к этому моменту (её выставил ответ
         // логина) — не ждём, пока это подтвердит собственный useAuth()
         setAuthModalOpen(false);
-        tryCreate();
+        // Продолжаем прерванное действие только если форма готова: кнопка
+        // входа для гостя стоит отдельно от «Забронировать», и войти можно
+        // с пустой суммой — тогда тост «заполните поля» был бы грубым.
+        if (validAmount) tryCreate();
       }}
     />
     </>

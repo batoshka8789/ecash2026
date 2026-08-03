@@ -12,7 +12,13 @@ import { CurrencyFlag } from '@/components/ui/CurrencyFlag';
 import { Select, type SelectOption } from '@/components/ui/Select';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
-import { currencyFlagClass, currencyName, currencySymbol, formatNumber } from '@/lib/format';
+import {
+  currencyFlagClass,
+  currencyName,
+  currencySymbol,
+  formatMoney,
+  formatNumber,
+} from '@/lib/format';
 import { sortCurrencyCodes } from '@/lib/currency-order';
 import { useErrorText } from '@/lib/useErrorText';
 import { useNearestDepId } from '@/lib/user-place';
@@ -156,7 +162,7 @@ export function Calculator({
     if (field === entry.source && editing === field) return entry.raw;
     const value = fieldValue(field);
     if (value === null) return field === entry.source ? entry.raw : '';
-    return formatNumber(value, locale, 2);
+    return formatMoney(value, locale);
   };
 
   const onFieldChange = (field: Field, value: string) =>

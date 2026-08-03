@@ -250,7 +250,10 @@ export function Select({
             ? // «Frame 1437254947» попапа: 376 − 8 − 52 − 16 − 8 − 2 = 290
               'max-h-[290px] overflow-auto overscroll-contain'
             : // попап «Frame 1437254896»: r20, p8, обводка stroke/modal, тень 0 0 6px 12%
-              'absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto overscroll-contain rounded-[20px] border border-stroke-modal bg-surface-modal-bg p-2 shadow-[0_0_6px_rgb(0_0_0/0.12)]'
+              // Ширина: не уже кнопки (min-w-full), дальше по содержимому (w-max).
+              // Раньше стояло right-0 — попап был ровно по кнопке, и в узкой
+              // колонке даты названия месяцев обрезались до «м…», «а…».
+              'absolute left-0 top-full z-30 mt-1 max-h-72 w-max min-w-full max-w-[calc(100vw-2rem)] overflow-auto overscroll-contain rounded-[20px] border border-stroke-modal bg-surface-modal-bg p-2 shadow-[0_0_6px_rgb(0_0_0/0.12)]'
       }
     >
       {visible.map((opt, idx) => (

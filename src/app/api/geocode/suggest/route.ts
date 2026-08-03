@@ -3,58 +3,60 @@ import { rateLimited } from '@/server/api/guard';
 import { fail, ok } from '@/server/api/respond';
 
 /**
- * Подсказки адреса по мере ввода («Укажите свой адрес») — реальные
- * казахстанские адреса, а не substring-фильтр по адресам отделений
- * (тот остаётся отдельным списком «избранного» для пустого поля,
- * см. useAddressSuggestions). Тот же провайдер и тот же BFF-приём, что
- * у /api/geocode: OSM Nominatim, countrycodes=kz, кеш в памяти процесса.
+ * Подсказки адреса по мере ввода («Укажите свой адрес») — 2GIS Suggest API
+ * (catalog.api.2gis.com/3.0/suggests). Ключ ОТДЕЛЬНЫЙ от NEXT_PUBLIC_DGIS_API_KEY
+ * (тот — для MapGL JS API в браузере, этот — для Suggest/Places API на
+ * сервере, оба выдаются на platform.2gis.ru как разные продукты).
+ * Раньше здесь был OSM Nominatim — сменили на 2GIS ради покрытия по КЗ.
  */
 
 type Suggestion = { label: string; lat: number; lon: number };
 
-/** Подмножество полей `address` из ответа Nominatim (addressdetails=1), которое нас интересует. */
-type NominatimAddress = {
-  city?: string;
-  town?: string;
-  village?: string;
-  municipality?: string;
-  county?: string;
-  state_district?: string;
-  state?: string;
-  postcode?: string;
-  country?: string;
+type DgisAdmDiv = { name?: string; type?: string };
+
+type DgisItem = {
+  name?: string;
+  address_name?: string;
+  full_address_name?: string;
+  point?: string | { lat?: number; lon?: number };
+  adm_div?: DgisAdmDiv[];
 };
 
-/** Город — сам населённый пункт, а при его отсутствии (мелкий н.п.) — район/область по убыванию. */
-function resolveCity(a: NominatimAddress): string | undefined {
-  return a.city ?? a.town ?? a.village ?? a.municipality ?? a.county ?? a.state_district ?? a.state;
+/** Тот же прямоугольник Казахстана, что и в normalizeCoords (coerce.ts) — ограничивает подсказки регионом. */
+const KZ_VIEWPOINT1 = '46,56';
+const KZ_VIEWPOINT2 = '88,40';
+
+function resolveCity(admDiv: DgisAdmDiv[] | undefined): string | undefined {
+  return admDiv?.find((d) => d.type === 'adm_div.city' || d.type === 'adm_div.settlement')?.name;
 }
 
-/**
- * «Город, <остальная адресная часть — как её вернул Nominatim>».
- *
- * НЕ собираем адрес вручную из типизированных полей (`road`+`house_number`):
- * адрес — не всегда «улица и дом», бывают ЖК, микрорайоны, кварталы,
- * корпуса и т.п., для которых у Nominatim нет отдельных типизированных
- * полей вообще — они есть только внутри готовой строки `display_name`.
- * Поэтому берём её как есть и просто убираем административный хвост
- * (город — раз он уже вынесен вперёд отдельно, — область/район/индекс/
- * страна): порядок и состав ОСТАЛЬНЫХ компонентов не трогаем.
- */
-function formatAddress(a: NominatimAddress, displayName: string): string {
-  const city = resolveCity(a);
-  const strip = new Set(
-    [city, a.state, a.state_district, a.county, a.postcode, a.country].filter(
-      (v): v is string => Boolean(v),
-    ),
-  );
-  const rest = displayName
+/** `point` документирован как строка «lon,lat», но подстраховываемся и под объектную форму. */
+function parsePoint(point: DgisItem['point']): { lat: number; lon: number } | null {
+  if (!point) return null;
+  if (typeof point === 'object') {
+    const lat = Number(point.lat);
+    const lon = Number(point.lon);
+    return Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon } : null;
+  }
+  const [lonStr, latStr] = point.split(',');
+  const lon = Number(lonStr);
+  const lat = Number(latStr);
+  return Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon } : null;
+}
+
+/** «Город, <остальная адресная часть>» — город выносим вперёд и убираем из хвоста, порядок остального не трогаем. */
+function formatAddress(item: DgisItem): string {
+  const raw = item.full_address_name || item.address_name || item.name || '';
+  const city = resolveCity(item.adm_div);
+  if (!city) return raw;
+
+  const strip = new Set([city, ...(item.adm_div ?? []).map((d) => d.name).filter((n): n is string => Boolean(n))]);
+  const rest = raw
     .split(',')
     .map((p) => p.trim())
     .filter((p) => p && !strip.has(p));
 
-  if (!city) return rest.join(', ') || displayName;
-  return [city, ...rest].join(', ');
+  return rest.length > 0 ? [city, ...rest].join(', ') : city;
 }
 
 const CACHE = new Map<string, Suggestion[]>();
@@ -65,51 +67,47 @@ export async function GET(req: NextRequest) {
   const q = (req.nextUrl.searchParams.get('q') ?? '').trim().slice(0, 200);
   if (q.length < 3) return ok({ suggestions: [] });
 
-  const key = q.toLowerCase();
-  if (CACHE.has(key)) return ok({ suggestions: CACHE.get(key) });
+  // Ключа нет — подсказки молча пустеют, поле остаётся рабочим (та же
+  // деградация, что и у карты без NEXT_PUBLIC_DGIS_API_KEY, см. dgis.ts).
+  const key = process.env.DGIS_SUGGEST_API_KEY;
+  if (!key) return ok({ suggestions: [] });
 
-  // тот же бюджет, что и у /api/geocode: лимит только на кеш-промахи
+  const cacheKey = q.toLowerCase();
+  if (CACHE.has(cacheKey)) return ok({ suggestions: CACHE.get(cacheKey) });
+
   if (rateLimited(req, 'geocode-suggest', 20, 60_000)) {
     return fail('errors.tooManyRequests', 429);
   }
 
-  const url = new URL('https://nominatim.openstreetmap.org/search');
+  const url = new URL('https://catalog.api.2gis.com/3.0/suggests');
   url.searchParams.set('q', q);
-  url.searchParams.set('format', 'jsonv2');
-  url.searchParams.set('limit', String(LIMIT));
-  url.searchParams.set('countrycodes', 'kz');
-  url.searchParams.set('accept-language', 'ru');
-  url.searchParams.set('addressdetails', '1');
+  url.searchParams.set('key', key);
+  url.searchParams.set('suggest_type', 'address');
+  url.searchParams.set('viewpoint1', KZ_VIEWPOINT1);
+  url.searchParams.set('viewpoint2', KZ_VIEWPOINT2);
+  url.searchParams.set('locale', 'ru_RU');
+  url.searchParams.set('fields', 'items.point,items.adm_div');
+  url.searchParams.set('page_size', String(LIMIT));
 
   try {
-    const res = await fetch(url, {
-      headers: { 'user-agent': 'ecash-exchange-site/1.0 (contact: info@ecash.kz)' },
-      signal: AbortSignal.timeout(6000),
-      next: { revalidate: 3600 },
-    });
+    const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
     if (!res.ok) return ok({ suggestions: [] });
-    const rows = (await res.json()) as {
-      display_name?: string;
-      address?: NominatimAddress;
-      lat?: string;
-      lon?: string;
-    }[];
-    const suggestions: Suggestion[] = rows
-      .map((r) => ({
-        label: formatAddress(r.address ?? {}, r.display_name ?? ''),
-        lat: Number(r.lat),
-        lon: Number(r.lon),
-      }))
-      .filter((s) => s.label && Number.isFinite(s.lat) && Number.isFinite(s.lon));
+    const data = (await res.json()) as { result?: { items?: DgisItem[] } };
+
+    const suggestions: Suggestion[] = (data.result?.items ?? [])
+      .map((item) => {
+        const point = parsePoint(item.point);
+        return point ? { label: formatAddress(item), lat: point.lat, lon: point.lon } : null;
+      })
+      .filter((s): s is Suggestion => Boolean(s?.label));
 
     if (CACHE.size >= MAX_CACHE) {
       const oldest = CACHE.keys().next().value;
       if (oldest !== undefined) CACHE.delete(oldest);
     }
-    CACHE.set(key, suggestions);
+    CACHE.set(cacheKey, suggestions);
     return ok({ suggestions });
   } catch {
-    // геокодер недоступен — подсказки молча пустеют, поле остаётся рабочим
     return ok({ suggestions: [] });
   }
 }

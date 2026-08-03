@@ -29,3 +29,25 @@ export function counterAmount(value: number, rate: number, currencyFrom: string)
   if (!Number.isFinite(value) || !Number.isFinite(rate) || rate <= 0) return 0;
   return isKztGive(currencyFrom) ? value / rate : value * rate;
 }
+
+/** Во сколько раз целевой курс подписки может отличаться от текущего. */
+const RATE_TOLERANCE = 10;
+
+/**
+ * Правдоподобен ли целевой курс подписки на уведомление.
+ *
+ * В поле «Уведомить при курсе (₸)» вводят КУРС ЗА ЕДИНИЦУ, а не сумму обмена,
+ * но проверки на это не было: подходило любое положительное число, и в
+ * подписке оседали значения вроде 60 000 000 ₸ за доллар — такой курс не
+ * наступит никогда, уведомление молча не сработает.
+ *
+ * Допуск нарочно широкий (÷10 … ×10): ждать сильного движения курса не мешаем,
+ * а промах на порядок и ввод суммы вместо курса ловим. Пока курс отделения не
+ * загружен (current <= 0), не придираемся — иначе форма блокировалась бы из-за
+ * недоступности апстрима.
+ */
+export function isPlausibleTargetRate(target: number, current: number): boolean {
+  if (!Number.isFinite(target) || target <= 0) return false;
+  if (!Number.isFinite(current) || current <= 0) return true;
+  return target >= current / RATE_TOLERANCE && target <= current * RATE_TOLERANCE;
+}

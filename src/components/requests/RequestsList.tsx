@@ -9,7 +9,7 @@ import { SidebarLayout } from '@/components/profile/SidebarLayout';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
-import { formatDateTime, formatNumber } from '@/lib/format';
+import { formatDateTime, formatMoney, formatNumber } from '@/lib/format';
 import type { ExchangeRequest, RequestPhase } from '@/lib/domain';
 
 const PAGE_SIZE = 10;
@@ -107,7 +107,7 @@ export function RequestsList() {
                     </span>
                   </span>
                   <span className="mt-1 block truncate text-sm text-text-disabled">
-                    {formatNumber(r.value, locale)} {r.currencyFrom} ·{' '}
+                    {formatMoney(r.value, locale)} {r.currencyFrom} ·{' '}
                     {t('rate')}: {formatNumber(r.rate, locale)} ·{' '}
                     {formatDateTime(r.createdAt, locale)}
                   </span>

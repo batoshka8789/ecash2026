@@ -31,6 +31,16 @@ export function formatNumber(value: number, locale: string, digits = 2): string 
   return nf.format(value);
 }
 
+/**
+ * Денежная сумма — всегда целое число с округлением.
+ * Дробные единицы валюты (центы, евроценты, тиын) в обменнике не выдаются,
+ * поэтому «1 607,72 €» вводило в заблуждение: на руки клиент получит 1 608.
+ * Курсы этим не форматируются — там копейки существенны (см. formatNumber).
+ */
+export function formatMoney(value: number, locale: string): string {
+  return formatNumber(Math.round(value), locale, 0);
+}
+
 export function formatDateTime(iso: string | null, locale: string): string {
   if (!iso) return '—';
   const d = new Date(iso);
