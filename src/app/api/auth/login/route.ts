@@ -6,7 +6,7 @@ import { checkOrigin, rateLimited } from '@/server/api/guard';
 import { body, fail, fromError, ok } from '@/server/api/respond';
 import { createSession, sessionFromTokens } from '@/server/session';
 import { loginBody } from '@/shared/schemas';
-import { DEMO_TOKEN, demoAccount, demoCheckPassword } from '@/server/demo/store';
+import { DEMO_TOKEN, demoAccount, demoCheckPassword, demoPhoneRetired } from '@/server/demo/store';
 
 /** Вход: телефон или ИИН + пароль. */
 export async function POST(req: Request) {
@@ -16,6 +16,13 @@ export async function POST(req: Request) {
 
   const parsed = await body(req, loginBody);
   if (parsed instanceof NextResponse) return parsed;
+
+  // Номер, с которого переехали при смене телефона, — больше не логин:
+  // без этой проверки общий демо-пароль 'ecash2026' пускал по старому
+  // номеру в тот же аккаунт (в настоящем ядре телефон и есть логин).
+  if (env.ECASH_OTP_MOCK && demoPhoneRetired(parsed.login)) {
+    return fail('errors.INVALID_CREDENTIALS', 401);
+  }
 
   // демо-режим: свой пароль с регистрации (плюс запасной 'ecash2026'),
   // аккаунт не ходит в upstream

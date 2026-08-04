@@ -6,7 +6,7 @@ import { checkOrigin, rateLimited } from '@/server/api/guard';
 import { body, fail, fromError, ok } from '@/server/api/respond';
 import { createSession, sessionFromTokens } from '@/server/session';
 import { otpLoginBody } from '@/shared/schemas';
-import { DEMO_OTP, DEMO_TOKEN, demoAccount } from '@/server/demo/store';
+import { DEMO_OTP, DEMO_TOKEN, demoAccount, demoPhoneRetired } from '@/server/demo/store';
 
 /** Вход по SMS-коду (purpose 1). */
 export async function POST(req: Request) {
@@ -19,6 +19,11 @@ export async function POST(req: Request) {
 
   if (env.ECASH_OTP_MOCK) {
     if (parsed.otp !== DEMO_OTP) return fail('errors.INVALID_OTP', 401, { field: 'otp' });
+    // Старый (сменённый) номер не пускаем и по SMS-коду — вход по нему
+    // вёл бы в тот же аккаунт в обход смены логина (см. demoSetPhone).
+    if (demoPhoneRetired(parsed.phoneNumber)) {
+      return fail('errors.ACCOUNT_NOT_FOUND', 404);
+    }
     const account = demoAccount(parsed.phoneNumber);
     await createSession({
       accessToken: DEMO_TOKEN,

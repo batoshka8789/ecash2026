@@ -164,3 +164,55 @@ describe('demoSetPhone — смена номера в демо-режиме', ()
     expect(store.demoCheckPassword('+7 (701) 555 55 55', 'pw-2')).toBe(false);
   });
 });
+
+describe('demoPhoneRetired — старый номер перестаёт быть логином целиком', () => {
+  it('после смены старый номер в отставке (и общий пароль его не спасает)', () => {
+    const OLD = '+7 (702) 100 00 01';
+    const NEW = '+7 (702) 100 00 02';
+    const id = store.demoAccount(OLD).accountId;
+    store.demoSetPhone(id, NEW);
+
+    // login-роуты проверяют отставку ДО пароля: сюда упирается и вход с
+    // 'ecash2026', и вход по SMS-коду — оба раньше пускали по старому номеру
+    expect(store.demoPhoneRetired(OLD)).toBe(true);
+    expect(store.demoPhoneRetired(NEW)).toBe(false);
+    // формат не важен — сравнение по цифрам
+    expect(store.demoPhoneRetired('87021000001')).toBe(false); // другой префикс = другие цифры
+    expect(store.demoPhoneRetired('+7702-100-00-01')).toBe(true);
+  });
+
+  it('вся цепочка смен в отставке, кроме текущего номера', () => {
+    const A = '+7 (703) 200 00 01';
+    const B = '+7 (703) 200 00 02';
+    const C = '+7 (703) 200 00 03';
+    const id = store.demoAccount(A).accountId;
+    store.demoSetPhone(id, B);
+    store.demoSetPhone(id, C);
+
+    expect(store.demoPhoneRetired(A)).toBe(true);
+    expect(store.demoPhoneRetired(B)).toBe(true);
+    expect(store.demoPhoneRetired(C)).toBe(false);
+  });
+
+  it('возврат на прежний номер снимает его отставку', () => {
+    const A = '+7 (704) 300 00 01';
+    const B = '+7 (704) 300 00 02';
+    const id = store.demoAccount(A).accountId;
+    store.demoSetPhone(id, B);
+    expect(store.demoPhoneRetired(A)).toBe(true);
+    store.demoSetPhone(id, A); // передумал — вернул старый номер
+    expect(store.demoPhoneRetired(A)).toBe(false);
+    expect(store.demoPhoneRetired(B)).toBe(true);
+  });
+
+  it('повторная регистрация возвращает освободившийся номер в строй', () => {
+    const A = '+7 (705) 400 00 01';
+    const B = '+7 (705) 400 00 02';
+    const id = store.demoAccount(A).accountId;
+    store.demoSetPhone(id, B);
+    expect(store.demoPhoneRetired(A)).toBe(true);
+
+    store.demoUnretirePhone(A); // register-роут делает это перед созданием
+    expect(store.demoPhoneRetired(A)).toBe(false);
+  });
+});

@@ -39,6 +39,29 @@ export function demoSetPhone(accountId: string, phone: string): void {
     passwords.set(phoneKey(phone), saved);
     passwords.delete(phoneKey(from));
   }
+
+  /**
+   * Переноса пароля мало: общий демо-пароль 'ecash2026' и вход по SMS-коду
+   * логин вообще не сверяют — старый номер продолжал заходить в тот же
+   * аккаунт. «Увольняем» его явно: оба login-роута проверяют demoPhoneRetired
+   * и отвечают INVALID_CREDENTIALS — как настоящее ядро на несуществующий
+   * логин. Новый номер из отставки убираем (могли вернуть номер обратно).
+   */
+  if (phoneKey(from) !== phoneKey(phone)) retiredPhones.add(phoneKey(from));
+  retiredPhones.delete(phoneKey(phone));
+}
+
+/**
+ * Номер, с которого «переехали» (см. demoSetPhone): входить по нему больше
+ * нельзя ни с каким паролем и ни с каким SMS-кодом. Повторная регистрация
+ * возвращает номер в строй (в настоящем ядре освободившийся номер тоже
+ * может занять новый человек).
+ */
+export const demoPhoneRetired = (login: string): boolean =>
+  retiredPhones.has(phoneKey(login));
+
+export function demoUnretirePhone(phone: string): void {
+  retiredPhones.delete(phoneKey(phone));
 }
 
 export function demoAccount(phone: string): Account {
@@ -67,11 +90,15 @@ const g = globalThis as unknown as {
   __ecashDemo?: DemoDb;
   __ecashDemoPasswords?: Map<string, string>;
   __ecashDemoPhones?: Map<string, string>;
+  __ecashDemoRetired?: Set<string>;
 };
 const store: DemoDb = (g.__ecashDemo ??= { requests: new Map(), nextId: 10432 });
 
 /** accountId → показываемый номер, если его сменили (см. demoSetPhone). */
 const phoneOverrides = (g.__ecashDemoPhones ??= new Map<string, string>());
+
+/** Цифры номеров, с которых переехали, — вход по ним закрыт (demoPhoneRetired). */
+const retiredPhones = (g.__ecashDemoRetired ??= new Set<string>());
 
 /**
  * Пароли демо-аккаунтов (только ECASH_OTP_MOCK=1). Раньше вход в демо-режиме

@@ -4,7 +4,7 @@ import { otpSend } from '@/server/ecash/endpoints/otp';
 import { checkOrigin, rateLimited } from '@/server/api/guard';
 import { body, fail, fromError, ok } from '@/server/api/respond';
 import { otpSendBody } from '@/shared/schemas';
-import { DEMO_OTP } from '@/server/demo/store';
+import { DEMO_OTP, demoPhoneRetired } from '@/server/demo/store';
 
 /**
  * Отправка SMS-кода. Свой rate-limit ПЕРЕД upstream: OTP_COOLDOWN у Ecash
@@ -20,6 +20,11 @@ export async function POST(req: Request) {
   if (parsed instanceof NextResponse) return parsed;
 
   if (env.ECASH_OTP_MOCK) {
+    // Вход (1) и сброс пароля (2) по сменённому номеру — «аккаунта нет»,
+    // как ответило бы ядро; регистрация (0) разрешена: номер освободился.
+    if (parsed.purpose !== 0 && demoPhoneRetired(parsed.phoneNumber)) {
+      return fail('errors.ACCOUNT_NOT_FOUND', 404);
+    }
     return ok({
       phoneNumber: parsed.phoneNumber,
       ttlSeconds: 300,
