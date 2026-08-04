@@ -256,6 +256,14 @@ export function demoCreate(accountId: string, body: ReserveBody, individual: boo
       r.phase = 'held';
       r.acceptStatus = 2;
       r.treasurerLogin = 'kaznachey01';
+      // Комментарий казначея есть и у брони, не только у индивидуального
+      // курса: в реальном Ecash казначей отвечает на заказ купюр при
+      // подтверждении. Без этого поле «Комментарий казначея» на карточке
+      // брони в демо было всегда пустым и выглядело неработающим.
+      r.acceptComment =
+        r.comment === 'Мелкими купюрами'
+          ? 'Мелких купюр нет — выдача крупными'
+          : 'Купюры в наличии, курс подтверждаю';
       r.reservedAt = answeredAt.toISOString();
       r.reservedUntil = until;
     }
