@@ -39,6 +39,8 @@ export function normalizeTranslations(value: unknown): NewsTranslations {
       title,
       excerpt: typeof t.excerpt === 'string' ? t.excerpt : '',
       body: typeof t.body === 'string' ? t.body : '',
+      // метка авто-перевода живёт только в БД и никогда не приходит из форм
+      ...(typeof t.auto === 'string' && t.auto ? { auto: t.auto } : {}),
     };
   }
   return out;

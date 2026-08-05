@@ -5,6 +5,7 @@ import { news } from '@/server/db/schema';
 import { rateLimited, withAdmin } from '@/server/api/guard';
 import { body, fail, fromError, ok, zodFail } from '@/server/api/respond';
 import { slugify, toAdminPost } from '@/server/db/news';
+import { ensureNewsTranslations } from '@/server/news-autotranslate';
 import { adminNewsQuery, newsCreateBody } from '@/shared/schemas';
 import { isUniqueViolation } from '@/server/db/errors';
 
@@ -64,6 +65,9 @@ export const POST = withAdmin(async (req, _token, { account }) => {
         updatedAt: new Date(),
       })
       .returning();
+
+    // перевод догоняет запись в фоне — ответ редактору не ждёт переводчика
+    void ensureNewsTranslations(row.id);
 
     return ok({ post: toAdminPost(row) }, { status: 201 });
   } catch (e) {

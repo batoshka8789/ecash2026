@@ -5,6 +5,7 @@ import { news } from '@/server/db/schema';
 import { rateLimited, withAdmin } from '@/server/api/guard';
 import { body, fail, fromError, ok } from '@/server/api/respond';
 import { normalizeTranslations, toAdminPost } from '@/server/db/news';
+import { ensureNewsTranslations } from '@/server/news-autotranslate';
 import { isUniqueViolation } from '@/server/db/errors';
 import { isBodyEmpty } from '@/lib/richtext-doc';
 import { newsPatchBody } from '@/shared/schemas';
@@ -48,7 +49,21 @@ export const PATCH = withAdmin(async (req, _token, ctx) => {
         if (value === null) {
           if (key !== 'ru') delete next[key];
         } else if (value) {
-          next[key] = value;
+          /**
+           * Метка авто-перевода живёт только в БД, из редактора не приходит
+           * (он шлёт все локали при каждом сохранении). Если текст локали не
+           * менялся — метку сохраняем, иначе нетронутый авто-перевод после
+           * любого пересохранения превращался бы в «ручной» и переставал
+           * обновляться за русским оригиналом. Реально отредактированный
+           * текст метку теряет — становится ручным, автоматика его не трогает.
+           */
+          const prev = translations[key];
+          const untouched =
+            prev?.auto &&
+            prev.title === value.title &&
+            prev.excerpt === value.excerpt &&
+            prev.body === value.body;
+          next[key] = untouched ? { ...value, auto: prev.auto } : value;
         }
       }
       translations = next;
@@ -76,6 +91,9 @@ export const PATCH = withAdmin(async (req, _token, ctx) => {
       })
       .where(eq(news.id, id))
       .returning();
+
+    // перевод догоняет запись в фоне — ответ редактору не ждёт переводчика
+    void ensureNewsTranslations(id);
 
     return ok({ post: toAdminPost(row) });
   } catch (e) {

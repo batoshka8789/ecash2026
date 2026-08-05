@@ -16,6 +16,11 @@ export async function register() {
 
       const { startSnapshotter } = await import('./server/jobs/snapshots');
       startSnapshotter();
+
+      // Разовый доперевод новостей (en/kk/zh) — в фоне, старт не ждёт:
+      // закрывает записи, созданные до автоперевода, и упавшие попытки.
+      const { sweepNewsTranslations } = await import('./server/news-autotranslate');
+      setTimeout(() => void sweepNewsTranslations(), 15_000);
     }
   }
 }
