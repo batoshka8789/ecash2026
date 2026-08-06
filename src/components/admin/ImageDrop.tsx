@@ -7,21 +7,9 @@ import { Button } from '@/components/ui/Button';
 import { api, ApiError } from '@/lib/api';
 import { useErrorText } from '@/lib/useErrorText';
 import { DEFAULT_IMAGE_FOCUS, IMAGE_FOCUS, type ImageFocus } from '@/lib/domain';
+import { useAdminStrings } from './strings';
 
 const MAX_BYTES = 8 * 1024 * 1024;
-
-/** Подписи узлов сетки — в том же порядке, что IMAGE_FOCUS. */
-const FOCUS_LABEL: Record<ImageFocus, string> = {
-  '0% 0%': 'сверху слева',
-  '50% 0%': 'сверху по центру',
-  '100% 0%': 'сверху справа',
-  '0% 50%': 'слева',
-  '50% 50%': 'по центру',
-  '100% 50%': 'справа',
-  '0% 100%': 'снизу слева',
-  '50% 100%': 'снизу по центру',
-  '100% 100%': 'снизу справа',
-};
 
 /**
  * Обложка новости: перетаскивание или выбор файла.
@@ -50,6 +38,7 @@ export function ImageDrop({
   onFocusChange?: (focus: ImageFocus) => void;
 }) {
   const inputId = useId();
+  const t = useAdminStrings();
   const errorText = useErrorText();
   const objectUrl = useRef<string | null>(null);
   const [local, setLocal] = useState<string | null>(null);
@@ -148,14 +137,14 @@ export function ImageDrop({
             className="absolute right-3 top-3 inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-surface-page-bg/85 px-3 py-1.5 text-xs font-medium text-text-default backdrop-blur transition-colors hover:bg-surface-page-bg"
           >
             <Icon name={whole ? 'crop' : 'fit_screen'} size={16} />
-            {whole ? 'Показать кадр' : 'Вся картинка'}
+            {whole ? t.showCrop : t.wholeImage}
           </button>
 
           {/* выбор видимой части: сетка 3×3 поверх картинки */}
           {onFocusChange && (
             <div
               role="radiogroup"
-              aria-label="Что оставить в кадре"
+              aria-label={t.cropGroup}
               className="absolute bottom-3 left-3 grid grid-cols-3 gap-0.5 rounded-xl bg-surface-page-bg/85 p-1 backdrop-blur"
             >
               {IMAGE_FOCUS.map((f) => (
@@ -164,8 +153,8 @@ export function ImageDrop({
                   type="button"
                   role="radio"
                   aria-checked={focus === f}
-                  aria-label={`Кадрировать ${FOCUS_LABEL[f]}`}
-                  title={FOCUS_LABEL[f]}
+                  aria-label={t.cropTo(t.focus[f])}
+                  title={t.focus[f]}
                   onClick={() => onFocusChange(f)}
                   className={clsx(
                     'h-5 w-5 cursor-pointer rounded transition-colors',
@@ -180,7 +169,7 @@ export function ImageDrop({
             <div className="absolute inset-0 flex items-center justify-center bg-scrim">
               <span className="flex items-center gap-2 rounded-full bg-surface-page-surf1 px-4 py-2 text-sm text-text-default">
                 <Icon name="progress_activity" size={18} className="animate-spin" />
-                Загружаю…
+                {t.uploading}
               </span>
             </div>
           )}
@@ -209,12 +198,8 @@ export function ImageDrop({
           )}
         >
           <Icon name="add_photo_alternate" size={32} className="text-text-disabled" />
-          <span className="text-sm text-text-default">
-            Перетащите картинку или нажмите, чтобы выбрать
-          </span>
-          <span className="text-xs text-text-disabled">
-            JPG, PNG, WebP · до 8 МБ · лучше 1440×720
-          </span>
+          <span className="text-sm text-text-default">{t.dropHere}</span>
+          <span className="text-xs text-text-disabled">{t.dropTypes}</span>
         </label>
       )}
 
@@ -226,7 +211,7 @@ export function ImageDrop({
             onClick={() => document.getElementById(inputId)?.click()}
             disabled={busy}
           >
-            Заменить
+            {t.replace}
           </Button>
           <Button
             variant="ghost"
@@ -240,11 +225,11 @@ export function ImageDrop({
               onChange(null);
             }}
           >
-            Удалить
+            {t.remove}
           </Button>
           <span className="ml-auto text-xs text-text-disabled">
             {size ? `${size.w}×${size.h} · ` : ''}
-            кадр: {FOCUS_LABEL[focus]}
+            {t.cropCurrent(t.focus[focus])}
           </span>
         </div>
       )}

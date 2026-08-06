@@ -4,6 +4,7 @@ import { clsx } from 'clsx';
 import { Link, usePathname } from '@/i18n/navigation';
 import { Icon } from '@/components/ui/Icon';
 import { Header } from '@/components/layout/Header';
+import { useAdminStrings } from './strings';
 
 /**
  * Раскладка редакции — тот же рисунок, что у кабинета
@@ -13,9 +14,10 @@ import { Header } from '@/components/layout/Header';
  */
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const t = useAdminStrings();
 
   const items = [
-    { key: 'news', icon: 'newspaper', href: '/admin/news' as const, label: 'Новости' },
+    { key: 'news', icon: 'newspaper', href: '/admin/news' as const, label: t.news },
   ];
 
   return (
@@ -28,11 +30,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           <aside className="relative h-fit w-full shrink-0 rounded-3xl bg-surface-page-surf1 p-3 lg:w-64">
             <div className="mb-2 flex items-center gap-2 px-4 pt-2">
               <span className="rounded-full bg-brand-hardsoft px-3 py-1 text-xs font-medium text-text-brand">
-                Редакция
+                {t.section}
               </span>
             </div>
             <nav
-              aria-label="Редакция"
+              aria-label={t.section}
               className="flex snap-x flex-row gap-1 overflow-x-auto lg:flex-col lg:overflow-visible"
             >
               {items.map((item) => {
@@ -61,7 +63,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                 className="flex snap-start items-center gap-3 whitespace-nowrap rounded-xl px-4 py-3 text-sm font-medium text-text-default transition-colors hover:bg-comp-surface1-hover"
               >
                 <Icon name="arrow_back" size={20} />
-                В кабинет
+                {t.toCabinet}
               </Link>
             </nav>
           </aside>

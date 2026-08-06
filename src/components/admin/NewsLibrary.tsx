@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { PillTabs } from '@/components/ui/PillTabs';
 import { Toast } from '@/components/ui/Toast';
 import { api } from '@/lib/api';
+import { useAdminStrings } from './strings';
 import { formatDateTime } from '@/lib/format';
 import { plainTextFromStoredBody } from '@/lib/richtext-doc';
 import type { Locale, NewsAdminPost, NewsStatus } from '@/lib/domain';
@@ -22,6 +23,7 @@ type Filter = 'all' | NewsStatus;
 export function NewsLibrary() {
   const qc = useQueryClient();
   const router = useRouter();
+  const t = useAdminStrings();
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -44,7 +46,7 @@ export function NewsLibrary() {
       }),
     onSuccess: (_r, post) => {
       invalidate();
-      setToast(post.status === 'published' ? 'Снято с публикации' : 'Опубликовано');
+      setToast(post.status === 'published' ? t.unpublished : t.published);
     },
   });
 
@@ -53,7 +55,7 @@ export function NewsLibrary() {
     onSuccess: () => {
       invalidate();
       setConfirmId(null);
-      setToast('Новость удалена');
+      setToast(t.removed);
     },
   });
 
@@ -83,20 +85,20 @@ export function NewsLibrary() {
 
   return (
     <div className="flex flex-col gap-5">
-      <Toast open={Boolean(toast)} tone="positive" onClose={() => setToast(null)} closeLabel="Закрыть">
+      <Toast open={Boolean(toast)} tone="positive" onClose={() => setToast(null)} closeLabel={t.close}>
         {toast}
       </Toast>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-text-default sm:text-2xl">Библиотека новостей</h1>
+          <h1 className="text-xl font-bold text-text-default sm:text-2xl">{t.libraryTitle}</h1>
           <p className="mt-1 text-sm text-text-disabled">
             {data
-              ? `${counts.all} ${plural(counts.all, 'материал', 'материала', 'материалов')} · ${counts.published} опубликовано · ${counts.draft} в черновиках`
-              : 'Загружаю…'}
+              ? t.summary(counts.all, counts.published, counts.draft)
+              : t.loading}
           </p>
         </div>
-        <Button onClick={() => router.push('/admin/news/new')}>Создать новость</Button>
+        <Button onClick={() => router.push('/admin/news/new')}>{t.create}</Button>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -105,8 +107,8 @@ export function NewsLibrary() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Поиск по заголовку или адресу"
-            aria-label="Поиск по новостям"
+            placeholder={t.searchPlaceholder}
+            aria-label={t.searchLabel}
             className="w-full bg-transparent text-sm text-text-default outline-none placeholder:text-text-disabled"
           />
         </div>
@@ -115,9 +117,9 @@ export function NewsLibrary() {
           value={filter}
           onChange={setFilter}
           tabs={[
-            { value: 'all' as Filter, label: 'Все' },
-            { value: 'draft' as Filter, label: 'Черновики' },
-            { value: 'published' as Filter, label: 'Опубликованы' },
+            { value: 'all' as Filter, label: t.filterAll },
+            { value: 'draft' as Filter, label: t.filterDrafts },
+            { value: 'published' as Filter, label: t.filterPublished },
           ]}
         />
       </div>
@@ -132,9 +134,9 @@ export function NewsLibrary() {
 
       {isError && (
         <div className="rounded-2xl bg-surface-page-surf1 p-6 text-center">
-          <p className="text-text-disabled">Не удалось загрузить список</p>
+          <p className="text-text-disabled">{t.loadFailed}</p>
           <Button className="mt-4" onClick={() => refetch()}>
-            Повторить
+            {t.retry}
           </Button>
         </div>
       )}
@@ -143,11 +145,11 @@ export function NewsLibrary() {
         <div className="rounded-2xl bg-surface-page-surf1 p-10 text-center">
           <Icon name="newspaper" size={40} className="text-text-disabled" />
           <p className="mt-3 text-text-default">
-            {data.posts.length === 0 ? 'Пока ни одной новости' : 'Ничего не найдено'}
+            {data.posts.length === 0 ? t.emptyAll : t.emptyFound}
           </p>
           {data.posts.length === 0 && (
             <Button className="mt-4" onClick={() => router.push('/admin/news/new')}>
-              Создать первую
+              {t.createFirst}
             </Button>
           )}
         </div>
@@ -155,9 +157,9 @@ export function NewsLibrary() {
 
       {posts.map((post) => {
         const ru = post.translations.ru;
-        const title = ru?.title || Object.values(post.translations)[0]?.title || '(без заголовка)';
+        const title = ru?.title || Object.values(post.translations)[0]?.title || t.noTitle;
         const summary =
-          ru?.excerpt || plainTextFromStoredBody(ru?.body ?? '', 160) || 'Текста пока нет';
+          ru?.excerpt || plainTextFromStoredBody(ru?.body ?? '', 160) || t.noText;
         const published = post.status === 'published';
         return (
           <div
@@ -166,7 +168,7 @@ export function NewsLibrary() {
           >
             <Link
               href={`/admin/news/${post.id}`}
-              aria-label={`Открыть «${title}»`}
+              aria-label={t.open(title)}
               className="h-24 w-full shrink-0 overflow-hidden rounded-xl bg-surface-page-surf2 sm:h-20 sm:w-32"
             >
               {post.image ? (
@@ -194,7 +196,7 @@ export function NewsLibrary() {
                       : 'bg-surface-page-surf2 text-text-disabled',
                   )}
                 >
-                  {published ? 'Опубликовано' : 'Черновик'}
+                  {published ? t.statusPublished : t.statusDraft}
                 </span>
                 <span aria-hidden className="flex gap-1">
                   {LOCALES.map((l) => (
@@ -212,10 +214,10 @@ export function NewsLibrary() {
                   ))}
                 </span>
                 <span className="sr-only">
-                  Языки:{' '}
+                  {t.languages}:{' '}
                   {LOCALES.filter((l) => post.translations[l])
                     .map((l) => LOCALE_LABEL[l])
-                    .join(', ') || 'нет'}
+                    .join(', ') || t.languagesNone}
                 </span>
                 <span className="text-xs text-text-disabled">
                   {formatDateTime(post.updatedAt, 'ru')}
@@ -237,8 +239,8 @@ export function NewsLibrary() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Открыть на сайте"
-                  title="Открыть на сайте"
+                  aria-label={t.openOnSite}
+                  title={t.openOnSite}
                   onClick={() => window.open(`/news/${post.slug}`, '_blank', 'noopener')}
                 >
                   <Icon name="open_in_new" size={20} />
@@ -250,13 +252,13 @@ export function NewsLibrary() {
                 disabled={pending}
                 onClick={() => toggle.mutate(post)}
               >
-                {published ? 'Снять' : 'Опубликовать'}
+                {published ? t.unpublish : t.publish}
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="Удалить"
-                title="Удалить"
+                aria-label={t.remove}
+                title={t.remove}
                 disabled={pending}
                 className="text-text-negative"
                 onClick={() => setConfirmId(post.id)}
@@ -274,30 +276,30 @@ export function NewsLibrary() {
               с клавиатуры и не считается «немым» элементом с обработчиком */}
           <button
             type="button"
-            aria-label="Закрыть"
+            aria-label={t.close}
             className="absolute inset-0 cursor-default bg-scrim"
             onClick={() => setConfirmId(null)}
           />
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Удалить новость"
+            aria-label={t.removeTitle}
             className="relative w-full max-w-sm rounded-3xl bg-surface-modal-bg p-6"
           >
-            <h2 className="text-lg font-bold text-text-default">Удалить новость?</h2>
+            <h2 className="text-lg font-bold text-text-default">{t.removeTitle}</h2>
             <p className="mt-2 text-sm text-text-disabled">
-              Отменить это действие будет нельзя.
+              {t.removeWarning}
             </p>
             <div className="mt-5 flex gap-2">
               <Button variant="surf2" className="flex-1" onClick={() => setConfirmId(null)}>
-                Отмена
+                {t.cancel}
               </Button>
               <Button
                 className="flex-1"
                 disabled={remove.isPending}
                 onClick={() => remove.mutate(confirmId)}
               >
-                Удалить
+                {t.remove}
               </Button>
             </div>
           </div>
@@ -307,11 +309,3 @@ export function NewsLibrary() {
   );
 }
 
-/** Склонение числительного: 1 материал / 2 материала / 5 материалов. */
-function plural(n: number, one: string, few: string, many: string): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return one;
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
-  return many;
-}

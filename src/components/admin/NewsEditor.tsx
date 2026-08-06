@@ -226,7 +226,7 @@ export function NewsEditor({ id }: { id?: string }) {
       setError(null);
       void qc.invalidateQueries({ queryKey: ['admin', 'news'] });
       void qc.invalidateQueries({ queryKey: ['news'] });
-      setToast(status === 'published' ? 'Опубликовано' : 'Сохранено');
+      setToast(status === 'published' ? t.published : t.saved);
       if (!id) router.replace(`/admin/news/${res.post.id}`);
     },
     onError: (e) => {
@@ -249,7 +249,7 @@ export function NewsEditor({ id }: { id?: string }) {
     save.mutate(status);
   };
 
-  const previewTitle = current.title || 'Заголовок новости';
+  const previewTitle = current.title || t.previewTitle;
   const previewExcerpt = current.excerpt || plainTextFromStoredBody(current.body, 220);
   const titleLeft = TITLE_LIMIT - current.title.length;
 
@@ -282,24 +282,24 @@ export function NewsEditor({ id }: { id?: string }) {
 
       <Section
         icon="title"
-        title="Заголовок"
-        hint={locale === 'ru' ? 'обязательно' : 'без перевода покажем русский'}
+        title={t.fieldTitle}
+        hint={locale === 'ru' ? t.required : t.fallbackHint}
       >
         <input
           value={current.title}
           onChange={(e) => setField('title', e.target.value)}
-          placeholder="Например: Новые условия обмена"
+          placeholder={t.titlePlaceholder}
           className="h-14 w-full rounded-2xl border border-transparent bg-surface-page-surf2 px-4 text-base font-medium text-text-default outline-none transition-colors focus:border-stroke-brand placeholder:font-normal placeholder:text-text-disabled"
         />
         <div className="mt-2 flex items-center justify-between text-xs text-text-disabled">
-          <span>Виден в ленте, на странице и во вкладке браузера</span>
+          <span>{t.titleHint}</span>
           <span className={clsx(titleLeft < 0 && 'text-text-negative')}>
             {current.title.length} / {TITLE_LIMIT}
           </span>
         </div>
       </Section>
 
-      <Section icon="image" title="Обложка" hint="кадр выбирается сеткой на картинке">
+      <Section icon="image" title={t.fieldCover} hint={t.coverHint}>
         <ImageDrop
           value={image}
           onChange={(url) => {
@@ -315,21 +315,21 @@ export function NewsEditor({ id }: { id?: string }) {
         />
       </Section>
 
-      <Section icon="short_text" title="Анонс для ленты" hint="пусто — возьмём начало текста">
+      <Section icon="short_text" title={t.fieldExcerpt} hint={t.excerptHint}>
         <textarea
           value={current.excerpt}
           onChange={(e) => setField('excerpt', e.target.value)}
           rows={2}
           maxLength={400}
-          placeholder="Короткая выжимка"
+          placeholder={t.excerptPlaceholder}
           className="w-full resize-none rounded-2xl border border-transparent bg-surface-page-surf2 px-4 py-3 text-sm text-text-default outline-none transition-colors focus:border-stroke-brand placeholder:text-text-disabled"
         />
       </Section>
 
       <Section
         icon="article"
-        title="Текст новости"
-        hint={locale === 'ru' ? 'обязательно' : undefined}
+        title={t.fieldBody}
+        hint={locale === 'ru' ? t.required : undefined}
       >
         <RichTextEditor
           // Tiptap читает value только при создании редактора — remount нужен
@@ -343,7 +343,7 @@ export function NewsEditor({ id }: { id?: string }) {
         />
       </Section>
 
-      <Section icon="link" title="Адрес страницы" hint="пусто — создадим из заголовка">
+      <Section icon="link" title={t.fieldSlug} hint={t.slugHint}>
         <input
           value={slug}
           onChange={(e) => {
@@ -381,7 +381,7 @@ export function NewsEditor({ id }: { id?: string }) {
       <article className="mx-auto flex max-w-3xl flex-col">
         <span className="inline-flex w-fit items-center gap-2 text-sm text-text-disabled">
           <Icon name="arrow_back" size={18} />
-          Все новости
+          {t.previewAllNews}
         </span>
 
         {(localPreview ?? image) && (
@@ -398,11 +398,11 @@ export function NewsEditor({ id }: { id?: string }) {
         )}
 
         <h1 className="mt-6 text-2xl font-bold text-text-default sm:text-[32px]">{previewTitle}</h1>
-        <span className="mt-2 text-sm text-text-disabled">сегодня</span>
+        <span className="mt-2 text-sm text-text-disabled">{t.previewToday}</span>
 
         <RichText source={current.body} className="mt-4 pb-6" />
         {isBodyEmpty(current.body) && (
-          <p className="mt-4 text-sm text-text-disabled">Текста пока нет</p>
+          <p className="mt-4 text-sm text-text-disabled">{t.noText}</p>
         )}
       </article>
     </div>
@@ -416,19 +416,19 @@ export function NewsEditor({ id }: { id?: string }) {
           value={screen}
           onChange={setScreen}
           tabs={[
-            { value: 'page' as const, label: 'Страница' },
-            { value: 'feed' as const, label: 'Лента' },
+            { value: 'page' as const, label: t.screenPage },
+            { value: 'feed' as const, label: t.screenFeed },
           ]}
         />
         <div
           role="radiogroup"
-          aria-label="Размер экрана"
+          aria-label={t.screenSize}
           className="flex gap-1 rounded-3xl bg-surface-page-bg p-1"
         >
           {(
             [
-              { v: 'desktop' as Device, icon: 'computer', label: 'Компьютер' },
-              { v: 'mobile' as Device, icon: 'smartphone', label: 'Телефон' },
+              { v: 'desktop' as Device, icon: 'computer', label: t.deviceDesktop },
+              { v: 'mobile' as Device, icon: 'smartphone', label: t.deviceMobile },
             ]
           ).map((d) => (
             <button
@@ -460,15 +460,14 @@ export function NewsEditor({ id }: { id?: string }) {
       </DeviceFrame>
 
       <p className="text-xs text-text-disabled">
-        Настоящая ширина {device === 'mobile' ? '390' : '1280'} px, уменьшена под колонку — так
-        видно ровно ту вёрстку, которую получит посетитель.
+        {t.previewNote(device === 'mobile' ? 390 : 1280)}
       </p>
     </div>
   );
 
   return (
     <div className="flex flex-col gap-5">
-      <Toast open={Boolean(toast)} tone="positive" onClose={() => setToast(null)} closeLabel="Закрыть">
+      <Toast open={Boolean(toast)} tone="positive" onClose={() => setToast(null)} closeLabel={t.close}>
         {toast}
       </Toast>
 
@@ -479,25 +478,25 @@ export function NewsEditor({ id }: { id?: string }) {
           className="inline-flex cursor-pointer items-center gap-2 text-sm text-text-disabled transition-colors hover:text-text-default"
         >
           <Icon name="arrow_back" size={18} />
-          К списку
+          {t.backToList}
         </button>
 
         <div className="flex items-center gap-2">
           {dirty && (
             <span className="inline-flex items-center gap-1.5 text-xs text-text-disabled">
               <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-brand" />
-              Есть несохранённые правки
+              {t.unsaved}
             </span>
           )}
           <Button variant="surf2" disabled={save.isPending} onClick={() => submit()}>
-            Сохранить
+            {t.save}
           </Button>
           <Button
             disabled={save.isPending || !ruReady}
-            title={ruReady ? undefined : 'Для публикации заполните русский заголовок и текст'}
+            title={ruReady ? undefined : t.publishHint}
             onClick={() => submit('published')}
           >
-            Опубликовать
+            {t.publish}
           </Button>
         </div>
       </div>
@@ -514,8 +513,8 @@ export function NewsEditor({ id }: { id?: string }) {
           value={tab}
           onChange={setTab}
           tabs={[
-            { value: 'edit' as const, label: 'Редактор' },
-            { value: 'preview' as const, label: 'Превью' },
+            { value: 'edit' as const, label: t.tabEditor },
+            { value: 'preview' as const, label: t.tabPreview },
           ]}
         />
       </div>
