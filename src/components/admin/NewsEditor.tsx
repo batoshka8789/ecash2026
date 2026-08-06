@@ -90,6 +90,13 @@ export function NewsEditor({ id }: { id?: string }) {
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   const [slug, setSlug] = useState('');
   const [dirty, setDirty] = useState(false);
+  /**
+   * Какие локали редактор РЕАЛЬНО трогал. При сохранении отправляются только
+   * они: серверный автоперевод дописывает en/kk/zh в БД в фоне, и если слать
+   * все локали из состояния редактора (загруженного раньше), устаревшая
+   * копия затирала бы свежие переводы и намертво помечала их «ручными».
+   */
+  const [dirtyLocales, setDirtyLocales] = useState<Set<Locale>>(() => new Set());
   const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [translating, setTranslating] = useState(false);
@@ -109,6 +116,7 @@ export function NewsEditor({ id }: { id?: string }) {
     setImage(loaded.image || null);
     setImageFocus(loaded.imageFocus);
     setSlug(loaded.slug);
+    setDirtyLocales(new Set());
   }
 
   // предупреждение о несохранённых правках при закрытии вкладки
@@ -122,6 +130,7 @@ export function NewsEditor({ id }: { id?: string }) {
   const current = tr[locale] ?? empty();
   const setField = (field: keyof NewsTranslation, value: string) => {
     setDirty(true);
+    setDirtyLocales((prev) => new Set(prev).add(locale));
     setTr((prev) => ({ ...prev, [locale]: { ...(prev[locale] ?? empty()), [field]: value } }));
   };
 
@@ -154,6 +163,13 @@ export function NewsEditor({ id }: { id?: string }) {
       const merged = { ...base, ...res.translations };
       setTr(merged);
       setDirty(true);
+      // переводы, вызванные кнопкой, редактор явно кураторствует — они
+      // сохраняются (и становятся «ручными» для серверного автоперевода)
+      setDirtyLocales((prev) => {
+        const next = new Set(prev);
+        for (const l of done) next.add(l);
+        return next;
+      });
       return { tr: merged, done };
     } catch {
       return { tr: base, done: [] }; // перевод — необязательный шаг, не должен блокировать сохранение
@@ -173,20 +189,40 @@ export function NewsEditor({ id }: { id?: string }) {
 
   const save = useMutation({
     mutationFn: async (status?: 'draft' | 'published') => {
-      const { tr: finalTr } = await runAutoTranslate(tr);
+      // Автоперевод на сохранении переехал НА СЕРВЕР (news-autotranslate):
+      // он сам дописывает недостающие языки в фоне и, в отличие от прежнего
+      // клиентского вызова, помечает их авто-метками — русский изменился,
+      // переводы обновятся. Кнопка «Перевести» осталась для случая, когда
+      // редактору нужно увидеть и поправить перевод прямо сейчас.
+      if (!id) {
+        // создание: сервер требует русский — новая запись отправляется целиком
+        const payload = {
+          translations: nonEmptyTranslations(tr),
+          image: image ?? '',
+          imageFocus,
+          ...(slug ? { slug } : {}),
+          ...(status ? { status } : {}),
+        };
+        return api.admin.news.create(payload as Parameters<typeof api.admin.news.create>[0]);
+      }
+      // правка: отправляются ТОЛЬКО тронутые локали (см. dirtyLocales)
+      const touched: NewsTranslations = {};
+      for (const l of dirtyLocales) {
+        const value = tr[l];
+        if (value?.title.trim()) touched[l] = value;
+      }
       const payload = {
-        translations: nonEmptyTranslations(finalTr),
+        ...(Object.keys(touched).length ? { translations: touched } : {}),
         image: image ?? '',
         imageFocus,
         ...(slug ? { slug } : {}),
         ...(status ? { status } : {}),
       };
-      return id
-        ? api.admin.news.update(id, payload)
-        : api.admin.news.create(payload as Parameters<typeof api.admin.news.create>[0]);
+      return api.admin.news.update(id, payload);
     },
     onSuccess: (res, status) => {
       setDirty(false);
+      setDirtyLocales(new Set());
       setError(null);
       void qc.invalidateQueries({ queryKey: ['admin', 'news'] });
       void qc.invalidateQueries({ queryKey: ['news'] });
