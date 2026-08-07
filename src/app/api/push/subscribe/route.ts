@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server';
 import { withUser } from '@/server/api/guard';
 import { body, fail, fromError, ok } from '@/server/api/respond';
 import { readSession } from '@/server/session';
-import { pushEnabled, removePushSubscription, savePushSubscription } from '@/server/push';
+import {
+  pushEnabled,
+  removePushSubscription,
+  savePushSubscription,
+  sendWelcome,
+} from '@/server/push';
 import { pushSubscribeBody, pushUnsubscribeBody } from '@/shared/schemas';
 
 /**
@@ -25,10 +30,23 @@ export const POST = withUser(async (req) => {
       endpoint: parsed.endpoint,
       p256dh: parsed.keys.p256dh,
       auth: parsed.keys.auth,
+      locale: parsed.locale,
       // обрезаем: заголовок бывает очень длинным, а нужен он только чтобы
       // понять, с какого браузера пришла проблемная подписка
       userAgent: (req.headers.get('user-agent') ?? '').slice(0, 300),
     });
+
+    // Приветствие ровно на это устройство. Без него человек нажал «Включить»
+    // и до первого настоящего срабатывания (снапшоттер ходит раз в 15 минут)
+    // не знает, работает ли что-нибудь вообще. Ошибку отправки глотаем:
+    // подписка уже сохранена, и ронять из-за приветствия успешный ответ —
+    // значит показать «не получилось» там, где всё получилось.
+    try {
+      await sendWelcome(parsed.endpoint, parsed.keys.p256dh, parsed.keys.auth, parsed.locale);
+    } catch (e) {
+      console.warn('[push] приветствие не ушло', (e as Error).message);
+    }
+
     return ok({ subscribed: true }, { status: 201 });
   } catch (e) {
     return fromError(e);

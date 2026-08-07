@@ -147,7 +147,12 @@ export const api = {
   push: {
     publicKey: (signal?: AbortSignal) =>
       request<{ enabled: boolean; key: string | null }>('/push/public-key', { signal }),
-    subscribe: (payload: { endpoint: string; keys: { p256dh: string; auth: string } }) =>
+    subscribe: (payload: {
+      endpoint: string;
+      keys: { p256dh: string; auth: string };
+      /** язык устройства — на нём и придут уведомления */
+      locale: Locale;
+    }) =>
       post<{ subscribed: true }>('/push/subscribe', payload),
     unsubscribe: (endpoint: string) =>
       request<{ subscribed: false }>('/push/subscribe', {

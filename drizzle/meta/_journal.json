@@ -64,6 +64,13 @@
       "when": 1786093586657,
       "tag": "0008_bouncy_jubilee",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786097916321,
+      "tag": "0009_huge_rawhide_kid",
+      "breakpoints": true
     }
   ]
 }

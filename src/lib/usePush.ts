@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useLocale } from 'next-intl';
 import { api } from '@/lib/api';
+import type { Locale } from '@/lib/domain';
 
 /**
  * Push-уведомления в браузере: состояние разрешения, подписка и отписка.
@@ -48,6 +50,9 @@ const supported = () =>
   'Notification' in window;
 
 export function usePush() {
+  // язык этого устройства запоминается вместе с подпиской: уведомления
+  // уходят из фоновой задачи, где локали уже неоткуда взять
+  const locale = useLocale() as Locale;
   const [state, setState] = useState<PushState>('loading');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,14 +126,14 @@ export function usePush() {
       const json = sub.toJSON() as { endpoint?: string; keys?: { p256dh: string; auth: string } };
       if (!json.endpoint || !json.keys) throw new Error('bad subscription');
 
-      await api.push.subscribe({ endpoint: json.endpoint, keys: json.keys });
+      await api.push.subscribe({ endpoint: json.endpoint, keys: json.keys, locale });
       setState('on');
     } catch {
       setError('failed');
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [locale]);
 
   const disable = useCallback(async () => {
     setBusy(true);

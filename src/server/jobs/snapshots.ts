@@ -5,6 +5,7 @@ import { rateAlerts, rateSnapshots } from '@/server/db/schema';
 import { depList } from '@/server/ecash/endpoints/departments';
 import { rateStatistics } from '@/server/ecash/endpoints/rates';
 import { sendToAccounts } from '@/server/push';
+import { alertBodyMany, alertBodyOne, alertTitle } from '@/server/push-text';
 import { alertCurrency, alertDirection, alertReached } from '@/lib/rate-alert';
 
 /**
@@ -134,26 +135,22 @@ async function notifyFired(
 
   for (const [accountId, list] of byAccount) {
     const first = list[0];
-    const rate = formatRate(first.rate);
     try {
-      await sendToAccounts([accountId], {
-        title: 'Курс достиг вашей отметки',
+      // текст строится под язык КАЖДОГО устройства — у человека телефон и
+      // компьютер могут быть на разных языках, см. sendToAccounts
+      await sendToAccounts([accountId], (locale) => ({
+        title: alertTitle[locale],
         body:
           list.length === 1
-            ? `${first.code} — ${rate} ₸. ${first.side === 'buy' ? 'Можно покупать' : 'Можно продавать'}.`
-            : `${list.map((f) => f.code).join(', ')} — курс дошёл до заданных значений.`,
+            ? alertBodyOne(locale, first.code, first.rate, first.side)
+            : alertBodyMany(locale, list.map((f) => f.code)),
         url: '/notifications',
         tag: 'rate-alert',
-      });
+      }));
     } catch (e) {
       console.warn('[snapshots] push по подписке не ушёл', e);
     }
   }
-}
-
-/** Курс в тексте уведомления: без хвоста нулей, но с копейками, если есть. */
-function formatRate(v: number): string {
-  return v.toLocaleString('ru-RU', { maximumFractionDigits: 2 });
 }
 
 export function startSnapshotter(): void {

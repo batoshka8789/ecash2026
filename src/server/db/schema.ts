@@ -91,6 +91,14 @@ export const pushSubscriptions = pgTable(
     auth: text('auth').notNull(),
     /** для диагностики: какой браузер/устройство, если подписка вдруг падает */
     userAgent: text('user_agent').notNull().default(''),
+    /**
+     * Язык, на котором показывать уведомление. Хранится у ПОДПИСКИ, а не у
+     * аккаунта: сайт четырёхъязычный, и один и тот же человек может держать
+     * рабочий компьютер на русском, а телефон на казахском. Отправка идёт из
+     * фоновой задачи, где ни запроса, ни его заголовков уже нет, — значит
+     * язык надо запомнить в момент подписки, больше взять его неоткуда.
+     */
+    locale: text('locale').notNull().default('ru'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index('push_subscriptions_account_idx').on(t.accountId)],

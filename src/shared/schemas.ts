@@ -254,6 +254,8 @@ export const pushSubscribeBody = z.object({
     p256dh: z.string().min(1).max(200),
     auth: z.string().min(1).max(100),
   }),
+  /** язык этого устройства; уведомления уходят из фона, где локали уже нет */
+  locale: localeSchema.default('ru'),
 });
 
 export const pushUnsubscribeBody = z.object({ endpoint: z.url().max(1000) });

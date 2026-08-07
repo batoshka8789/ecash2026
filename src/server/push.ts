@@ -4,6 +4,7 @@ import { eq, inArray } from 'drizzle-orm';
 import { db } from '@/server/db/client';
 import { pushSubscriptions } from '@/server/db/schema';
 import { env } from '@/server/env';
+import { toPushLocale, welcomeText, type PushLocale } from '@/server/push-text';
 
 /**
  * Браузерные push-уведомления (Web Push, VAPID).
@@ -44,13 +45,18 @@ export type PushPayload = {
 /**
  * Отправка на все устройства аккаунтов. Возвращает, сколько сообщений ушло.
  *
+ * Текст задаётся ФУНКЦИЕЙ от языка, а не готовой строкой: у одного человека
+ * рабочий компьютер может быть на русском, а телефон на казахском, и язык
+ * хранится у каждой подписки отдельно. Так каждое устройство получает
+ * сообщение на своём языке, а вызывающему коду не нужно ничего группировать.
+ *
  * Мёртвые подписки (404/410 — браузер удалён, разрешение отозвано) чистим
  * сразу: иначе их накапливается больше, чем живых, и каждый проход
  * снапшоттера тратит время на заведомо провальные запросы.
  */
 export async function sendToAccounts(
   accountIds: string[],
-  payload: PushPayload,
+  build: (locale: PushLocale) => PushPayload,
 ): Promise<number> {
   if (!pushEnabled || accountIds.length === 0) return 0;
 
@@ -60,7 +66,16 @@ export async function sendToAccounts(
     .where(inArray(pushSubscriptions.accountId, accountIds));
   if (subs.length === 0) return 0;
 
-  const body = JSON.stringify(payload);
+  // тело одинаково для всех подписок с одним языком — собираем по разу
+  const bodyByLocale = new Map<PushLocale, string>();
+  const bodyFor = (locale: PushLocale): string => {
+    const cached = bodyByLocale.get(locale);
+    if (cached !== undefined) return cached;
+    const built = JSON.stringify(build(locale));
+    bodyByLocale.set(locale, built);
+    return built;
+  };
+
   const dead: string[] = [];
   let sent = 0;
 
@@ -69,7 +84,7 @@ export async function sendToAccounts(
       try {
         await webpush.sendNotification(
           { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-          body,
+          bodyFor(toPushLocale(s.locale)),
           // сутки: если телефон был выключен, уведомление всё равно догонит,
           // но протухший курс через сутки уже никому не нужен
           { TTL: 86_400 },
@@ -91,12 +106,39 @@ export async function sendToAccounts(
   return sent;
 }
 
+/**
+ * Приветствие сразу после включения. Отдельная функция, а не вызов
+ * sendToAccounts на месте: слать нужно ровно на то устройство, которое только
+ * что подписалось, а не на все устройства аккаунта — иначе человек включает
+ * уведомления на телефоне, а они приходят ещё и на рабочий компьютер.
+ */
+export async function sendWelcome(
+  endpoint: string,
+  p256dh: string,
+  auth: string,
+  locale: PushLocale,
+): Promise<void> {
+  if (!pushEnabled) return;
+  const text = welcomeText[locale];
+  await webpush.sendNotification(
+    { endpoint, keys: { p256dh, auth } },
+    JSON.stringify({
+      title: text.title,
+      body: text.body,
+      url: '/notifications',
+      tag: 'push-welcome',
+    } satisfies PushPayload),
+    { TTL: 3600 },
+  );
+}
+
 /** Подписка браузера. Повторная с того же устройства обновляет строку. */
 export async function savePushSubscription(input: {
   accountId: string;
   endpoint: string;
   p256dh: string;
   auth: string;
+  locale: PushLocale;
   userAgent: string;
 }): Promise<void> {
   await db
@@ -109,6 +151,8 @@ export async function savePushSubscription(input: {
         accountId: input.accountId,
         p256dh: input.p256dh,
         auth: input.auth,
+        // язык мог смениться: человек переключил сайт и включил заново
+        locale: input.locale,
         userAgent: input.userAgent,
       },
     });
