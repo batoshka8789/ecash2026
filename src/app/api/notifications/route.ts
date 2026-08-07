@@ -75,11 +75,22 @@ export const GET = withUser(async (req, token) => {
       ? demoList(accountId, 1, 100)
       : await listOperations(token, 1, 100);
 
+    /*
+     * Подписки на курс — необязательная добавка нашего слоя; заявки, ради
+     * которых страницу и открывают, приходят от Ecash. Падение базы не
+     * должно уносить их с собой: раньше при недоступной базе весь список
+     * уведомлений отдавал 500 и страница показывала пустую ошибку, хотя
+     * заявки уже были получены.
+     */
     const alerts = await db
       .select()
       .from(rateAlerts)
       .where(eq(rateAlerts.accountId, accountId))
-      .orderBy(desc(rateAlerts.createdAt));
+      .orderBy(desc(rateAlerts.createdAt))
+      .catch((e) => {
+        console.warn('[notifications] подписки на курс недоступны', e);
+        return [];
+      });
 
     const requestNotes = page.requests.map(fromRequest);
     const alertNotes: NotificationDto[] = alerts.map((a) => {

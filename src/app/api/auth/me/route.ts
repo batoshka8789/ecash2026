@@ -21,10 +21,22 @@ export async function GET() {
     const account = await currentAccount();
     if (!account) return ok({ account: null });
 
+    /*
+     * Анкета — необязательная добавка НАШЕГО слоя; личность и права приходят
+     * от Ecash. Поэтому её падение не должно ронять ответ: раньше при
+     * недоступной базе весь /auth/me отдавал 500, а это на каждой странице —
+     * сайт считал вошедшего гостем, шапка мигала «Войти», кабинет
+     * закрывался. Тот же приём уже применён в /api/rates (allSettled):
+     * упавший необязательный источник просто отдаёт пустоту.
+     */
     const rows = await db
       .select()
       .from(profiles)
-      .where(eq(profiles.accountId, account.accountId));
+      .where(eq(profiles.accountId, account.accountId))
+      .catch((e) => {
+        console.warn('[auth/me] анкета недоступна, отдаём аккаунт без неё', e);
+        return [];
+      });
 
     return ok({
       account: {
