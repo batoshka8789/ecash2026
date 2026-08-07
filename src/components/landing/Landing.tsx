@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { clsx } from "clsx";
@@ -865,42 +865,6 @@ function CtaButton({
 }
 
 /**
- * Стартовые смещения рядов (scrollLeft, px) по ступеням макета.
- *
- * Пороги записаны в rem, как у самого Tailwind (md 48rem, lg 64rem, xl 80rem),
- * а не в пикселях. В медиазапросе rem считается от базового кегля браузера, и
- * если пользователь его увеличил, md наступает не на 768. Порог в px разошёлся
- * бы с шириной карточки: ряд открывался бы на обрезанной половине второй.
- *
- * Ниже md смещения нет — и оно там не нужно: карточка уже колонки на 40px, так
- * что кромка следующей видна и без сдвига, а первая остаётся целой. Сдвиг здесь
- * обрезал бы её слева, то есть спрятал бы начало ряда.
- *
- * Отрицательные margin ряда (-mx-8) и равный им padding (px-8) друг друга
- * гасят, поэтому scrollLeft отсчитывается от той же точки, что x трека в макете.
- *
- * У «поддержки» ряд 1 на xl — 1550 вместо макетных 1240: шаг карточки здесь 620
- * (580 + 40), а 1240 = ровно два шага, из-за чего третья карточка встаёт
- * вплотную к левому краю и ряд снова читается «по линейке». 1550 шагу не кратно
- * и даёт картину «обрезана — целиком — обрезана».
- */
-const RAIL_SCROLL: Record<
-  "package" | "support",
-  { mq: string; rails: number[] }[]
-> = {
-  package: [
-    { mq: "(min-width: 80rem)", rails: [992, 0] },
-    { mq: "(min-width: 64rem)", rails: [1248, 0] },
-    { mq: "(min-width: 48rem)", rails: [599, 0] },
-  ],
-  support: [
-    { mq: "(min-width: 80rem)", rails: [1550, 744] },
-    { mq: "(min-width: 64rem)", rails: [1120, 620] },
-    { mq: "(min-width: 48rem)", rails: [748, 599] },
-  ],
-};
-
-/**
  * Ряды карточек («complex slider»): по 3 (пакет) или 6 (поддержка) в ряд.
  * Ряд горизонтальный на всех ширинах — в макете это scroll container колонки.
  * Ширина карточки равна колонке до 768, 429 на 768, 704 (пакет) / 580
@@ -923,92 +887,143 @@ function CardRails({
   for (let i = 0; i < items.length; i += perRail)
     rails.push(items.slice(i, i + perRail));
 
-  const railEls = useRef<(HTMLDivElement | null)[]>([]);
-  const reduced = useReducedMotion();
-
-  /**
-   * Стартовое смещение выставляем после монтирования, а не в разметке: ширины
-   * окна на сервере нет, и любое смещение в SSR-разметке разошлось бы с
-   * клиентом. Ступень выбираем через matchMedia, ровно теми же порогами, что и
-   * Tailwind, чтобы смещение и ширина карточки переключались одновременно.
-   *
-   * Пересчитываем на каждой смене ширины окна, а не только на смене ступени:
-   * ширина ряда внутри одной ступени плавающая, и максимум прокрутки вместе с
-   * ней — иначе зажатое браузером значение так и остаётся. Сравниваем именно
-   * ширину: ресайз по одной высоте (адресная строка на мобильном) ряд не трогает.
-   */
-  useEffect(() => {
-    const steps = RAIL_SCROLL[variant];
-    let appliedWidth = -1;
-
-    const apply = () => {
-      if (window.innerWidth === appliedWidth) return;
-      appliedWidth = window.innerWidth;
-      const step = steps.find((s) => window.matchMedia(s.mq).matches);
-
-      railEls.current.forEach((el, i) => {
-        // Мгновенно и без behavior: 'smooth' — это стартовое состояние ряда,
-        // а не анимация. Браузер сам зажмёт значение по максимуму прокрутки.
-        if (el) el.scrollLeft = step ? (step.rails[i] ?? 0) : 0;
-      });
-    };
-
-    apply();
-    window.addEventListener("resize", apply);
-    return () => window.removeEventListener("resize", apply);
-  }, [variant]);
-
   return (
     <div className={clsx("flex flex-col gap-5 lg:gap-10", className)}>
       {rails.map((rail, railIndex) => (
-        /*
-          Появление — на РЯДЕ, а не на карточках. Раньше каждая карточка гасла
-          до opacity 0 и оживала по своему пересечению с вьюпортом, но у соседа
-          в кадре всего ~22px кромки, а порог был margin: -40px — сосед не
-          пересекался и оставался невидимым. Пользователь видел одну карточку и
-          не понимал, что ряд скроллится. Заодно уходит вторая беда того же
-          подхода: карточки вглубь ряда висели прозрачными, пока их не
-          доскроллишь, и всплывали прямо под курсором.
-        */
-        <motion.div
-          key={railIndex}
-          ref={(el: HTMLDivElement | null) => {
-            railEls.current[railIndex] = el;
-          }}
-          initial={reduced ? undefined : { opacity: 0, y: 20 }}
-          whileInView={reduced ? undefined : { opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-40px" }}
-          transition={{ duration: 0.45 }}
-          /*
-           * overflow-x:auto по спецификации делает и overflow-y:auto, поэтому
-           * ряд обрезает всё, что выходит за его границы: подъём карточки на
-           * ховере и, главное, её тень — на срезе видны резкие углы. Тень на
-           * ховере выходит за карточку на 12px по бокам и на 44px вниз, поэтому
-           * берём двойной запас (32 по бокам и сверху, 96 снизу), а
-           * отрицательные margin ровно на ту же величину возвращают исходную
-           * геометрию. Боковой вылет за край экрана безопасен: у обёртки
-           * лендинга overflow-x: hidden.
-           *
-           * scroll-pl-8 — чтобы snap-start приклеивал карточку туда же, где
-           * стоит первая: снаппорт по умолчанию считается от padding-бокса.
-           *
-           * md:snap-none — с 768 снап выключен совсем. Смещения макета не
-           * выровнены по карточкам, а снап притягивает прокрутку к ближайшей
-           * точке привязки и при программной установке scrollLeft тоже. Ниже md
-           * снап остаётся mandatory и полезен: помещается ровно одна карточка.
-           */
-          className="-mx-8 -mb-24 -mt-8 flex snap-x snap-mandatory scroll-pl-8 flex-row gap-3 overflow-x-auto px-8 pb-24 pt-8 [scrollbar-width:none] md:snap-none md:gap-5 lg:gap-10 [&::-webkit-scrollbar]:hidden"
-        >
-          {rail.map((item, i) => (
-            <RailCard
-              key={item.title}
-              item={item}
-              index={i}
-              variant={variant}
-            />
-          ))}
-        </motion.div>
+        <Rail key={railIndex} cards={rail} variant={variant} />
       ))}
+    </div>
+  );
+}
+
+/**
+ * Один ряд-карусель.
+ *
+ * Ряд начинается С НАЧАЛА. Раньше стартовое смещение бралось из макета
+ * (scrollLeft до 1550px), чтобы ряды выглядели «в разбежку», как на статичном
+ * артборде. На живой странице это оборачивалось тем, что при загрузке на 1280
+ * ВОСЕМЬ карточек из восемнадцати не были видны вообще — включая первую в
+ * ряду, — а полоса прокрутки скрыта, и подсказки, что ряд листается, не было.
+ * Для страницы, которая продаёт франшизу, спрятать половину доводов —
+ * недопустимо, поэтому декоративная разбежка убрана.
+ *
+ * Взамен ряд честно показывает, что он листается: градиент у того края, где
+ * есть продолжение, и стрелки на устройствах с мышью (на тач-экранах свайп
+ * привычнее и стрелки только мешают).
+ */
+function Rail({ cards, variant }: { cards: Card[]; variant: "package" | "support" }) {
+  const reduced = useReducedMotion();
+  const ref = useRef<HTMLDivElement | null>(null);
+  /** есть ли продолжение слева/справа — от этого зависят градиент и стрелки */
+  const [more, setMore] = useState({ left: false, right: false });
+
+  const sync = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    // допуск в 1px: дробные ширины дают остаток, из-за которого стрелка
+    // «вперёд» не гаснет даже в самом конце ряда
+    setMore({ left: el.scrollLeft > 1, right: el.scrollLeft < max - 1 });
+  }, []);
+
+  useEffect(() => {
+    sync();
+    const el = ref.current;
+    if (!el) return;
+    // ResizeObserver, а не resize окна: ширина ряда меняется и от смены
+    // ступени макета, и от появления полосы прокрутки страницы
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [sync]);
+
+  /** Листаем ровно на карточку с зазором — так ряд не «съезжает» по полкарточки. */
+  const step = (dir: -1 | 1) => {
+    const el = ref.current;
+    if (!el) return;
+    const card = el.firstElementChild as HTMLElement | null;
+    const gap = parseFloat(getComputedStyle(el).columnGap || "0") || 0;
+    const by = card ? card.getBoundingClientRect().width + gap : el.clientWidth * 0.8;
+    el.scrollBy({ left: dir * by, behavior: reduced ? "auto" : "smooth" });
+  };
+
+  return (
+    <div className="relative">
+      {/*
+        Градиент-подсказка у края с продолжением. pointer-events-none —
+        иначе полоска перехватывала бы курсор у крайней карточки.
+        Ширина 32 совпадает с боковым вылетом ряда (-mx-8), поэтому подсказка
+        ложится ровно на обрезанную кромку.
+      */}
+      {(["left", "right"] as const).map((side) => (
+        <span
+          key={side}
+          aria-hidden
+          className={clsx(
+            "pointer-events-none absolute inset-y-0 z-10 w-16 transition-opacity duration-300",
+            side === "left"
+              ? "left-0 bg-gradient-to-r from-[#141414] to-transparent"
+              : "right-0 bg-gradient-to-l from-[#141414] to-transparent",
+            more[side] ? "opacity-100" : "opacity-0",
+          )}
+        />
+      ))}
+
+      {(["left", "right"] as const).map((side) => (
+        <button
+          key={side}
+          type="button"
+          // на тач-экранах свайп естественнее — стрелки там лишний шум
+          className={clsx(
+            "absolute top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/15 bg-black/60 text-white backdrop-blur transition hover:bg-black/80 disabled:pointer-events-none disabled:opacity-0 [@media(hover:hover)]:flex",
+            side === "left" ? "left-2" : "right-2",
+          )}
+          disabled={!more[side]}
+          aria-label={side === "left" ? "Предыдущие карточки" : "Следующие карточки"}
+          onClick={() => step(side === "left" ? -1 : 1)}
+        >
+          <Icon name={side === "left" ? "chevron_left" : "chevron_right"} size={24} />
+        </button>
+      ))}
+
+      {/*
+        Появление — на РЯДЕ, а не на карточках. Раньше каждая карточка гасла
+        до opacity 0 и оживала по своему пересечению с вьюпортом, но у соседа
+        в кадре всего ~22px кромки, а порог был margin: -40px — сосед не
+        пересекался и оставался невидимым. Заодно уходит вторая беда того же
+        подхода: карточки вглубь ряда висели прозрачными, пока их не
+        доскроллишь, и всплывали прямо под курсором.
+      */}
+      <motion.div
+        ref={ref}
+        onScroll={sync}
+        initial={reduced ? undefined : { opacity: 0, y: 20 }}
+        whileInView={reduced ? undefined : { opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.45 }}
+        /*
+         * overflow-x:auto по спецификации делает и overflow-y:auto, поэтому
+         * ряд обрезает всё, что выходит за его границы: подъём карточки на
+         * ховере и, главное, её тень — на срезе видны резкие углы. Тень на
+         * ховере выходит за карточку на 12px по бокам и на 44px вниз, поэтому
+         * берём двойной запас (32 по бокам и сверху, 96 снизу), а
+         * отрицательные margin ровно на ту же величину возвращают исходную
+         * геометрию. Боковой вылет за край экрана безопасен: у обёртки
+         * лендинга overflow-x: hidden.
+         *
+         * scroll-pl-8 — чтобы snap-start приклеивал карточку туда же, где
+         * стоит первая: снаппорт по умолчанию считается от padding-бокса.
+         *
+         * Снап оставлен на всех ширинах: ряд теперь всегда начинается с начала
+         * и листается ровно на карточку — притяжение к ближайшей точке
+         * привязки этому только помогает и не даёт остановиться на срезе.
+         */
+        className="-mx-8 -mb-24 -mt-8 flex snap-x snap-mandatory scroll-pl-8 flex-row gap-3 overflow-x-auto px-8 pb-24 pt-8 [scrollbar-width:none] md:gap-5 lg:gap-10 [&::-webkit-scrollbar]:hidden"
+      >
+        {cards.map((item, i) => (
+          <RailCard key={item.title} item={item} index={i} variant={variant} />
+        ))}
+      </motion.div>
     </div>
   );
 }
