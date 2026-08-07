@@ -661,7 +661,8 @@
     "conflict": "The record was changed in another window — reload the page",
     "translateUnavailable": "The translator is unavailable right now. Try again later or fill the language in by hand.",
     "translateQuota": "The translator’s daily quota is used up. Try tomorrow or fill the language in by hand.",
-    "emailInvalid": "Check the email address"
+    "emailInvalid": "Check the email address",
+    "pushDisabled": "Notifications are not configured on this deployment."
   },
   "addressModal": {
     "title": "Enter your address",
@@ -849,5 +850,17 @@
     "requests": {
       "title": "My requests — ecash"
     }
+  },
+  "push": {
+    "onTitle": "Notifications are on",
+    "onText": "We'll let you know in the browser the moment the rate reaches your target — even with the tab closed.",
+    "offTitle": "Browser notifications",
+    "offText": "Turn them on and you'll hear about the rate right away, not on your next visit.",
+    "deniedTitle": "Notifications blocked",
+    "deniedText": "Permission was declined in your browser. To switch them on, allow notifications for this site in the site settings.",
+    "turnOn": "Turn on",
+    "turnOff": "Turn off",
+    "busy": "One moment…",
+    "failed": "That didn't work. Please try again."
   }
 }

@@ -67,6 +67,25 @@ const schema = z.object({
    */
   TRANSLATE_EMAIL: z.email().optional(),
 
+  /**
+   * Ключи VAPID для браузерных push-уведомлений (web-push).
+   * Пара генерируется один раз: `npx web-push generate-vapid-keys`.
+   *
+   * Публичный уходит в браузер (иначе подписаться нельзя) — это нормально,
+   * он для того и публичный. Приватным сервер подписывает каждую отправку,
+   * и он не должен покидать сервер, поэтому БЕЗ префикса NEXT_PUBLIC_:
+   * публичный ключ отдаётся своим маршрутом /api/push/public-key.
+   *
+   * Обе переменные опциональны: без них push просто выключен — карточка
+   * подписки не показывается, остальной сайт работает как прежде.
+   * Менять пару после запуска нельзя: старые подписки браузеров привязаны
+   * к прежнему публичному ключу и перестанут приниматься.
+   */
+  VAPID_PUBLIC_KEY: z.string().min(1).optional(),
+  VAPID_PRIVATE_KEY: z.string().min(1).optional(),
+  /** Контакт для сервисов доставки (Google/Mozilla): mailto: или https://. */
+  VAPID_SUBJECT: z.string().min(1).default('mailto:info@ecash.kz'),
+
   REALTIME_ENABLED: z
     .enum(['true', 'false'])
     .default('true')

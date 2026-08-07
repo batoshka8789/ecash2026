@@ -143,6 +143,19 @@ export const api = {
 
   toggleFavorite: (code: CurrencyCode) => post<{ favorites: string[] }>('/favorites', { code }),
 
+  /** Push-уведомления: ключ VAPID, подписка и отписка браузера. */
+  push: {
+    publicKey: (signal?: AbortSignal) =>
+      request<{ enabled: boolean; key: string | null }>('/push/public-key', { signal }),
+    subscribe: (payload: { endpoint: string; keys: { p256dh: string; auth: string } }) =>
+      post<{ subscribed: true }>('/push/subscribe', payload),
+    unsubscribe: (endpoint: string) =>
+      request<{ subscribed: false }>('/push/subscribe', {
+        method: 'DELETE',
+        body: JSON.stringify({ endpoint }),
+      }),
+  },
+
   /** Лента: сервер сам выбирает перевод по локали и падает на русский. */
   news: (locale: Locale, signal?: AbortSignal) =>
     request<{ posts: NewsPost[] }>(`/news?locale=${locale}`, { signal }),

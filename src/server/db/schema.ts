@@ -70,6 +70,33 @@ export const rateAlerts = pgTable(
 );
 
 /**
+ * Push-подписки браузеров. Одна строка — одно устройство (точнее, один
+ * браузер): человек, открывший сайт с телефона и с ноутбука, получит
+ * уведомление на оба.
+ *
+ * endpoint — это и адрес доставки, и естественный ключ: браузер выдаёт его
+ * при подписке, и он же приходит обратно, если подписка протухла. Поэтому
+ * первичный ключ по нему, а не по accountId: при повторной подписке того же
+ * браузера строка обновляется, а не плодится.
+ *
+ * Ключи p256dh/auth выдаёт сам браузер — ими web-push шифрует полезную
+ * нагрузку, чтобы сервис доставки (Google/Apple) не мог прочитать текст.
+ */
+export const pushSubscriptions = pgTable(
+  'push_subscriptions',
+  {
+    endpoint: text('endpoint').primaryKey(),
+    accountId: text('account_id').notNull(),
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    /** для диагностики: какой браузер/устройство, если подписка вдруг падает */
+    userAgent: text('user_agent').notNull().default(''),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('push_subscriptions_account_idx').on(t.accountId)],
+);
+
+/**
  * Картинки новостей — байтами в БД, а не файлами на диске: Railway стирает
  * файловую систему при каждом деплое, поэтому загруженное в public/ не
  * пережило бы ни одной выкладки. Отдаются через /api/media/[id].

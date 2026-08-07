@@ -8,6 +8,7 @@ import { Link } from '@/i18n/navigation';
 import { Icon } from '@/components/ui/Icon';
 import { CurrencyFlag } from '@/components/ui/CurrencyFlag';
 import { PillTabs } from '@/components/ui/PillTabs';
+import { PushCard } from '@/components/profile/PushCard';
 import { api, ApiError, type NotificationDto } from '@/lib/api';
 import { useCountdown } from '@/lib/hooks';
 import { currencyFlagClass, formatDateTime } from '@/lib/format';
@@ -30,65 +31,69 @@ export function NotificationsCard() {
   const errorStatus = query.error instanceof ApiError ? query.error.status : undefined;
 
   return (
-    <div className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
-      <PillTabs
-        value={tab}
-        onChange={setTab}
-        tabs={[
-          { value: 'actual', label: t('tabs.actual') },
-          { value: 'history', label: t('tabs.history') },
-        ]}
-      />
+    <div className="flex flex-col gap-4">
+      <PushCard />
 
-      {query.isPending && (
-        <div aria-hidden className="mt-2 flex flex-col gap-5 py-6">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="flex animate-pulse gap-4">
-              <span className="h-10 w-10 shrink-0 rounded-xl bg-surface-page-surf2" />
-              <div className="flex flex-1 flex-col gap-2">
-                <span className="h-4 w-2/5 rounded-full bg-surface-page-surf2" />
-                <span className="h-4 w-3/5 rounded-full bg-surface-page-surf2" />
+      <div className="rounded-2xl bg-surface-page-surf1 p-5 sm:rounded-3xl sm:p-8">
+        <PillTabs
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { value: 'actual', label: t('tabs.actual') },
+            { value: 'history', label: t('tabs.history') },
+          ]}
+        />
+
+        {query.isPending && (
+          <div aria-hidden className="mt-2 flex flex-col gap-5 py-6">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex animate-pulse gap-4">
+                <span className="h-10 w-10 shrink-0 rounded-xl bg-surface-page-surf2" />
+                <div className="flex flex-1 flex-col gap-2">
+                  <span className="h-4 w-2/5 rounded-full bg-surface-page-surf2" />
+                  <span className="h-4 w-3/5 rounded-full bg-surface-page-surf2" />
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
-      {!query.isPending && query.isError && !data && (
-        <div className="flex flex-col items-center gap-3 py-10">
-          {errorStatus === 401 ? (
-            <p className="text-sm text-text-negative">{t('needLogin')}</p>
-          ) : (
-            <>
-              <p className="text-sm text-text-negative">{errorText(query.error.message)}</p>
-              <button
-                type="button"
-                onClick={() => query.refetch()}
-                className="cursor-pointer rounded-full border border-stroke-brand px-4 py-2 text-sm font-medium text-text-brand transition-colors hover:bg-brand-hardsoft"
-              >
-                {tSystem('retry')}
-              </button>
-            </>
-          )}
-        </div>
-      )}
+        {!query.isPending && query.isError && !data && (
+          <div className="flex flex-col items-center gap-3 py-10">
+            {errorStatus === 401 ? (
+              <p className="text-sm text-text-negative">{t('needLogin')}</p>
+            ) : (
+              <>
+                <p className="text-sm text-text-negative">{errorText(query.error.message)}</p>
+                <button
+                  type="button"
+                  onClick={() => query.refetch()}
+                  className="cursor-pointer rounded-full border border-stroke-brand px-4 py-2 text-sm font-medium text-text-brand transition-colors hover:bg-brand-hardsoft"
+                >
+                  {tSystem('retry')}
+                </button>
+              </>
+            )}
+          </div>
+        )}
 
-      {data && data.notifications.length === 0 && (
-        <p className="py-10 text-center text-sm text-text-disabled">{t('empty')}</p>
-      )}
+        {data && data.notifications.length === 0 && (
+          <p className="py-10 text-center text-sm text-text-disabled">{t('empty')}</p>
+        )}
 
-      {data && data.notifications.length > 0 && (
-        <div
-          className={clsx(
-            'mt-2 divide-y divide-divider-additional transition-opacity',
-            query.isFetching && 'opacity-60',
-          )}
-        >
-          {data.notifications.map((n) => (
-            <NotificationRow key={n.id} n={n} />
-          ))}
-        </div>
-      )}
+        {data && data.notifications.length > 0 && (
+          <div
+            className={clsx(
+              'mt-2 divide-y divide-divider-additional transition-opacity',
+              query.isFetching && 'opacity-60',
+            )}
+          >
+            {data.notifications.map((n) => (
+              <NotificationRow key={n.id} n={n} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -145,6 +150,8 @@ function NotificationRow({ n }: { n: NotificationDto }) {
   const canCancel = requestId !== null && n.phase === 'held';
   const canResume = n.actions.includes('resume');
   const canDisable = n.alertId !== null && n.actions.includes('disable');
+  /** сработавшая подписка: курс дошёл — ведём бронировать, пока не ушёл */
+  const canBook = n.actions.includes('book');
 
   return (
     <div className="py-5 first:pt-6">
@@ -210,7 +217,7 @@ function NotificationRow({ n }: { n: NotificationDto }) {
             </span>
           </div>
 
-          {(canConfirm || canCancel || canResume || canDisable) && (
+          {(canConfirm || canCancel || canResume || canDisable || canBook) && (
             <div className="mt-3 flex flex-wrap gap-2">
               {requestId !== null && (
                 <>
@@ -245,6 +252,11 @@ function NotificationRow({ n }: { n: NotificationDto }) {
                     </button>
                   )}
                 </>
+              )}
+              {canBook && (
+                <Link href="/booking" className={actionCls('solid')}>
+                  {t('actions.book')}
+                </Link>
               )}
               {canResume && (
                 <Link href="/subscribe" className={actionCls('outline')}>

@@ -82,24 +82,41 @@ export const GET = withUser(async (req, token) => {
       .orderBy(desc(rateAlerts.createdAt));
 
     const requestNotes = page.requests.map(fromRequest);
-    const alertNotes: NotificationDto[] = alerts.map((a) => ({
-      id: `alert-${a.id}`,
-      badges: ['rateAlert'],
-      titleKey: a.active && a.until.getTime() > Date.now() ? 'alertsOn' : 'alertsOff',
-      createdAt: a.createdAt.toISOString(),
-      // направление закодировано порядком пары: KZT→валюта — покупка
-      side: a.currencyFrom === 'KZT' ? 'buy' : 'sell',
-      amount: `${Number(a.targetRate)} (₸)`,
-      currencyFrom: a.currencyFrom as CurrencyCode,
-      currencyTo: a.currencyTo as CurrencyCode,
-      requestId: null,
-      reservedUntil: null,
-      needsClientConfirmation: false,
-      phase: 'pending',
-      // активная — можно отключить; отключённая — можно возобновить (форма /subscribe)
-      actions: a.active ? ['disable'] : ['resume'],
-      alertId: a.id,
-    }));
+    const alertNotes: NotificationDto[] = alerts.map((a) => {
+      const live = a.active && a.until.getTime() > Date.now();
+      // Курс дошёл до отметки — это и есть само событие, ради которого
+      // подписку заводили. Раньше firedAt не доходил до интерфейса вовсе:
+      // заголовок «Курс достиг вашей отметки» лежал в переводах, но не
+      // выставлялся никогда, и сработавшая подписка выглядела так же,
+      // как только что созданная.
+      const reached = a.firedAt !== null;
+
+      return {
+        id: `alert-${a.id}`,
+        badges: ['rateAlert'],
+        titleKey: reached ? 'rateReached' : live ? 'alertsOn' : 'alertsOff',
+        // у сработавшей — время события: иначе она тонет в общем списке,
+        // отсортированном по дате, на месте дня своего создания
+        createdAt: (a.firedAt ?? a.createdAt).toISOString(),
+        // направление закодировано порядком пары: KZT→валюта — покупка
+        side: a.currencyFrom === 'KZT' ? 'buy' : 'sell',
+        amount: `${Number(a.targetRate)} (₸)`,
+        currencyFrom: a.currencyFrom as CurrencyCode,
+        currencyTo: a.currencyTo as CurrencyCode,
+        requestId: null,
+        reservedUntil: null,
+        needsClientConfirmation: false,
+        // Отработавшая и просроченная подписки — уже история; в «Актуальном»
+        // остаются действующие и только что сработавшие. Раньше здесь всегда
+        // стояло 'pending', из-за чего отключённые подписки висели в
+        // «Актуальном» вместе с надписью «Уведомления отключены».
+        phase: live || reached ? 'pending' : 'ended',
+        // сработала — предлагаем воспользоваться курсом; действует — отключить;
+        // закончилась — возобновить (форма /subscribe)
+        actions: reached ? ['book', 'disable'] : live ? ['disable'] : ['resume'],
+        alertId: a.id,
+      };
+    });
 
     const all = [...requestNotes, ...alertNotes].sort((a, b) =>
       (b.createdAt ?? '').localeCompare(a.createdAt ?? ''),

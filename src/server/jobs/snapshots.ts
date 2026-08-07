@@ -1,9 +1,11 @@
 import 'server-only';
-import { and, eq, gt, gte, isNull, lte } from 'drizzle-orm';
+import { and, eq, gt, isNull } from 'drizzle-orm';
 import { db } from '@/server/db/client';
 import { rateAlerts, rateSnapshots } from '@/server/db/schema';
 import { depList } from '@/server/ecash/endpoints/departments';
 import { rateStatistics } from '@/server/ecash/endpoints/rates';
+import { sendToAccounts } from '@/server/push';
+import { alertCurrency, alertDirection, alertReached } from '@/lib/rate-alert';
 
 /**
  * Снапшоттер курсов: раз в 15 минут пишет buy/sell по каждому отделению
@@ -45,15 +47,22 @@ async function takeSnapshot(): Promise<void> {
 }
 
 /**
- * Срабатывание подписок «уведомить об изменении курса». Направление
- * закодировано порядком пары (как в бронировании):
- *  — KZT→валюта (клиент ПОКУПАЕТ): цель достигнута, когда курс ПРОДАЖИ
- *    обменника опустился до targetRate или ниже;
- *  — валюта→KZT (клиент ПРОДАЁТ): когда курс ПОКУПКИ поднялся до
- *    targetRate или выше.
- * Отметка firedAt ставится один раз — уведомление показывается в кабинете.
+ * Срабатывание подписок «уведомить об изменении курса».
+ *
+ * Само правило — в lib/rate-alert.ts, там же тесты. Раньше сравнение жило
+ * прямо в SQL-условии и было перевёрнуто: подписка «сообщи, когда доллар
+ * подешевеет до 500» срабатывала сразу при создании, а на реальном
+ * достижении курса молчала. Проверить SQL-условие нечем — поэтому решение
+ * принимается в коде, а запрос лишь отбирает кандидатов и проставляет
+ * отметку.
+ *
+ * Отметка firedAt ставится один раз, и по `.returning()` мы узнаём, какие
+ * подписки сработали ИМЕННО СЕЙЧАС — это и есть повод отправить push. Между
+ * отбором и обновлением стоит повторная проверка `isNull(firedAt)`: если
+ * два прохода наложатся, второй не отправит то же самое дважды.
  */
 async function fireAlerts(rows: (typeof rateSnapshots.$inferInsert)[]): Promise<void> {
+  /** лучшие курсы рынка: покупателю — самая низкая продажа, продавцу — самая высокая покупка */
   const bestSell = new Map<string, number>();
   const bestBuy = new Map<string, number>();
   for (const r of rows) {
@@ -68,36 +77,83 @@ async function fireAlerts(rows: (typeof rateSnapshots.$inferInsert)[]): Promise<
       if (cur === undefined || buy > cur) bestBuy.set(r.currencyCode, buy);
     }
   }
-  for (const [code, sell] of bestSell) {
-    await db
+
+  const now = new Date();
+  const candidates = await db
+    .select()
+    .from(rateAlerts)
+    .where(and(eq(rateAlerts.active, true), isNull(rateAlerts.firedAt), gt(rateAlerts.until, now)));
+
+  /** сработавшие сейчас: аккаунт, валюта и курс, который её вызвал */
+  const fired: { accountId: string; code: string; rate: number; side: 'buy' | 'sell' }[] = [];
+
+  for (const a of candidates) {
+    const direction = alertDirection(a.currencyFrom, a.currencyTo);
+    const code = alertCurrency(a.currencyFrom, a.currencyTo);
+    if (!direction || !code) continue;
+
+    const best = direction === 'buying' ? bestSell.get(code) : bestBuy.get(code);
+    if (!alertReached(direction, Number(a.targetRate), best)) continue;
+
+    const hit = await db
       .update(rateAlerts)
       .set({ firedAt: new Date() })
-      .where(
-        and(
-          eq(rateAlerts.currencyFrom, 'KZT'),
-          eq(rateAlerts.currencyTo, code),
-          eq(rateAlerts.active, true),
-          isNull(rateAlerts.firedAt),
-          gt(rateAlerts.until, new Date()),
-          lte(rateAlerts.targetRate, String(sell)),
-        ),
-      );
+      .where(and(eq(rateAlerts.id, a.id), isNull(rateAlerts.firedAt)))
+      .returning({ accountId: rateAlerts.accountId });
+
+    for (const r of hit) {
+      fired.push({
+        accountId: r.accountId,
+        code,
+        rate: best!,
+        side: direction === 'buying' ? 'buy' : 'sell',
+      });
+    }
   }
-  for (const [code, buy] of bestBuy) {
-    await db
-      .update(rateAlerts)
-      .set({ firedAt: new Date() })
-      .where(
-        and(
-          eq(rateAlerts.currencyFrom, code),
-          eq(rateAlerts.currencyTo, 'KZT'),
-          eq(rateAlerts.active, true),
-          isNull(rateAlerts.firedAt),
-          gt(rateAlerts.until, new Date()),
-          gte(rateAlerts.targetRate, String(buy)),
-        ),
-      );
+
+  if (fired.length > 0) await notifyFired(fired);
+}
+
+/**
+ * Push по сработавшим подпискам. Отправка не должна ронять проход
+ * снапшоттера: отметка firedAt уже стоит, уведомление в кабинете человек
+ * увидит в любом случае — push здесь лишь способ доставить его быстрее.
+ */
+async function notifyFired(
+  fired: { accountId: string; code: string; rate: number; side: 'buy' | 'sell' }[],
+): Promise<void> {
+  // Один человек мог подписаться на несколько валют, и все они сработали в
+  // один проход — шлём по одному сообщению на валюту, но метка общая, чтобы
+  // на экране не выросла стопка.
+  const byAccount = new Map<string, typeof fired>();
+  for (const f of fired) {
+    const list = byAccount.get(f.accountId) ?? [];
+    list.push(f);
+    byAccount.set(f.accountId, list);
   }
+
+  for (const [accountId, list] of byAccount) {
+    const first = list[0];
+    const rate = formatRate(first.rate);
+    try {
+      await sendToAccounts([accountId], {
+        title: 'Курс достиг вашей отметки',
+        body:
+          list.length === 1
+            ? `${first.code} — ${rate} ₸. ${first.side === 'buy' ? 'Можно покупать' : 'Можно продавать'}.`
+            : `${list.map((f) => f.code).join(', ')} — курс дошёл до заданных значений.`,
+        url: '/notifications',
+        tag: 'rate-alert',
+      });
+    } catch (e) {
+      console.warn('[snapshots] push по подписке не ушёл', e);
+    }
+  }
+}
+
+/** Курс в тексте уведомления: без хвоста нулей, но с копейками, если есть. */
+function formatRate(v: number): string {
+  return v.toLocaleString('ru-RU', { maximumFractionDigits: 2 });
 }
 
 export function startSnapshotter(): void {

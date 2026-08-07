@@ -242,6 +242,22 @@ export const publicNewsQuery = z.object({
 
 export const favoriteToggleBody = z.object({ code: currencyCodeSchema });
 
+/**
+ * Push-подписка браузера. Форма ровно та, что отдаёт
+ * `PushSubscription.toJSON()` — клиент пересылает её как есть, без разбора.
+ * endpoint ограничен по длине: это URL сервиса доставки, у Google он около
+ * 200 символов, запас взят с большим избытком.
+ */
+export const pushSubscribeBody = z.object({
+  endpoint: z.url().max(1000),
+  keys: z.object({
+    p256dh: z.string().min(1).max(200),
+    auth: z.string().min(1).max(100),
+  }),
+});
+
+export const pushUnsubscribeBody = z.object({ endpoint: z.url().max(1000) });
+
 export const rateAlertBody = z
   .object({
     currencyFrom: currencyCodeSchema,

@@ -661,7 +661,8 @@
     "conflict": "记录已在其他窗口被修改——请刷新页面",
     "translateUnavailable": "翻译服务当前不可用。请稍后重试，或手动填写该语言。",
     "translateQuota": "翻译服务的每日额度已用完。请明天再试，或手动填写该语言。",
-    "emailInvalid": "请检查电子邮箱地址"
+    "emailInvalid": "请检查电子邮箱地址",
+    "pushDisabled": "此部署未配置通知功能。"
   },
   "addressModal": {
     "title": "填写您的地址",
@@ -849,5 +850,17 @@
     "requests": {
       "title": "我的申请 — ecash"
     }
+  },
+  "push": {
+    "onTitle": "通知已开启",
+    "onText": "汇率一到您设定的数值，我们就会在浏览器中提醒您——即使标签页已关闭。",
+    "offTitle": "浏览器通知",
+    "offText": "开启后，汇率到位会立即通知您，而不必等到下次访问网站。",
+    "deniedTitle": "通知已被阻止",
+    "deniedText": "浏览器中已拒绝该权限。如需开启，请在网站设置中允许本站发送通知。",
+    "turnOn": "开启",
+    "turnOff": "关闭",
+    "busy": "请稍候…",
+    "failed": "操作失败，请重试。"
   }
 }
