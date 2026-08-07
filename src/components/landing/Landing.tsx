@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { clsx } from "clsx";
@@ -899,93 +899,30 @@ function CardRails({
 /**
  * Один ряд-карусель.
  *
- * Ряд начинается С НАЧАЛА. Раньше стартовое смещение бралось из макета
- * (scrollLeft до 1550px), чтобы ряды выглядели «в разбежку», как на статичном
- * артборде. На живой странице это оборачивалось тем, что при загрузке на 1280
- * ВОСЕМЬ карточек из восемнадцати не были видны вообще — включая первую в
- * ряду, — а полоса прокрутки скрыта, и подсказки, что ряд листается, не было.
- * Для страницы, которая продаёт франшизу, спрятать половину доводов —
- * недопустимо, поэтому декоративная разбежка убрана.
+ * Ряд начинается С НАЧАЛА и не имеет никакой навигационной обвязки.
  *
- * Взамен ряд честно показывает, что он листается: градиент у того края, где
- * есть продолжение, и стрелки на устройствах с мышью (на тач-экранах свайп
- * привычнее и стрелки только мешают).
+ * Раньше стартовое смещение бралось из макета (scrollLeft до 1550px), чтобы
+ * ряды выглядели «в разбежку», как на статичном артборде. На живой странице
+ * это значило, что при загрузке на 1280 восемь карточек из восемнадцати не
+ * видно вообще — включая первую в ряду. Смещение убрано.
+ *
+ * Стрелок и градиентов-подсказок тут тоже нет, и это осознанно: они были
+ * добавлены и сняты. Градиент приходится заливать конкретным цветом, а фон
+ * секции не плоский — под ним живут цветные свечения, поэтому подсказка
+ * читалась как серая полоса чужого оттенка. Круглые кнопки со своей рамкой
+ * не имели ничего общего с языком лендинга (стекло, мягкие канты, оранжевый
+ * акцент) и множились по восемь штук на страницу.
+ *
+ * Подсказка, что ряд листается, и так есть — родная: следующая карточка
+ * обрезана правым краем. Это универсальный знак «здесь есть продолжение», он
+ * не добавляет ни одного лишнего элемента и совпадает с тем, как ряды
+ * устроены в макете.
  */
 function Rail({ cards, variant }: { cards: Card[]; variant: "package" | "support" }) {
   const reduced = useReducedMotion();
-  const ref = useRef<HTMLDivElement | null>(null);
-  /** есть ли продолжение слева/справа — от этого зависят градиент и стрелки */
-  const [more, setMore] = useState({ left: false, right: false });
-
-  const sync = useCallback(() => {
-    const el = ref.current;
-    if (!el) return;
-    const max = el.scrollWidth - el.clientWidth;
-    // допуск в 1px: дробные ширины дают остаток, из-за которого стрелка
-    // «вперёд» не гаснет даже в самом конце ряда
-    setMore({ left: el.scrollLeft > 1, right: el.scrollLeft < max - 1 });
-  }, []);
-
-  useEffect(() => {
-    sync();
-    const el = ref.current;
-    if (!el) return;
-    // ResizeObserver, а не resize окна: ширина ряда меняется и от смены
-    // ступени макета, и от появления полосы прокрутки страницы
-    const ro = new ResizeObserver(sync);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [sync]);
-
-  /** Листаем ровно на карточку с зазором — так ряд не «съезжает» по полкарточки. */
-  const step = (dir: -1 | 1) => {
-    const el = ref.current;
-    if (!el) return;
-    const card = el.firstElementChild as HTMLElement | null;
-    const gap = parseFloat(getComputedStyle(el).columnGap || "0") || 0;
-    const by = card ? card.getBoundingClientRect().width + gap : el.clientWidth * 0.8;
-    el.scrollBy({ left: dir * by, behavior: reduced ? "auto" : "smooth" });
-  };
 
   return (
-    <div className="relative">
-      {/*
-        Градиент-подсказка у края с продолжением. pointer-events-none —
-        иначе полоска перехватывала бы курсор у крайней карточки.
-        Ширина 32 совпадает с боковым вылетом ряда (-mx-8), поэтому подсказка
-        ложится ровно на обрезанную кромку.
-      */}
-      {(["left", "right"] as const).map((side) => (
-        <span
-          key={side}
-          aria-hidden
-          className={clsx(
-            "pointer-events-none absolute inset-y-0 z-10 w-16 transition-opacity duration-300",
-            side === "left"
-              ? "left-0 bg-gradient-to-r from-[#141414] to-transparent"
-              : "right-0 bg-gradient-to-l from-[#141414] to-transparent",
-            more[side] ? "opacity-100" : "opacity-0",
-          )}
-        />
-      ))}
-
-      {(["left", "right"] as const).map((side) => (
-        <button
-          key={side}
-          type="button"
-          // на тач-экранах свайп естественнее — стрелки там лишний шум
-          className={clsx(
-            "absolute top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/15 bg-black/60 text-white backdrop-blur transition hover:bg-black/80 disabled:pointer-events-none disabled:opacity-0 [@media(hover:hover)]:flex",
-            side === "left" ? "left-2" : "right-2",
-          )}
-          disabled={!more[side]}
-          aria-label={side === "left" ? "Предыдущие карточки" : "Следующие карточки"}
-          onClick={() => step(side === "left" ? -1 : 1)}
-        >
-          <Icon name={side === "left" ? "chevron_left" : "chevron_right"} size={24} />
-        </button>
-      ))}
-
+    <>
       {/*
         Появление — на РЯДЕ, а не на карточках. Раньше каждая карточка гасла
         до opacity 0 и оживала по своему пересечению с вьюпортом, но у соседа
@@ -995,8 +932,6 @@ function Rail({ cards, variant }: { cards: Card[]; variant: "package" | "support
         доскроллишь, и всплывали прямо под курсором.
       */}
       <motion.div
-        ref={ref}
-        onScroll={sync}
         initial={reduced ? undefined : { opacity: 0, y: 20 }}
         whileInView={reduced ? undefined : { opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-40px" }}
@@ -1024,7 +959,7 @@ function Rail({ cards, variant }: { cards: Card[]; variant: "package" | "support
           <RailCard key={item.title} item={item} index={i} variant={variant} />
         ))}
       </motion.div>
-    </div>
+    </>
   );
 }
 
