@@ -4,10 +4,8 @@ import { body, fail, fromError, ok } from '@/server/api/respond';
 import { accountPatchBody } from '@/shared/schemas';
 import { updateClient } from '@/server/ecash/endpoints/account';
 import { currentAccount } from '@/server/account';
-import { DEMO_OTP, demoSetPhone, isDemoToken } from '@/server/demo/store';
 import { createSession, readSession } from '@/server/session';
 import { otpConfirm } from '@/server/ecash/endpoints/otp';
-import { env } from '@/server/env';
 
 /**
  * Контакты аккаунта Ecash — номер телефона и почта.
@@ -32,21 +30,11 @@ export const PATCH = withUser(async (req, token) => {
       // purpose 0 (регистрация): код уходит на номер, который ЕЩЁ НЕ ЗАНЯТ —
       // ровно нужная семантика, занятый номер апстрим отклонит сам
       // (409 PHONE_ALREADY_REGISTERED) ещё на шаге отправки кода.
-      const confirmed = env.ECASH_OTP_MOCK
-        ? parsed.otp === DEMO_OTP
-        : (await otpConfirm(parsed.phoneNumber, parsed.otp, 0)).isConfirmed;
+      const confirmed = (await otpConfirm(parsed.phoneNumber, parsed.otp, 0)).isConfirmed;
       if (!confirmed) return fail('errors.INVALID_OTP', 401);
     }
 
-    if (isDemoToken(token)) {
-      // В демо-режиме ядра нет. accountId выведен из телефона, менять его
-      // нельзя — иначе порвётся сессия и потеряются заявки, поэтому новый
-      // номер держим отдельным оверрайдом поверх демо-аккаунта.
-      const s = await readSession();
-      if (parsed.phoneNumber) demoSetPhone(s!.accountId, parsed.phoneNumber);
-    } else {
-      await updateClient(token, parsed);
-    }
+    await updateClient(token, parsed);
 
     const account = await currentAccount();
     if (!account) return fail('errors.unauthorized', 401);

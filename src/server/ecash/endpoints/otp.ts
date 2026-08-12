@@ -41,9 +41,33 @@ export const otpLogin = async (
     }),
   );
 
-/** Сбрасывает пароль и отзывает все сессии аккаунта. */
-export const otpResetPassword = (phoneNumber: string, otp: string, newPassword: string) =>
-  ecashFetch<boolean>('/mobile/otp/reset-password', {
+/**
+ * Сбрасывает пароль и отзывает все сессии аккаунта.
+ *
+ * Форма успешного тела в Swagger не описана (как и у остальных 28 операций),
+ * а http.ts честно предупреждает: часть ручек отвечает literal true / пустым
+ * телом, часть — конвертом {success, data}. Поэтому 200 сам по себе ещё не
+ * значит «пароль изменён»: явный false в любом из известных мест считаем
+ * отказом. Раньше тело игнорировалось целиком, и роут отвечал «reset: true»
+ * на любой 200 — человек видел «пароль изменён», а вход со «сменённым»
+ * паролем получал INVALID_CREDENTIALS.
+ */
+export const otpResetPassword = async (
+  phoneNumber: string,
+  otp: string,
+  newPassword: string,
+): Promise<boolean> => {
+  const res = await ecashFetch<unknown>('/mobile/otp/reset-password', {
     method: 'POST',
     body: { phoneNumber, otp, newPassword },
   });
+  if (res === false) return false;
+  if (typeof res === 'object' && res !== null) {
+    const r = res as { success?: unknown; data?: unknown; isConfirmed?: unknown };
+    if (r.success === false || r.data === false || r.isConfirmed === false) return false;
+  }
+  // тело сброса не содержит ПДн — фиксируем форму, чтобы диагностика
+  // «200, но пароль не подошёл» не требовала гаданий
+  console.warn('[ecash] reset-password 200, тело:', JSON.stringify(res));
+  return true;
+};

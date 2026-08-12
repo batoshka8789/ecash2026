@@ -1,13 +1,11 @@
 import { env } from '@/server/env';
 import { readSession, userToken } from '@/server/session';
 import { subscribeAccount } from '@/server/realtime/hub';
-import { isDemoToken } from '@/server/demo/store';
 
 /**
  * SSE-поток событий заявки/курсов для браузера. Сервер держит SignalR
  * к Ecash и пересылает события; браузеру не нужны ни CORS Ecash,
  * ни доступ к токену. Heartbeat каждые 15 с держит прокси-соединения.
- * В демо-режиме поток пуст (демо-казначей работает через поллинг).
  */
 
 export const dynamic = 'force-dynamic';
@@ -56,7 +54,7 @@ export async function GET(req: Request) {
       heartbeat = setInterval(() => send('{}', 'ping'), HEARTBEAT_MS);
       send('{"ok":true}', 'ready');
 
-      if (env.REALTIME_ENABLED && !isDemoToken(token)) {
+      if (env.REALTIME_ENABLED) {
         try {
           unsubscribe = await subscribeAccount(session.accountId, token, (event) => {
             send(JSON.stringify(event));

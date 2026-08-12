@@ -120,7 +120,6 @@
       "text": "We sent a code to {email}. Enter the code from the email to finish registration",
       "codePlaceholder": "Code from email",
       "submit": "Sign up",
-      "devCode": "Test code: {code}",
       "phonePlaceholder": "Phone number"
     },
     "loginLabel": "Phone number or email",
@@ -132,11 +131,14 @@
     "resendIn": "Resend available in {sec} s",
     "byOtp": "Log in with SMS code",
     "byPassword": "Log in with password",
-    "devCodeHint": "Demo mode: code {code}",
     "iinOptional": "IIN (optional)",
     "register": "Sign up",
     "completeTitle": "Set a password",
-    "displayNameLabel": "Your name"
+    "displayNameLabel": "Your name",
+    "consentBefore": "I consent to Ecash LLP collecting and processing my personal data in accordance with the ",
+    "consentLink": "Consent to the collection and processing of personal data",
+    "consentAfter": ".",
+    "consentRequired": "Registration is not possible without consent to personal data processing"
   },
   "recovery": {
     "title": "Password recovery",
@@ -158,7 +160,6 @@
     "phonePlaceholder": "Phone number",
     "resend": "Resend code",
     "resendIn": "Resend available in {sec} s",
-    "devCode": "Demo mode: code {code}",
     "toLogin": "Back to log in"
   },
   "sidebar": {
@@ -662,7 +663,9 @@
     "translateUnavailable": "The translator is unavailable right now. Try again later or fill the language in by hand.",
     "translateQuota": "The translator’s daily quota is used up. Try tomorrow or fill the language in by hand.",
     "emailInvalid": "Check the email address",
-    "pushDisabled": "Notifications are not configured on this deployment."
+    "pushDisabled": "Notifications are not configured on this deployment.",
+    "WEAK_PASSWORD": "Password is too weak. At least 8 characters and one digit",
+    "INVALID_CLIENT_CREDENTIALS": "Ecash rejected the application credentials. Contact the administrator"
   },
   "addressModal": {
     "title": "Enter your address",
@@ -849,6 +852,10 @@
     },
     "requests": {
       "title": "My requests — ecash"
+    },
+    "consent": {
+      "title": "Personal data processing consent — ecash",
+      "description": "Full text of the consent to the collection and processing of personal data by Ecash LLP."
     }
   },
   "push": {
@@ -862,5 +869,16 @@
     "turnOff": "Turn off",
     "busy": "One moment…",
     "failed": "That didn't work. Please try again."
+  },
+  "legal": {
+    "backToSignup": "Back to sign-up",
+    "version": "Version of {version}",
+    "accept": "I accept",
+    "acceptNote": "By clicking “I accept” you confirm that you have read the text above and consent to the collection and processing of your personal data.",
+    "accepted": "Consent given",
+    "acceptedHint": "The checkbox on the sign-up tab is already ticked — you can continue.",
+    "toSignup": "Go to sign-up",
+    "acceptAndContinue": "Accept and continue",
+    "close": "Close"
   }
 }

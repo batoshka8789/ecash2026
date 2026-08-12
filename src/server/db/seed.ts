@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import { requireDatabaseUrl } from './env-cli';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { competitors, news } from './schema';
@@ -8,9 +8,7 @@ import { competitors, news } from './schema';
  * Запуск: npx tsx src/server/db/seed.ts — или npm run db:seed.
  */
 async function main() {
-  const client = postgres(process.env.DATABASE_URL ?? 'postgres://ecash:ecash@localhost:5432/ecash', {
-    max: 1,
-  });
+  const client = postgres(requireDatabaseUrl(), { max: 1 });
   const db = drizzle(client);
 
   // Только имя и цвет: курсы конкурентов НЕ хранятся — /api/rates выводит их
@@ -41,12 +39,12 @@ async function main() {
           en: {
             title: 'Travelers',
             excerpt: '',
-            body: 'When preparing for a trip, it is important to think everything through in advance, including currency exchange. Our services help you get the amount you need quickly and without unnecessary hassle, so you can focus on your holiday or work instead of looking for exchange offices on arrival. We offer favourable terms and professional advice for those who want to feel confident at every stage of their journey.',
+            body: 'When preparing for a trip, it is important to think everything through in advance, including currency exchange. Our services help you get the amount you need quickly and hassle-free, so you can focus on your vacation or work instead of looking for exchange offices upon arrival. We offer favorable terms and professional advice for those who want to be confident at every stage of their journey.',
           },
           kk: {
             title: 'Саяхатшылар',
             excerpt: '',
-            body: 'Сапарға дайындықта бәрін алдын ала ойластыру маңызды, соның ішінде валюта айырбастауды да. Біздің қызметтеріміз қажетті соманы жылдам әрі артық қиындықсыз алуға көмектеседі, сонда сіз келген бойда айырбастау пункттерін іздеудің орнына демалысқа немесе жұмысқа зейін қоя аласыз. Біз тиімді шарттар, сондай-ақ сапарының әр кезеңіне сенімді болғысы келетіндерге кәсіби кеңес ұсынамыз.',
+            body: 'Сапарға дайындықта бәрін алдын ала ойластыру маңызды, соның ішінде валюта айырбастауды да. Біздің қызметтер қажетті соманы жылдам әрі қиындықсыз алуға көмектеседі, осылайша сіз келген соң айырбастау орнын іздемей, демалысқа немесе жұмысқа назар аудара аласыз. Біз тиімді шарттар мен саяхаттың әр кезеңіне сенімді болғысы келетіндерге кәсіби кеңес ұсынамыз.',
           },
           zh: {
             title: '旅行者',

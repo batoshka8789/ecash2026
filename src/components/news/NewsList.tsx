@@ -61,6 +61,7 @@ export function NewsList() {
               imageFocus={post.imageFocus}
               title={post.title}
               excerpt={post.excerpt}
+              excerptRich={post.excerptRich}
               priority={i === 0}
             />
           </Link>

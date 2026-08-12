@@ -25,9 +25,6 @@ import { useNearestDepId } from '@/lib/user-place';
 import type { CurrencyCode } from '@/lib/domain';
 import { RateGraph, RateGraphToggle, type Period } from './RateGraph';
 
-/** Fallback-отделение, пока «Мой адрес» не указан/не геокодирован. */
-const DEFAULT_DEP_ID = 1;
-
 /** kztToForeign: отдаю тенге, получаю валюту; foreignToKzt — наоборот. */
 type Direction = 'kztToForeign' | 'foreignToKzt';
 type Field = 'give' | 'get';
@@ -108,10 +105,11 @@ export function Calculator({
 
   // Курсы — от БЛИЖАЙШЕГО к «Моему адресу» отделения (ключ общий с
   // RatesList: оба используют useNearestDepId — запрос дедуплицируется)
-  const { depId } = useNearestDepId(DEFAULT_DEP_ID);
+  const { depId } = useNearestDepId();
   const ratesQuery = useQuery({
     queryKey: ['rates', depId],
-    queryFn: ({ signal }) => api.rates.forDep(depId, signal),
+    enabled: depId != null,
+    queryFn: ({ signal }) => api.rates.forDep(depId!, signal),
   });
 
   const goldLabel = (grams: string) => tRates('gold', { grams });
@@ -289,7 +287,9 @@ export function Calculator({
           />
         </div>
 
-        {graphOpen && (
+        {/* график строится по конкретному отделению — ждём, пока оно
+            определится по живому списку */}
+        {graphOpen && depId != null && (
           <div id={graphId} className="anim-chart-panel overflow-hidden">
             <RateGraph depId={depId} code={foreign} period={period} setPeriod={setPeriod} />
           </div>

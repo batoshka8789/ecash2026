@@ -36,10 +36,36 @@ export function RichText({ source, className }: { source: string; className?: st
   );
 }
 
-/** Инлайновое содержимое одного узла-обёртки (пункт списка, цитата, врезка). */
-function innerInline(node: NodeJson): NodeJson[] {
-  const first = node.content?.[0];
-  return first?.type === 'paragraph' ? (first.content ?? []) : (node.content ?? []);
+/**
+ * Содержимое узла-обёртки (пункт списка, цитата, врезка).
+ *
+ * По схеме Tiptap туда помещается НЕСКОЛЬКО блоков: `listItem` это
+ * `paragraph block*`, `blockquote` и `callout` — `block+`. То есть Enter
+ * внутри цитаты даёт второй абзац, а Tab в списке — вложенный список.
+ * Раньше здесь брался инлайн только ПЕРВОГО абзаца, и всё остальное
+ * пропадало на сайте, оставаясь видимым в редакторе: автор писал абзац,
+ * публиковал и не находил его у читателей.
+ *
+ * Первый абзац по-прежнему печатается инлайном — разметка обычного
+ * однострочного случая (а он почти всегда) остаётся ровно прежней.
+ */
+function WrapperContent({ node }: { node: NodeJson }) {
+  const kids = node.content ?? [];
+  if (kids.length === 0) return null;
+
+  const [first, ...rest] = kids;
+  return (
+    <>
+      {first.type === 'paragraph' ? (
+        <InlineView nodes={first.content ?? []} />
+      ) : (
+        <BlockView node={first} nested />
+      )}
+      {rest.map((child, i) => (
+        <BlockView key={i} node={child} nested />
+      ))}
+    </>
+  );
 }
 
 /** Класс выравнивания абзаца/заголовка — только доверенные значения TextAlign. */
@@ -49,7 +75,12 @@ function alignClass(attrs: Record<string, unknown> | undefined): string | undefi
   return align === 'center' ? 'text-center' : 'text-right';
 }
 
-function BlockView({ node }: { node: NodeJson }) {
+/**
+ * `nested` — блок внутри обёртки (второй абзац цитаты, вложенный список).
+ * Такой блок не задаёт свой цвет текста: он наследует цвет обёртки, иначе
+ * продолжение цитаты выцветало бы до серого текста абзаца.
+ */
+function BlockView({ node, nested = false }: { node: NodeJson; nested?: boolean }) {
   if (node.type === 'heading') {
     const level = node.attrs?.level === 3 ? 3 : 2;
     return level === 2 ? (
@@ -64,10 +95,13 @@ function BlockView({ node }: { node: NodeJson }) {
   }
 
   if (node.type === 'bulletList' || node.type === 'orderedList') {
-    const cls = 'mt-3 flex flex-col gap-1 pl-5 text-sm leading-relaxed text-text-disabled';
+    const cls = clsx(
+      'mt-3 flex flex-col gap-1 pl-5 text-sm leading-relaxed',
+      !nested && 'text-text-disabled',
+    );
     const items = (node.content ?? []).map((item, i) => (
       <li key={i}>
-        <InlineView nodes={innerInline(item)} />
+        <WrapperContent node={item} />
       </li>
     ));
     return node.type === 'orderedList' ? (
@@ -80,7 +114,7 @@ function BlockView({ node }: { node: NodeJson }) {
   if (node.type === 'blockquote') {
     return (
       <blockquote className="mt-4 border-l-[3px] border-stroke-brand pl-4 text-sm italic leading-relaxed text-text-default sm:text-base">
-        <InlineView nodes={innerInline(node)} />
+        <WrapperContent node={node} />
       </blockquote>
     );
   }
@@ -89,9 +123,9 @@ function BlockView({ node }: { node: NodeJson }) {
     return (
       <div className="mt-4 flex gap-3 rounded-2xl bg-brand-hardsoft p-4">
         <Icon name="info" size={20} className="mt-0.5 shrink-0 text-text-brand" />
-        <p className="text-sm leading-relaxed text-text-default">
-          <InlineView nodes={innerInline(node)} />
-        </p>
+        <div className="min-w-0 text-sm leading-relaxed text-text-default">
+          <WrapperContent node={node} />
+        </div>
       </div>
     );
   }
@@ -104,7 +138,15 @@ function BlockView({ node }: { node: NodeJson }) {
     const content = node.content ?? [];
     if (content.length === 0) return null;
     return (
-      <p className={clsx('mt-3 text-sm leading-relaxed text-text-disabled', alignClass(node.attrs))}>
+      <p
+        className={clsx(
+          'leading-relaxed',
+          // внутри обёртки — продолжение её текста: свой размер и цвет там
+          // задаёт сама обёртка, отступ между абзацами меньше
+          nested ? 'mt-2' : 'mt-3 text-sm text-text-disabled',
+          alignClass(node.attrs),
+        )}
+      >
         <InlineView nodes={content} />
       </p>
     );
@@ -118,6 +160,10 @@ function InlineView({ nodes }: { nodes: NodeJson[] }) {
   return (
     <>
       {nodes.map((node, i) => {
+        // Перенос строки (Shift+Enter). Раньше сюда попадал только 'text', и
+        // все переносы внутри абзаца пропадали: в редакторе строки стояли
+        // раздельно, а у читателей слипались в одну.
+        if (node.type === 'hardBreak') return <br key={i} />;
         if (node.type !== 'text' || !node.text) return null;
         return <Fragment key={i}>{applyMarks(node.text, node.marks)}</Fragment>;
       })}

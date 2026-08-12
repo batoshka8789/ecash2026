@@ -105,9 +105,3 @@ export async function listOperations(
   return mapOperationsPage(raw as Parameters<typeof mapOperationsPage>[0]);
 }
 
-export async function getOperation(accessToken: string, requestId: number): Promise<ExchangeRequest> {
-  const raw = await ecashFetch<RawRequest>(`/mobile/operations/${requestId}`, {
-    token: accessToken,
-  });
-  return mapRequest(raw);
-}

@@ -1,11 +1,11 @@
-import 'dotenv/config';
 import { defineConfig } from 'drizzle-kit';
+import { requireDatabaseUrl } from './src/server/db/env-cli';
 
 export default defineConfig({
   schema: './src/server/db/schema.ts',
   out: './drizzle',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? 'postgres://ecash:ecash@localhost:5432/ecash',
+    url: requireDatabaseUrl(),
   },
 });

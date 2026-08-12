@@ -17,9 +17,6 @@ import { useErrorText } from '@/lib/useErrorText';
 import { useNearestDepId } from '@/lib/user-place';
 import type { Competitor, CurrencyCode, RateStat } from '@/lib/domain';
 
-/** Fallback-отделение, пока «Мой адрес» не указан/не геокодирован. */
-const DEFAULT_DEP_ID = 1;
-
 /** Валюты «первого экрана» до нажатия «Показать все валюты». */
 const PRIMARY_CODES: readonly CurrencyCode[] = ['USD', 'EUR', 'RUB', 'CNY', 'GOLD1'];
 
@@ -36,11 +33,14 @@ export function RatesList() {
 
   // Курсы — от БЛИЖАЙШЕГО к «Моему адресу» отделения; ключ ['rates', depId]
   // общий с Calculator — запрос дедуплицируется TanStack-ом
-  const { depId } = useNearestDepId(DEFAULT_DEP_ID);
+  const { depId } = useNearestDepId();
   const ratesQueryKey = useMemo(() => ['rates', depId] as const, [depId]);
   const { data, isPending, isError, error, refetch, isRefetching } = useQuery({
     queryKey: ratesQueryKey,
-    queryFn: ({ signal }) => api.rates.forDep(depId, signal),
+    // depId приходит из живого списка отделений; до его загрузки запрос
+    // не уходит — иначе ушёл бы с выдуманным id
+    enabled: depId != null,
+    queryFn: ({ signal }) => api.rates.forDep(depId!, signal),
   });
 
   const qc = useQueryClient();

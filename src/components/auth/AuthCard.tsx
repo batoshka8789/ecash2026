@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { useTranslations } from 'next-intl';
 import { useMutation } from '@tanstack/react-query';
 import { clsx } from 'clsx';
-import { useRouter } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { Logo } from '@/components/ui/Logo';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/Button';
@@ -15,6 +15,13 @@ import { useAuth } from '@/lib/auth';
 import { formatLoginInput, formatPhoneInput } from '@/lib/format';
 import { useResendTimer } from '@/lib/hooks';
 import { useErrorText } from '@/lib/useErrorText';
+import {
+  consentServerSnapshot,
+  readConsent,
+  subscribeConsent,
+  writeConsent,
+} from '@/lib/legal/consent-storage';
+import { ConsentModal } from '@/components/legal/ConsentModal';
 import { passwordSchema } from '@/shared/schemas';
 import { api, ApiError } from '@/lib/api';
 
@@ -24,13 +31,16 @@ type Tab = 'login' | 'signup';
 const REG_FORM_FIELDS = ['login', 'phoneNumber', 'password', 'password2'];
 
 /**
- * Соц-вход включается флагом сборки. По умолчанию выключен: в контракте
- * Ecash Mobile Api нет ни одного OAuth-метода (ни Telegram, ни Google), и
- * нажимать на кнопку, которая ничего не делает, пользователь не должен.
- * Когда апстрим отдаст эндпоинты — NEXT_PUBLIC_SOCIAL_AUTH=1 вернёт кнопки
- * в рабочее состояние, останется повесить обработчики.
+ * Кнопки соц-входа есть в макете, но нажать их нельзя: в контракте Ecash
+ * Mobile Api нет ни одного OAuth-метода — ни Telegram, ни Google. Поэтому
+ * они всегда неактивны и объясняют это подписью.
+ *
+ * Раньше здесь стоял флаг NEXT_PUBLIC_SOCIAL_AUTH, включавший кнопки. Это
+ * была ловушка: обработчика у них нет и не было, так что включение флага
+ * давало две активные кнопки, которые молча ничего не делают. Флаг убран —
+ * чтобы включить соц-вход, нужны эндпоинты у Ecash и обработчики здесь,
+ * а не переменная окружения.
  */
-const SOCIAL_AUTH_ENABLED = process.env.NEXT_PUBLIC_SOCIAL_AUTH === '1';
 
 /** Подпись-объяснение под парой соц-кнопок; на неё ссылаются обе кнопки. */
 const SOCIAL_HINT_ID = 'social-auth-hint';
@@ -78,9 +88,48 @@ export function AuthCard({
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [password2, setPassword2] = useState('');
-  const [devCode, setDevCode] = useState<string | null>(null);
   /** Обратный отсчёт до повторной отправки кода. */
   const [resendLeft, setResendLeft] = useResendTimer();
+  /**
+   * Вход по SMS-коду (purpose 1) — вторая ветка вкладки «Вход»: телефон →
+   * код, пароль не нужен. Поле телефона общее с регистрацией, а таймер
+   * повтора свой: иначе обратный отсчёт одного потока показывался бы
+   * в другом после переключения вкладок.
+   */
+  const [loginMode, setLoginMode] = useState<'password' | 'otp'>('password');
+  const [loginOtpStep, setLoginOtpStep] = useState<'phone' | 'code'>('phone');
+  const [otpResendLeft, setOtpResendLeft] = useResendTimer();
+  /**
+   * Согласие на обработку персональных данных — обязательное условие
+   * регистрации (Закон РК «О персональных данных и их защите»). Проверяется
+   * ДО отправки SMS: код уходит на реальный номер и стоит денег, а без
+   * согласия регистрация всё равно невозможна.
+   *
+   * Дать его можно двумя путями, и оба сходятся в одной галочке:
+   *
+   *  · галочкой прямо здесь;
+   *  · кнопкой «Принимаю и продолжаю» в окне с текстом (ConsentModal) —
+   *    оно открывается поверх формы, поля не теряются, и галочка встаёт
+   *    сама: возвращаться и искать её не нужно.
+   *
+   * Плюс согласие, данное на отдельной странице /legal/consent, тоже
+   * подхватывается — через localStorage, в том числе из соседней вкладки.
+   *
+   * `override` — осознанный выбор человека здесь: null означает «слушаем
+   * хранилище», true/false — «решено галочкой». Без него снятая вручную
+   * галочка тут же вставала бы обратно.
+   */
+  const acceptedInDoc = useSyncExternalStore(
+    subscribeConsent,
+    readConsent,
+    consentServerSnapshot,
+  );
+  const [override, setOverride] = useState<boolean | null>(null);
+  const consent = override ?? acceptedInDoc;
+  /** показать «без согласия нельзя» — только после попытки отправки */
+  const [consentError, setConsentError] = useState(false);
+  /** текст согласия окном поверх формы */
+  const [consentDocOpen, setConsentDocOpen] = useState(false);
   /**
    * Ошибка полей первого экрана регистрации: своя проверка паролей до отправки
    * SMS и ответ сервера, прилетевший уже на экране кода, — там этих полей нет.
@@ -106,7 +155,6 @@ export function AuthCard({
   const sendMut = useMutation({
     mutationFn: () => api.auth.otp.send(phone.trim(), 0),
     onSuccess: (res) => {
-      setDevCode(res.devCode ?? null);
       setRegStep('code');
       // сервер сам говорит, через сколько разрешит следующую отправку
       setResendLeft(res.resendAfterSeconds);
@@ -126,12 +174,33 @@ export function AuthCard({
     },
   });
 
+  const otpSendMut = useMutation({
+    mutationFn: () => api.auth.otp.send(phone.trim(), 1),
+    onSuccess: (res) => {
+      setLoginOtpStep('code');
+      setOtpResendLeft(res.resendAfterSeconds);
+    },
+  });
+
+  const otpLoginMut = useMutation({
+    mutationFn: () => api.auth.otp.login(phone.trim(), otp),
+    onSuccess: finish,
+  });
+
   /**
    * На экране кода ошибку может дать и регистрация, и повторная отправка —
    * берём ту, что случилась (регистрация приоритетнее: она свежее).
    */
   const screenMuts =
-    tab === 'login' ? [loginMut] : regStep === 'form' ? [sendMut] : [registerMut, sendMut];
+    tab === 'login'
+      ? loginMode === 'password'
+        ? [loginMut]
+        : loginOtpStep === 'phone'
+          ? [otpSendMut]
+          : [otpLoginMut, otpSendMut]
+      : regStep === 'form'
+        ? [sendMut]
+        : [registerMut, sendMut];
   const activeError =
     screenMuts.map((m) => m.error).find((e): e is ApiError => e instanceof ApiError) ?? null;
   const err = (field: string) => {
@@ -145,16 +214,26 @@ export function AuthCard({
     loginMut.reset();
     sendMut.reset();
     registerMut.reset();
+    otpSendMut.reset();
+    otpLoginMut.reset();
     setFormError(null);
+    setConsentError(false);
   };
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (tab === 'login') {
-      loginMut.mutate();
+      if (loginMode === 'password') loginMut.mutate();
+      else if (loginOtpStep === 'phone') otpSendMut.mutate();
+      else otpLoginMut.mutate();
       return;
     }
     if (regStep === 'form') {
+      // Согласие — первым: без него регистрации не будет, и незачем тратить SMS.
+      if (!consent) {
+        setConsentError(true);
+        return;
+      }
       // Пароль сервер проверит только финальным POST-ом — со второго экрана,
       // где полей уже нет. Проверяем той же схемой до отправки SMS.
       const pw = passwordSchema.safeParse(password);
@@ -173,9 +252,17 @@ export function AuthCard({
     registerMut.mutate();
   };
 
-  const busy = loginMut.isPending || sendMut.isPending || registerMut.isPending;
+  const busy =
+    loginMut.isPending ||
+    sendMut.isPending ||
+    registerMut.isPending ||
+    otpSendMut.isPending ||
+    otpLoginMut.isPending;
   /** экраны с вкладками — единственные, где под формой есть соц-входы */
-  const withTabs = tab === 'login' || regStep === 'form';
+  const withTabs =
+    tab === 'login'
+      ? loginMode === 'password' || loginOtpStep === 'phone'
+      : regStep === 'form';
 
   return (
     <div className="relative w-full max-w-[360px] md:max-w-[480px]">
@@ -218,7 +305,10 @@ export function AuthCard({
                 onChange={(v) => {
                   setTab(v);
                   setOtp('');
-                  setDevCode(null);
+                  // Вкладка «Вход» всегда открывается с пароля: SMS-режим —
+                  // осознанный выбор на каждый заход, а не липкое состояние.
+                  setLoginMode('password');
+                  setLoginOtpStep('phone');
                   // Состояние пароля общее у входа и регистрации, а поле пароля
                   // есть на ПЕРВОМ экране обеих вкладок. Без сброса пароль,
                   // набранный во «Входе», молча подставлялся бы в «Регистрацию».
@@ -233,42 +323,86 @@ export function AuthCard({
               />
 
               {tab === 'login' ? (
-                /* поля с зазором 8, под ними ссылка, затем кнопка через 12 */
-                <div className="flex flex-col gap-3">
-                  <div className="flex flex-col gap-1">
-                    {/* У поля логина НЕТ inputMode="tel": оно принимает и почту,
-                        а цифровая клавиатура на телефоне не даёт её набрать. */}
-                    <div className="flex flex-col gap-2">
-                      <Input
-                        placeholder={t('loginLabel')}
-                        value={loginValue}
-                        onChange={(e) => setLoginValue(formatLoginInput(e.target.value))}
-                        errors={err('login').concat(err('phoneNumber'))}
-                        autoComplete="username"
-                      />
-                      <Input
-                        placeholder={t('passwordPlaceholder')}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        password
-                        errors={err('password')}
-                        autoComplete="current-password"
-                      />
+                loginMode === 'password' ? (
+                  /* поля с зазором 8, под ними ссылка, затем кнопка через 12 */
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-1">
+                      {/* У поля логина НЕТ inputMode="tel": оно принимает и почту,
+                          а цифровая клавиатура на телефоне не даёт её набрать. */}
+                      <div className="flex flex-col gap-2">
+                        <Input
+                          placeholder={t('loginLabel')}
+                          value={loginValue}
+                          onChange={(e) => setLoginValue(formatLoginInput(e.target.value))}
+                          errors={err('login').concat(err('phoneNumber'))}
+                          autoComplete="username"
+                        />
+                        <Input
+                          placeholder={t('passwordPlaceholder')}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          password
+                          errors={err('password')}
+                          autoComplete="current-password"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => router.push('/recovery')}
+                        className="flex h-[34px] w-fit cursor-pointer items-center rounded-[20px] text-sm font-medium leading-5 text-text-default transition-opacity hover:opacity-80"
+                      >
+                        {t('forgot')}
+                      </button>
                     </div>
+
+                    {generalError && <GeneralError text={generalError} />}
+                    <Button type="submit" size="lg" className="w-full" disabled={busy}>
+                      {t('continue')}
+                    </Button>
                     <button
                       type="button"
-                      onClick={() => router.push('/recovery')}
-                      className="flex h-[34px] w-fit cursor-pointer items-center rounded-[20px] text-sm font-medium leading-5 text-text-default transition-opacity hover:opacity-80"
+                      onClick={() => {
+                        resetErrors();
+                        // если в поле логина уже набран телефон — переносим
+                        // его в SMS-режим, чтобы не набирать второй раз
+                        const digits = loginValue.replace(/\D/g, '');
+                        if (digits.length >= 10) setPhone(formatPhoneInput(loginValue));
+                        setLoginMode('otp');
+                      }}
+                      className="cursor-pointer text-center text-sm font-medium leading-5 text-text-brand transition-opacity hover:opacity-80"
                     >
-                      {t('forgot')}
+                      {t('byOtp')}
                     </button>
                   </div>
-
-                  {generalError && <GeneralError text={generalError} />}
-                  <Button type="submit" size="lg" className="w-full" disabled={busy}>
-                    {t('continue')}
-                  </Button>
-                </div>
+                ) : (
+                  /* SMS-вход, шаг телефона: маска как в регистрации — коду
+                     нужен именно номер, ИИН и почта здесь не подходят */
+                  <div className="flex flex-col gap-3">
+                    <Input
+                      placeholder={t('phoneLabel')}
+                      value={phone}
+                      onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
+                      errors={err('login').concat(err('phoneNumber'))}
+                      autoComplete="tel"
+                      inputMode="tel"
+                      maxLength={18}
+                    />
+                    {generalError && <GeneralError text={generalError} />}
+                    <Button type="submit" size="lg" className="w-full" disabled={busy}>
+                      {t('continue')}
+                    </Button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetErrors();
+                        setLoginMode('password');
+                      }}
+                      className="cursor-pointer text-center text-sm font-medium leading-5 text-text-brand transition-opacity hover:opacity-80"
+                    >
+                      {t('byPassword')}
+                    </button>
+                  </div>
+                )
               ) : (
                 /* поля 54 с зазором 8, затем кнопка через 16 */
                 <div className="flex flex-col gap-4">
@@ -312,6 +446,16 @@ export function AuthCard({
                     />
                   </div>
 
+                  <ConsentCheckbox
+                    checked={consent}
+                    error={consentError}
+                    onChange={(v) => {
+                      setOverride(v);
+                      if (v) setConsentError(false);
+                    }}
+                    onOpenDoc={() => setConsentDocOpen(true)}
+                  />
+
                   {generalError && <GeneralError text={generalError} />}
                   <Button type="submit" size="lg" className="w-full" disabled={busy}>
                     {t('continue')}
@@ -324,24 +468,14 @@ export function AuthCard({
             <div aria-hidden className="-mt-px h-px bg-divider-hole" />
 
             <div className="flex flex-col gap-2">
-              <SocialButton
-                icon={<TelegramIcon />}
-                label={t('withTelegram')}
-                hintId={SOCIAL_AUTH_ENABLED ? undefined : SOCIAL_HINT_ID}
-              />
-              <SocialButton
-                icon={<GoogleIcon />}
-                label={t('withGoogle')}
-                hintId={SOCIAL_AUTH_ENABLED ? undefined : SOCIAL_HINT_ID}
-              />
-              {!SOCIAL_AUTH_ENABLED && (
-                <p
-                  id={SOCIAL_HINT_ID}
-                  className="text-center text-xs font-medium leading-[1.3] text-text-disabled"
-                >
-                  {t('socialUnavailable')}
-                </p>
-              )}
+              <SocialButton icon={<TelegramIcon />} label={t('withTelegram')} />
+              <SocialButton icon={<GoogleIcon />} label={t('withGoogle')} />
+              <p
+                id={SOCIAL_HINT_ID}
+                className="text-center text-xs font-medium leading-[1.3] text-text-disabled"
+              >
+                {t('socialUnavailable')}
+              </p>
             </div>
           </>
         ) : (
@@ -352,14 +486,16 @@ export function AuthCard({
               <ModalText>{t('otpSent', { phone: phone.trim() })}</ModalText>
             </div>
 
-            {/* поле и кнопка с зазором 16 */}
+            {/* Поле и кнопка с зазором 16. Экран общий для двух потоков:
+                код регистрации (purpose 0) и код SMS-входа (purpose 1) —
+                вкладка решает, чьи мутации и чей таймер здесь работают. */}
             <div className="flex flex-col gap-4">
               <Input
                 placeholder={t('otpPlaceholder')}
                 value={otp}
                 onChange={(e) => {
-                  // код проверяет только register — его же ошибку и гасим
-                  registerMut.reset();
+                  // код проверяет финальный шаг потока — его же ошибку и гасим
+                  (tab === 'login' ? otpLoginMut : registerMut).reset();
                   setOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
                 }}
                 errors={err('otp')}
@@ -374,23 +510,23 @@ export function AuthCard({
                 className="w-full"
                 disabled={busy || otp.length !== 6}
               >
-                {t('register')}
+                {tab === 'login' ? t('continue') : t('register')}
               </Button>
               {/* Без повторной отправки экран кода — тупик: не дошло SMS,
                   и пройти дальше нечем. */}
-              {resendLeft > 0 ? (
+              {(tab === 'login' ? otpResendLeft : resendLeft) > 0 ? (
                 <p className="text-center text-sm font-medium leading-5 text-text-disabled">
-                  {t('resendIn', { sec: resendLeft })}
+                  {t('resendIn', { sec: tab === 'login' ? otpResendLeft : resendLeft })}
                 </p>
               ) : (
                 <button
                   type="button"
                   onClick={() => {
-                    registerMut.reset();
+                    (tab === 'login' ? otpLoginMut : registerMut).reset();
                     setOtp('');
-                    sendMut.mutate();
+                    (tab === 'login' ? otpSendMut : sendMut).mutate();
                   }}
-                  disabled={sendMut.isPending}
+                  disabled={tab === 'login' ? otpSendMut.isPending : sendMut.isPending}
                   className="cursor-pointer text-center text-sm font-medium leading-5 text-text-brand transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {t('resend')}
@@ -398,22 +534,36 @@ export function AuthCard({
               )}
               <BackButton
                 onClick={() => {
-                  registerMut.reset();
-                  setRegStep('form');
+                  if (tab === 'login') {
+                    otpLoginMut.reset();
+                    setOtp('');
+                    setLoginOtpStep('phone');
+                  } else {
+                    registerMut.reset();
+                    setRegStep('form');
+                  }
                 }}
               />
             </div>
           </>
         )}
-
-        {/* Демо-стенд отдаёт код в ответе; подсказка лежит в нижнем поле
-            карточки и не влияет на её высоту */}
-        {devCode && regStep === 'code' && (
-          <p className="absolute inset-x-5 bottom-3 text-center text-xs font-medium leading-[1.3] text-text-brand md:inset-x-10">
-            {t('devCodeHint', { code: devCode })}
-          </p>
-        )}
       </form>
+
+      {/*
+        Вне <form>: у модалки своя разметка с кнопками, а вложенные формы —
+        невалидный HTML (та же причина, что у AuthModal).
+      */}
+      <ConsentModal
+        open={consentDocOpen}
+        onClose={() => setConsentDocOpen(false)}
+        onAccept={() => {
+          // прочитал и принял — галочка ставится сама, возвращаться некуда
+          setOverride(true);
+          setConsentError(false);
+          writeConsent();
+          setConsentDocOpen(false);
+        }}
+      />
     </div>
   );
 }
@@ -457,35 +607,117 @@ function GeneralError({ text }: { text: string }) {
 }
 
 /**
+ * Согласие на обработку персональных данных — обязательное условие
+ * регистрации по Закону РК «О персональных данных и их защите».
+ *
+ * Собственный квадрат вместо стандартного `<input type=checkbox>`: он
+ * оформляется под макет, а настоящий input остаётся в разметке невидимым —
+ * так сохраняются клавиатура, фокус и чтение экранными дикторами.
+ *
+ * Ссылка ведёт на полный текст и открывается в новой вкладке: уходить с
+ * наполовину заполненной формы регистрации человек не должен.
+ */
+function ConsentCheckbox({
+  checked,
+  error,
+  onChange,
+  onOpenDoc,
+}: {
+  checked: boolean;
+  error: boolean;
+  onChange: (v: boolean) => void;
+  /** открыть текст согласия окном поверх формы */
+  onOpenDoc: () => void;
+}) {
+  const t = useTranslations('auth');
+  const errId = 'consent-error';
+
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="flex cursor-pointer items-start gap-3">
+        <span className="relative mt-px flex h-5 w-5 shrink-0 items-center justify-center">
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={(e) => onChange(e.target.checked)}
+            aria-invalid={error || undefined}
+            aria-describedby={error ? errId : undefined}
+            className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          />
+          <span
+            aria-hidden
+            className={clsx(
+              'flex h-5 w-5 items-center justify-center rounded-md border transition-colors',
+              'peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-stroke-brand',
+              checked
+                ? 'border-transparent bg-brand text-white'
+                : error
+                  ? // отдельного токена рамки для ошибки в макете нет —
+                    // берём цвет текста ошибки, он для этого и заведён
+                    'border-text-negative bg-transparent'
+                  : 'border-stroke-input bg-transparent',
+            )}
+          >
+            {checked && <Icon name="check" size={16} />}
+          </span>
+        </span>
+
+        <span className="text-xs font-medium leading-[1.4] text-text-disabled">
+          {t('consentBefore')}
+          {/*
+            Настоящая ссылка, но клик перехвачен: документ открывается окном
+            поверх формы. Уводить человека со страницы нельзя — заполненные
+            поля пропадут, а возврат и поиск галочки это лишние ходы.
+            Если JS не отработал, ссылка остаётся ссылкой и ведёт на
+            /legal/consent — документ доступен в любом случае.
+
+            Именно <a>, а не <button>: строчный элемент переносится вместе
+            с текстом, а кнопка — отдельным блоком, и точка после неё
+            уезжала на свою строку.
+
+            stopPropagation — чтобы клик не переключил сам чекбокс: ссылка
+            лежит внутри <label>.
+          */}
+          <Link
+            href="/legal/consent"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onOpenDoc();
+            }}
+            className="text-text-brand underline underline-offset-2 hover:opacity-80"
+          >
+            {t('consentLink')}
+          </Link>
+          {t('consentAfter')}
+        </span>
+      </label>
+
+      {error && (
+        <p id={errId} className="text-xs font-medium leading-[1.3] text-text-negative">
+          {t('consentRequired')}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
  * Соц-вход 54×r20: фон surface/surf2, иконка 20×20 у левого края,
  * подпись по центру кнопки.
  *
- * Пока провайдера нет (SOCIAL_AUTH_ENABLED=false) кнопка приходит с hintId:
- * она гасится, курсор становится «нельзя», а причина написана подписью под
- * парой кнопок и привязана к обеим через aria-describedby — иначе кнопка
- * молча не реагировала бы на клик, и это выглядело бы поломкой.
+ * Кнопка всегда неактивна: провайдера нет (см. комментарий у SOCIAL_HINT_ID).
+ * Курсор «нельзя», причина написана подписью под парой и привязана к обеим
+ * через aria-describedby — иначе кнопка молча не реагировала бы на клик, и
+ * это выглядело бы поломкой.
  */
-function SocialButton({
-  icon,
-  label,
-  hintId,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  hintId?: string;
-}) {
-  const disabled = Boolean(hintId);
+function SocialButton({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
     <button
       type="button"
-      disabled={disabled}
-      aria-describedby={hintId}
-      className={clsx(
-        'relative flex h-[54px] w-full items-center justify-center rounded-[20px] bg-surface-page-surf2 text-sm font-medium leading-5 text-text-default transition-colors',
-        disabled
-          ? 'cursor-not-allowed opacity-50'
-          : 'cursor-pointer hover:bg-comp-surface2-hover',
-      )}
+      disabled
+      aria-describedby={SOCIAL_HINT_ID}
+      className="relative flex h-[54px] w-full cursor-not-allowed items-center justify-center rounded-[20px] bg-surface-page-surf2 text-sm font-medium leading-5 text-text-default opacity-50"
     >
       <span className="absolute left-[17px] flex h-5 w-5 items-center justify-center">{icon}</span>
       {label}

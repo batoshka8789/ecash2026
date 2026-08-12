@@ -5,7 +5,6 @@ import { withUser } from '@/server/api/guard';
 import { fromError, ok } from '@/server/api/respond';
 import { listOperations } from '@/server/ecash/endpoints/reserve';
 import { readSession } from '@/server/session';
-import { demoList, isDemoToken } from '@/server/demo/store';
 import type { CurrencyCode, ExchangeRequest } from '@/lib/domain';
 
 /**
@@ -71,9 +70,7 @@ export const GET = withUser(async (req, token) => {
   const accountId = s!.accountId;
 
   try {
-    const page = isDemoToken(token)
-      ? demoList(accountId, 1, 100)
-      : await listOperations(token, 1, 100);
+    const page = await listOperations(token, 1, 100);
 
     /*
      * Подписки на курс — необязательная добавка нашего слоя; заявки, ради

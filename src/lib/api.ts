@@ -255,7 +255,6 @@ export const api = {
           ttlSeconds: number;
           resendAfterSeconds: number;
           digits: number;
-          devCode?: string;
         }>('/auth/otp/send', { phoneNumber, purpose }),
       login: (phoneNumber: string, otp: string) =>
         post<{ account: AccountWithProfile }>('/auth/otp/login', { phoneNumber, otp }),

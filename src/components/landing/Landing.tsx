@@ -12,7 +12,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Footer } from "@/components/layout/Footer";
 import { ContactModal } from "./ContactModal";
 import { Glows } from "./Glows";
-import { FloatImage, GrainOverlay, Magnetic, Spotlight } from "./effects";
+import { FloatImage, GrainOverlay, Magnetic, Spotlight, useAnimReady } from "./effects";
 import { VuesaxIcon, type VuesaxName } from "./VuesaxIcons";
 
 type Card = { title: string; text: string; accent?: boolean };
@@ -68,18 +68,20 @@ export function Landing() {
             С 768 — строка: текст слева, картинка справа.
           */}
           <section className="flex flex-col items-center gap-10 pt-8 md:flex-row md:items-end md:gap-10 md:pt-0">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{
-                duration: 0.9,
-                delay: 0.15,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-              className="w-[180px] shrink-0 md:order-2 md:mx-0 md:w-[300px] lg:w-[354px] xl:w-[580px]"
+            {/* появление — CSS .anim-pop: framer-твин в фоновой вкладке
+                замирал на opacity 0, и герой оставался пустым навсегда */}
+            <div
+              className="anim-pop w-[180px] shrink-0 md:order-2 md:mx-0 md:w-[300px] lg:w-[354px] xl:w-[580px]"
+              style={{ "--anim-delay": "0.15s" } as React.CSSProperties}
             >
-              <FloatImage src="/img/landing/hero.webp" tone="#F15A25" priority />
-            </motion.div>
+              <FloatImage
+                src="/img/landing/hero.webp"
+                tone="#F15A25"
+                priority
+                width={1235}
+                height={1000}
+              />
+            </div>
 
             <div className="min-w-0 flex-1 md:order-1">
               <HeroTitle
@@ -94,6 +96,8 @@ export function Landing() {
           <Section>
             <SplitBlock
               image="/img/landing/tech.webp"
+              imageWidth={1058}
+              imageHeight={1000}
               tone="#5500FF"
               title={t("intro.title")}
               text={t("intro.text")}
@@ -130,6 +134,8 @@ export function Landing() {
             <SplitBlock
               reverse
               image="/img/landing/package.webp"
+              imageWidth={780}
+              imageHeight={1000}
               tone="#FF0051"
               titleClassName="flex flex-wrap items-center justify-center gap-3 md:justify-start"
               titleNode={
@@ -158,6 +164,8 @@ export function Landing() {
           <Section>
             <SplitBlock
               image="/img/landing/steps.webp"
+              imageWidth={3223}
+              imageHeight={1000}
               tone="#F15A25"
               titleClassName="flex flex-wrap items-center justify-center gap-3 md:justify-start"
               titleNode={
@@ -198,6 +206,8 @@ export function Landing() {
                 src="/img/landing/contact.webp"
                 tone="#9D00FF"
                 delay={0.5}
+                width={773}
+                height={1000}
                 className="w-[160px] sm:w-[200px] lg:w-[354px] xl:w-[456px]"
               />
             </Appear>
@@ -243,6 +253,8 @@ export function Landing() {
           <Section>
             <SplitBlock
               image="/img/landing/support.webp"
+              imageWidth={1476}
+              imageHeight={1000}
               tone="#FF4200"
               title={t("support.title")}
               text={t("support.text")}
@@ -406,6 +418,18 @@ function Lead({
 }
 
 /** Появление блока при скролле. */
+/**
+ * Гейт входных анимаций, скрывающих контент: reduced-motion ИЛИ вкладка ещё
+ * не тикнула rAF (prerender, фоновая вкладка). Без второго слагаемого
+ * whileInView-твин замирает на opacity 0 и секция остаётся невидимой
+ * навсегда — тот же контракт, что у ui/Reveal.tsx с самого начала.
+ */
+function useEntranceOff(): boolean {
+  const reduced = useReducedMotion();
+  const ready = useAnimReady();
+  return !!reduced || !ready;
+}
+
 function Appear({
   children,
   className,
@@ -415,8 +439,7 @@ function Appear({
   className?: string;
   delay?: number;
 }) {
-  const reduced = useReducedMotion();
-  if (reduced) return <div className={className}>{children}</div>;
+  if (useEntranceOff()) return <div className={className}>{children}</div>;
 
   return (
     <motion.div
@@ -448,9 +471,11 @@ function HeroTitle({
    * свечение под монеткой (shadow 44px) выходит за строку и упиралось
    * в overflow-hidden — сверху и снизу ореол срезало по прямой.
    *
-   * useReducedMotion на первом рендере отдаёт null, поэтому reduced учитываем
-   * отдельным слагаемым: без анимации onAnimationComplete не сработает и
-   * маска осталась бы навсегда.
+   * Выезд — CSS (.anim-rise), не framer: JS-твин в фоновой вкладке замирал
+   * на полпути навсегда, а CSS-таймлайн идёт по часам и fill-mode both
+   * гарантирует конечное состояние. При reduced-motion .anim-rise отключён
+   * медиазапросом, animationend не придёт — поэтому reduced в unclipped
+   * стоит отдельным слагаемым.
    */
   const [revealed, setRevealed] = useState(false);
   const unclipped = revealed || !!reduced;
@@ -467,36 +492,28 @@ function HeroTitle({
             key={line}
             className={clsx("block pb-1", !unclipped && "overflow-hidden")}
           >
-            <motion.span
-              className="flex flex-wrap items-center justify-center gap-3 md:justify-start xl:gap-6"
-              initial={reduced ? undefined : { y: "110%" }}
-              animate={reduced ? undefined : { y: 0 }}
-              transition={{
-                duration: 0.75,
-                delay: 0.1 + i * 0.12,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-              onAnimationComplete={
+            <span
+              className="anim-rise flex flex-wrap items-center justify-center gap-3 md:justify-start xl:gap-6"
+              style={{ "--anim-delay": `${0.1 + i * 0.12}s` } as React.CSSProperties}
+              onAnimationEnd={
                 i === lines.length - 1 ? () => setRevealed(true) : undefined
               }
             >
               {line}
               <span className="hidden md:contents">{trailing[i]}</span>
-            </motion.span>
+            </span>
           </span>
         ))}
       </h1>
 
       {/* мобильный вариант: монетка и плашка под центрированным заголовком */}
-      <motion.div
-        initial={reduced ? undefined : { opacity: 0, y: 12 }}
-        animate={reduced ? undefined : { opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.5 }}
-        className="mt-6 flex flex-wrap items-center justify-center gap-3 md:hidden"
+      <div
+        className="anim-fade-up mt-6 flex flex-wrap items-center justify-center gap-3 md:hidden"
+        style={{ "--anim-delay": "0.5s" } as React.CSSProperties}
       >
         {badge}
         {coin}
-      </motion.div>
+      </div>
     </>
   );
 }
@@ -617,6 +634,8 @@ function CoinPill() {
  */
 function SplitBlock({
   image,
+  imageWidth,
+  imageHeight,
   tone,
   title,
   titleNode,
@@ -628,6 +647,9 @@ function SplitBlock({
   reverse,
 }: {
   image: string;
+  /** пиксели файла картинки — резервируют место до загрузки (см. FloatImage) */
+  imageWidth: number;
+  imageHeight: number;
   /** цвет ореола под картинкой — под свечение своей секции */
   tone: string;
   title?: string;
@@ -652,6 +674,8 @@ function SplitBlock({
         <FloatImage
           src={image}
           tone={tone}
+          width={imageWidth}
+          height={imageHeight}
           className="w-[184px] lg:w-[354px] xl:w-[456px]"
         />
       </Appear>
@@ -710,11 +734,18 @@ function GlassCard({
 }) {
   const accent = Boolean(card.accent);
   const reduced = useReducedMotion();
+  const off = useEntranceOff();
 
   return (
     <motion.div
-      initial={reduced ? undefined : { opacity: 0, y: 28 }}
-      whileInView={reduced ? undefined : { opacity: 1, y: 0 }}
+      /*
+       * key перемонтирует узел, когда гейт открывается: initial применяется
+       * только на маунте, и без перемонтирования появление бы просто
+       * пропускалось на каждой обычной загрузке.
+       */
+      key={off ? "static" : "anim"}
+      initial={off ? false : { opacity: 0, y: 28 }}
+      whileInView={off ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
       transition={{
         duration: 0.55,
@@ -791,12 +822,15 @@ function GlassCard({
  */
 function StepCard({ step, index }: { step: Card; index: number }) {
   const reduced = useReducedMotion();
+  const off = useEntranceOff();
   const wide = index % 4 === 0 || index % 4 === 3;
 
   return (
     <motion.article
-      initial={reduced ? undefined : { opacity: 0, y: 28 }}
-      whileInView={reduced ? undefined : { opacity: 1, y: 0 }}
+      // см. комментарий к key в Card: initial применяется только на маунте
+      key={off ? "static" : "anim"}
+      initial={off ? false : { opacity: 0, y: 28 }}
+      whileInView={off ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.5, delay: (index % 2) * 0.08 }}
       whileHover={reduced ? undefined : { y: -6 }}
@@ -915,7 +949,7 @@ function CardRails({
  * экрана: остаток уходит за его край — и оттуда же выезжает свайпом.
  */
 function Rail({ cards, variant }: { cards: Card[]; variant: "package" | "support" }) {
-  const reduced = useReducedMotion();
+  const off = useEntranceOff();
 
   return (
     /*
@@ -925,8 +959,10 @@ function Rail({ cards, variant }: { cards: Card[]; variant: "package" | "support
       пересекался и оставался невидимым.
     */
     <motion.div
-      initial={reduced ? undefined : { opacity: 0, y: 20 }}
-      whileInView={reduced ? undefined : { opacity: 1, y: 0 }}
+      // см. комментарий к key в Card: initial применяется только на маунте
+      key={off ? "static" : "anim"}
+      initial={off ? false : { opacity: 0, y: 20 }}
+      whileInView={off ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.45 }}
       /*

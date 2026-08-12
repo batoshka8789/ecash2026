@@ -30,8 +30,6 @@ import { RateGraph, RateGraphToggle, type Period } from '@/components/sections/R
 
 type Mode = 'booking' | 'individual';
 
-const DEFAULT_DEP = 1;
-
 /**
  * Флоу «Забронировать курс» и «Запросить индивидуальный курс» — по реальному
  * контракту /mobile/reserve: value = сумма в currencyFrom (что отдаём),
@@ -60,10 +58,12 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   const [foreign, setForeign] = useState(initialForeign);
   const [kztGive, setKztGive] = useState(initialKztGive);
   const [give, setGive] = useState(params.get('amount') ?? '');
-  // Отделение: из URL (пришли из карточки отделения), иначе — ближайшее
-  // к «Моему адресу»; пока адрес не геокодирован — историческое №1.
+  // Отделение: из URL (пришли из карточки отделения), иначе — ближайшее к
+  // «Моему адресу», а пока адреса нет — первое из живого списка отделений.
+  // Захардкоженного номера здесь больше нет: он существовал только на
+  // дев-контуре, и на боевом бронь уходила бы в несуществующее отделение.
   const paramDep = Number(params.get('depId')) || null;
-  const { depId: nearestDep } = useNearestDepId(DEFAULT_DEP);
+  const { depId: nearestDep } = useNearestDepId();
   const [pickedDep, setPickedDep] = useState<number | null>(paramDep);
   const depId = pickedDep ?? nearestDep;
   const setDepId = setPickedDep;
@@ -102,12 +102,14 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   });
   const depQ = useQuery({
     queryKey: ['department', depId],
-    queryFn: ({ signal }) => api.departments.info(depId, signal),
+    enabled: depId != null,
+    queryFn: ({ signal }) => api.departments.info(depId!, signal),
     staleTime: 5 * 60_000,
   });
   const ratesQ = useQuery({
     queryKey: ['rates', depId],
-    queryFn: ({ signal }) => api.rates.forDep(depId, signal),
+    enabled: depId != null,
+    queryFn: ({ signal }) => api.rates.forDep(depId!, signal),
     staleTime: 60_000,
   });
   const bestQ = useQuery({
@@ -234,7 +236,8 @@ export function BookingFlow({ mode }: { mode: Mode }) {
         value: round2(effValue),
         rate: round2(effRate),
         amount: Math.round(effAmount),
-        depId,
+        // проверено в tryCreate: без отделения мутация не запускается
+        depId: depId ?? undefined,
         fullName: name.trim() || undefined,
         comment,
       };
@@ -257,7 +260,9 @@ export function BookingFlow({ mode }: { mode: Mode }) {
 
   /** здесь пользователь уже гарантированно авторизован */
   const tryCreate = () => {
-    if (!validAmount || rate <= 0) {
+    // depId == null означает «список отделений ещё не пришёл»: без отделения
+    // заявку не примет ни схема, ни ядро — не даём отправить пустую
+    if (!validAmount || rate <= 0 || depId == null) {
       setShowErrors(true);
       return;
     }
@@ -335,7 +340,7 @@ export function BookingFlow({ mode }: { mode: Mode }) {
           />
         </div>
 
-        {graphOpen && (
+        {graphOpen && depId != null && (
           <div id={graphId} className="anim-chart-panel overflow-hidden">
             <RateGraph depId={depId} code={foreign} period={period} setPeriod={setPeriod} />
           </div>
@@ -421,7 +426,7 @@ export function BookingFlow({ mode }: { mode: Mode }) {
             betterOffer={betterOffer}
             onPickBetter={setDepId}
             departments={departmentOptions}
-            depId={depId}
+            depId={depId ?? undefined}
             onChangeDep={setDepId}
           />
         </div>

@@ -176,6 +176,21 @@ export function plainTextFromStoredBody(source: string, limit?: number): string 
 }
 
 /**
+ * Анонс с сохранённым оформлением — первый непустой блок статьи как
+ * самостоятельный документ. Блок берётся целиком: резать дерево по числу
+ * символов значило бы рвать разметку посреди выделения, а высоту в карточке
+ * и так ограничивает обрезка по строкам.
+ *
+ * Общая для сервера (toPublicPost) и админки (превью ленты) — иначе превью
+ * разошлось бы с сайтом ровно там, ради чего оно и сделано.
+ */
+export function richExcerptOf(source: string): string | null {
+  const doc = parseStoredBody(source);
+  const first = doc.content.find((n) => docToPlainText({ type: 'doc', content: [n] }).trim());
+  return first ? serializeDoc({ type: 'doc', content: [first] }) : null;
+}
+
+/**
  * «Текста нет» — по видимому содержимому, а не по длине сырой строки.
  * JSON-документ без единого символа текста (пустой абзац) сериализуется в
  * непустую строку `{"type":"doc","content":[{"type":"paragraph"}]}`, поэтому

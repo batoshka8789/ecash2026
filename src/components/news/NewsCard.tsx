@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { clsx } from 'clsx';
 import { Icon } from '@/components/ui/Icon';
+import { RichText } from '@/components/ui/RichText';
 import { DEFAULT_IMAGE_FOCUS, type ImageFocus } from '@/lib/domain';
 
 /**
@@ -15,6 +16,7 @@ export function NewsCard({
   imageFocus = DEFAULT_IMAGE_FOCUS,
   title,
   excerpt,
+  excerptRich,
   /** локальный blob-предпросмотр: файл ещё грузится, next/image его не умеет */
   localImage,
   priority = false,
@@ -25,6 +27,8 @@ export function NewsCard({
   imageFocus?: ImageFocus;
   title: string;
   excerpt: string;
+  /** начало статьи с оформлением автора; заменяет `excerpt`, когда есть */
+  excerptRich?: string;
   localImage?: string | null;
   priority?: boolean;
   className?: string;
@@ -66,7 +70,21 @@ export function NewsCard({
       </div>
 
       <h2 className="mt-6 text-lg font-bold text-text-default sm:text-2xl">{title}</h2>
-      {excerpt && <p className="mt-3 text-sm leading-relaxed text-text-disabled">{excerpt}</p>}
+
+      {/*
+        Анонс с оформлением автора (цвет, выделение, размер) — чтобы карточка
+        показывала то же, что и статья. Высота карточки при этом не «плывёт»:
+        line-clamp держит ровно три строки, а крупный текст (до 1.8em) их
+        просто заполняет быстрее. Отступ сверху задан здесь, поэтому первый
+        блок внутри RichText свой mt-3 уже не добавляет.
+      */}
+      {excerptRich ? (
+        <div className="mt-3 line-clamp-3 text-sm leading-relaxed text-text-disabled">
+          <RichText source={excerptRich} />
+        </div>
+      ) : (
+        excerpt && <p className="mt-3 text-sm leading-relaxed text-text-disabled">{excerpt}</p>
+      )}
     </article>
   );
 }

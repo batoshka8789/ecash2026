@@ -548,6 +548,52 @@ body {
   }
 }
 
+/* FloatImage: ореол и парение картинок лендинга. Бесконечные циклы — CSS,  */
+/* а не JS: framer писал инлайновый transform каждый кадр по слою с         */
+/* mix-blend-mode, что на части GPU мигало квадратными границами слоя.      */
+/* Центровка -50% зашита в кейфреймы: анимация владеет transform целиком.   */
+
+@keyframes halo-pulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 0.9;
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -14px, 0);
+  }
+}
+
+.anim-halo-pulse {
+  animation: halo-pulse 6s ease-in-out infinite both;
+  animation-delay: var(--anim-delay, 0s);
+  will-change: transform, opacity;
+}
+
+.anim-float-y {
+  animation: float-y 7s ease-in-out infinite both;
+  animation-delay: var(--anim-delay, 0s);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-halo-pulse,
+  .anim-float-y {
+    animation: none;
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Модалки — тот же принцип, что и у входных анимаций лендинга: чистый  */
 /* CSS, а не JS-драйвер (framer-motion opacity 0→1). JS-анимация зависит */

@@ -1,5 +1,6 @@
 import 'server-only';
 import type { Department, DepartmentInfo } from '@/lib/domain';
+import { env } from '@/server/env';
 import { ecashFetch } from '../http';
 import { cachedUpstream } from '../cache';
 import { mapDepartment, mapDepartmentInfo } from '@/shared/ecash/mappers';
@@ -27,10 +28,17 @@ export async function serviceGet<T>(path: string): Promise<T> {
 export function depList(): Promise<Department[]> {
   return cachedUpstream('depList', DEP_TTL_MS, async () => {
     const raw = await serviceGet<unknown[]>('/Department/depListApp');
-    return (raw ?? [])
-      .map((d) => mapDepartment(d as Parameters<typeof mapDepartment>[0]))
-      // dev-среда содержит тестовые записи без адреса — наружу их не отдаём
-      .filter((d) => d.depId > 0 && d.address.trim().length > 0);
+    return (
+      (raw ?? [])
+        .map((d) => mapDepartment(d as Parameters<typeof mapDepartment>[0]))
+        // Записи без адреса — заведомо служебные («ТестТест», «Тест»):
+        // человеку некуда прийти, а на карте их нечем разместить.
+        .filter((d) => d.depId > 0 && d.address.trim().length > 0)
+        // Остальные служебные записи дев-контура («DEVTEST», «проверка
+        // лимитов») по данным неотличимы от настоящих — у них есть и адрес,
+        // и курсы. Поэтому их список задаётся явно: HIDDEN_DEP_IDS.
+        .filter((d) => !env.HIDDEN_DEP_IDS.includes(d.depId))
+    );
   });
 }
 

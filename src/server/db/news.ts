@@ -8,7 +8,7 @@ import type {
   NewsTranslations,
 } from '@/lib/domain';
 import { toImageFocus } from '@/lib/domain';
-import { plainTextFromStoredBody } from '@/lib/richtext-doc';
+import { plainTextFromStoredBody, richExcerptOf } from '@/lib/richtext-doc';
 import { slugify } from '@/lib/slug';
 import type { news } from './schema';
 
@@ -60,6 +60,13 @@ export function toPublicPost(row: NewsRow, locale: Locale, withBody: boolean): N
   const t = pickTranslation(translations, locale);
   if (!t) return null;
 
+  // Заданный руками анонс — осознанный выбор редактора, он и идёт как есть.
+  // Иначе показываем начало статьи с её оформлением: раньше лента всегда
+  // выводила голый текст, и цвета, выставленные в редакторе, появлялись
+  // только на странице новости — со стороны это выглядело как «оформление
+  // пропало после публикации».
+  const rich = t.excerpt ? null : richExcerptOf(t.body);
+
   return {
     id: row.id,
     slug: row.slug,
@@ -67,6 +74,7 @@ export function toPublicPost(row: NewsRow, locale: Locale, withBody: boolean): N
     imageFocus: toImageFocus(row.imageFocus),
     title: t.title,
     excerpt: t.excerpt || plainTextFromStoredBody(t.body, EXCERPT_LIMIT),
+    ...(rich ? { excerptRich: rich } : {}),
     ...(withBody ? { body: t.body } : {}),
     publishedAt: row.publishedAt.toISOString(),
   };

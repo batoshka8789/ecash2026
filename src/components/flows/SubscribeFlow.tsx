@@ -16,9 +16,8 @@ import { useErrorText } from '@/lib/useErrorText';
 import { currencyName, currencySymbol, formatDateTime, formatNumber, intlLocale } from '@/lib/format';
 import type { RateAlert } from '@/lib/domain';
 import { isPlausibleTargetRate } from '@/lib/exchange';
+import { useNearestDepId } from '@/lib/user-place';
 import { AmountBox } from './PairFields';
-
-const DEFAULT_DEP = 1;
 
 const parseRate = (v: string) => parseFloat(v.replace(/[\s ]/g, '').replace(',', '.'));
 
@@ -99,9 +98,14 @@ export function SubscribeFlow() {
   const [removedOk, setRemovedOk] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
+  // Курс для подписки — от ближайшего отделения из живого списка.
+  // Раньше здесь стоял захардкоженный depId=1: на другом контуре Ecash
+  // такого отделения может не быть, и страница осталась бы без курса.
+  const { depId } = useNearestDepId();
   const ratesQ = useQuery({
-    queryKey: ['rates', DEFAULT_DEP],
-    queryFn: ({ signal }) => api.rates.forDep(DEFAULT_DEP, signal),
+    queryKey: ['rates', depId],
+    enabled: depId != null,
+    queryFn: ({ signal }) => api.rates.forDep(depId!, signal),
     staleTime: 60_000,
   });
   const stat = ratesQ.data?.rates.find((r) => r.currencyCode === foreign);

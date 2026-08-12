@@ -16,6 +16,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type PointerEvent,
   type ReactNode,
 } from "react";
@@ -261,6 +262,8 @@ export function FloatImage({
   className,
   delay = 0,
   priority = false,
+  width,
+  height,
 }: {
   src: string;
   /** цвет ореола — под цвет свечения секции */
@@ -269,9 +272,40 @@ export function FloatImage({
   delay?: number;
   /** первый экран: грузить сразу и с высоким приоритетом, не лениво */
   priority?: boolean;
+  /** пиксели файла: браузер резервирует место до загрузки, блок не прыгает */
+  width: number;
+  height: number;
 }) {
-  const reduced = useReducedMotion();
+  const prefersReduced = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  /**
+   * «Уменьшить движение» учитываем ТОЛЬКО после монтирования — для этого
+   * годится тот же useAnimReady, что гейтит входные анимации.
+   *
+   * `useReducedMotion` на сервере всегда false, а в браузере с включённой
+   * настройкой отдаёт true уже на первом рендере — и React падал с ошибкой
+   * гидратации: сервер прислал одну разметку, клиент нарисовал другую.
+   * Ловилось не у всех, поэтому и жило долго: настройка включена не у
+   * каждого (на iPhone — часто, и сама включается в энергосбережении).
+   *
+   * Теперь первый рендер одинаков всегда, а дальше компонент спокойно
+   * перерисуется — это обычное обновление, не гидратация.
+   */
+  const reduced = useAnimReady() && !!prefersReduced;
+
+  /**
+   * Тень и показ — только после декодирования. drop-shadow до декодирования
+   * рисуется по прямоугольнику элемента, а не по контуру картинки: пока файл
+   * грузился, вокруг «монеты» на пару секунд появлялась прямоугольная рамка
+   * тени. У eager-картинок onLoad может отстрелять до гидратации — проверка
+   * complete в эффекте закрывает и этот случай.
+   */
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    if (imgRef.current?.complete) setLoaded(true);
+  }, []);
 
   // наклон за курсором
   const px = useMotionValue(0.5);
@@ -304,72 +338,67 @@ export function FloatImage({
     py.set(0.5);
   };
 
-  if (reduced) {
-    // «Уменьшение движения» гасит ДВИЖЕНИЕ, но не цвет: ореол и подсветка —
-    // часть фирменной палитры макета, а не анимация. Раньше эта ветка отдавала
-    // голый <img>, и на любом устройстве с включённой настройкой (на iPhone она
-    // часто включена, а в режиме энергосбережения включается сама) лендинг
-    // становился плоским и терял контраст. Рисуем то же свечение статикой.
-    return (
-      <div className={clsx("relative", className)}>
-        <span
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/2 -z-10 aspect-square w-[135%] -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{
-            background: `radial-gradient(closest-side, ${tone}88 0%, ${tone}44 45%, transparent 72%)`,
-            mixBlendMode: "screen",
-            opacity: 0.7,
-          }}
-        />
-        <img
-          src={src}
-          alt=""
-          className="relative w-full"
-          loading={priority ? 'eager' : 'lazy'}
-          fetchPriority={priority ? 'high' : 'auto'}
-          decoding="async"
-          style={{ filter: `drop-shadow(0 26px 60px ${tone}66)` }}
-        />
-      </div>
-    );
-  }
+  const img = (
+    <img
+      ref={imgRef}
+      src={src}
+      alt=""
+      width={width}
+      height={height}
+      onLoad={() => setLoaded(true)}
+      className={clsx(
+        "relative h-auto w-full transition-opacity duration-300",
+        loaded ? "opacity-100" : "opacity-0",
+      )}
+      loading={priority ? "eager" : "lazy"}
+      fetchPriority={priority ? "high" : "auto"}
+      decoding="async"
+      // translateZ закрепляет растровый слой: без него повышение/сброс слоя
+      // на старте анимаций мигали его границами на части GPU
+      style={
+        loaded
+          ? { filter: `drop-shadow(0 26px 60px ${tone}66)`, transform: "translateZ(0)" }
+          : undefined
+      }
+    />
+  );
 
+  /*
+   * Дерево ОДНО на оба режима — разница только в значениях. Раньше здесь
+   * стояли два разных `return`, и на устройстве с «уменьшить движение»
+   * разметка сервера не совпадала с клиентской.
+   *
+   * «Уменьшение движения» гасит ДВИЖЕНИЕ, но не цвет: ореол и подсветка —
+   * часть фирменной палитры макета, а не анимация. Сами циклы (пульсация
+   * ореола, парение) живут в CSS и глушатся медиазапросом
+   * prefers-reduced-motion — здесь их гасить не нужно.
+   *
+   * На JS остаются параллакс от прокрутки и наклон за курсором: первый
+   * отключаем значением style, второй — проверкой в onMove.
+   */
   return (
     <motion.div
       ref={ref}
       onPointerMove={onMove}
       onPointerLeave={reset}
-      style={{ y: parallax, scale }}
+      style={reduced ? undefined : { y: parallax, scale }}
       className={clsx("relative [perspective:1200px]", className)}
     >
-      {/* пульсирующий ореол под картинкой */}
-      <motion.span
+      <span
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-1/2 -z-10 aspect-square w-[135%] -translate-x-1/2 -translate-y-1/2 rounded-full"
-        style={{
-          background: `radial-gradient(closest-side, ${tone}88 0%, ${tone}44 45%, transparent 72%)`,
-          mixBlendMode: "screen",
-        }}
-        animate={{ scale: [1, 1.15, 1], opacity: [0.55, 0.9, 0.55] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay }}
+        className="anim-halo-pulse pointer-events-none absolute left-1/2 top-1/2 -z-10 aspect-square w-[135%] rounded-full"
+        style={
+          {
+            background: `radial-gradient(closest-side, ${tone}88 0%, ${tone}44 45%, transparent 72%)`,
+            mixBlendMode: "screen",
+            "--anim-delay": `${delay}s`,
+          } as CSSProperties
+        }
       />
 
-      {/* парение + наклон */}
-      <motion.div
-        style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-        animate={{ y: [0, -14, 0] }}
-        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay }}
-      >
-        <img
-          src={src}
-          alt=""
-          className="relative w-full"
-          loading={priority ? 'eager' : 'lazy'}
-          fetchPriority={priority ? 'high' : 'auto'}
-          decoding="async"
-          style={{ filter: `drop-shadow(0 26px 60px ${tone}66)` }}
-        />
-      </motion.div>
+      <div className="anim-float-y" style={{ "--anim-delay": `${delay}s` } as CSSProperties}>
+        <motion.div style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}>{img}</motion.div>
+      </div>
     </motion.div>
   );
 }

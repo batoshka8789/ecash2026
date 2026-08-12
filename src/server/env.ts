@@ -50,15 +50,26 @@ const schema = z.object({
     ),
 
   /**
-   * Разрешить админку при ECASH_OTP_MOCK=1. По умолчанию НЕТ, и это важно:
-   * в демо-режиме вход возможен под ЛЮБЫМ телефоном с общим паролем
-   * (demoCheckPassword), поэтому знание номера админа = права админа.
-   * Включать осознанно и только там, где это приемлемо.
+   * depId отделений, которые не показываем посетителям (через запятую).
+   *
+   * Нужно для дев-контура Ecash: в нём рядом с настоящими отделениями лежат
+   * служебные записи — «DEVTEST», «проверка лимитов», «Франшизы/Проверка».
+   * Отличить их по данным нельзя: у них есть и адрес, и курсы, — а угадывать
+   * по названию опасно, настоящее отделение может называться как угодно.
+   * Поэтому список задаётся явно тем, кто разворачивает стенд.
+   *
+   * На боевом контуре служебных записей нет — переменная остаётся пустой.
    */
-  ADMIN_IN_DEMO: z
-    .enum(['0', '1'])
-    .default('0')
-    .transform((v) => v === '1'),
+  HIDDEN_DEP_IDS: z
+    .string()
+    .default('')
+    .transform((s) =>
+      s
+        .split(',')
+        .map((x) => Number(x.trim()))
+        .filter((n) => Number.isInteger(n) && n > 0),
+    ),
+
 
   /**
    * Почта для переводчика новостей. Работает и без неё, но анонимная дневная
@@ -91,11 +102,6 @@ const schema = z.object({
     .default('true')
     .transform((v) => v === 'true'),
 
-  ECASH_OTP_MOCK: z
-    .enum(['0', '1'])
-    .default('0')
-    .transform((v) => v === '1'),
-
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 });
 
@@ -106,16 +112,6 @@ function load() {
     throw new Error(`Некорректное серверное окружение:\n${lines}\n\nСм. .env.example`);
   }
   if (r.data.NODE_ENV === 'production') {
-    // Двойной явный флаг — временная витрина/выставка, не обычный прод.
-    // Один ECASH_OTP_MOCK=1 в проде по-прежнему падает: демо-режим не должен
-    // включиться случайно на настоящем запуске.
-    const allowDemo = process.env.ALLOW_DEMO_IN_PRODUCTION === '1';
-    if (r.data.ECASH_OTP_MOCK && !allowDemo) {
-      throw new Error(
-        'ECASH_OTP_MOCK=1 запрещён в продакшене (для временного стенда ' +
-          'дополнительно задайте ALLOW_DEMO_IN_PRODUCTION=1)',
-      );
-    }
     if (!r.data.APP_ORIGIN.startsWith('https:')) {
       throw new Error('APP_ORIGIN в продакшене должен быть https');
     }

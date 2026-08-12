@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { env } from '@/server/env';
 import { db } from '@/server/db/client';
 import { franchiseLeads } from '@/server/db/schema';
 import { submitFranchise } from '@/server/ecash/endpoints/franchise';
 import { checkOrigin, rateLimited } from '@/server/api/guard';
-import { body, fail, fromError, ok } from '@/server/api/respond';
+import { body, fail, ok } from '@/server/api/respond';
 import { franchiseLeadBody, type FranchiseLeadBody } from '@/shared/schemas';
 
 /**
@@ -41,16 +40,6 @@ export async function POST(req: Request) {
 
   const parsed = await body(req, franchiseLeadBody);
   if (parsed instanceof NextResponse) return parsed;
-
-  // Демо-режим: наружу не ходим, лид живёт только в нашей базе.
-  if (env.ECASH_OTP_MOCK) {
-    try {
-      const row = await insertLead(parsed, []);
-      return ok({ lead: { id: row.id, createdAt: row.createdAt.toISOString() } }, { status: 201 });
-    } catch (e) {
-      return fromError(e);
-    }
-  }
 
   let ecashDown = false;
   try {

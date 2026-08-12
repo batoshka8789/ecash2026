@@ -1,9 +1,8 @@
 import { notFound } from 'next/navigation';
 import { RequestDetail } from '@/components/requests/RequestDetail';
 import { pageMetadata } from '@/lib/metadata';
-import { readSession, userToken } from '@/server/session';
+import { userToken } from '@/server/session';
 import { getRequest } from '@/server/ecash/endpoints/reserve';
-import { demoGet, isDemoToken } from '@/server/demo/store';
 
 /**
  * Карточка заявки. Существование проверяем на сервере ДО отдачи страницы:
@@ -22,12 +21,7 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
   // без токена страницу не покажет layout кабинета — гейт здесь только для 404
   if (token) {
     try {
-      if (isDemoToken(token)) {
-        const s = await readSession();
-        if (!s || !demoGet(s.accountId, requestId)) notFound();
-      } else {
-        await getRequest(token, requestId);
-      }
+      await getRequest(token, requestId);
     } catch {
       // чужая или несуществующая заявка — upstream отвечает REQUEST_NOT_FOUND
       notFound();

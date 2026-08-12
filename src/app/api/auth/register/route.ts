@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { env } from '@/server/env';
 import { register } from '@/server/ecash/endpoints/auth';
 import { otpConfirm } from '@/server/ecash/endpoints/otp';
 import { accountMe } from '@/server/ecash/endpoints/account';
@@ -7,13 +6,6 @@ import { checkOrigin, rateLimited } from '@/server/api/guard';
 import { body, fail, fromError, ok } from '@/server/api/respond';
 import { createSession, sessionFromTokens } from '@/server/session';
 import { registerBody } from '@/shared/schemas';
-import {
-  DEMO_OTP,
-  DEMO_TOKEN,
-  demoAccount,
-  demoSetPassword,
-  demoUnretirePhone,
-} from '@/server/demo/store';
 
 /** Регистрация: телефон подтверждён OTP (purpose 0) → пароль → сессия. */
 export async function POST(req: Request) {
@@ -23,23 +15,6 @@ export async function POST(req: Request) {
 
   const parsed = await body(req, registerBody);
   if (parsed instanceof NextResponse) return parsed;
-
-  if (env.ECASH_OTP_MOCK) {
-    if (parsed.otp !== DEMO_OTP) return fail('errors.INVALID_OTP', 401, { field: 'otp' });
-    // Освободившийся после смены номер можно занять заново — как в ядре;
-    // регистрация возвращает его в строй (снимает запрет на вход).
-    demoUnretirePhone(parsed.phoneNumber);
-    const account = demoAccount(parsed.phoneNumber);
-    demoSetPassword(parsed.phoneNumber, parsed.password);
-    await createSession({
-      accessToken: DEMO_TOKEN,
-      refreshToken: DEMO_TOKEN,
-      accessExpiresAt: Date.now() + 3600_000 * 24,
-      accountId: account.accountId,
-      phone: account.phoneNumber,
-    });
-    return ok({ account }, { status: 201 });
-  }
 
   try {
     // подтверждаем код; upstream гасит его после успешной проверки

@@ -16,7 +16,7 @@ import { DeviceFrame, type Device } from './DeviceFrame';
 import { useAdminStrings } from './strings';
 import { api, ApiError } from '@/lib/api';
 import { useErrorText } from '@/lib/useErrorText';
-import { isBodyEmpty, plainTextFromStoredBody } from '@/lib/richtext-doc';
+import { isBodyEmpty, plainTextFromStoredBody, richExcerptOf } from '@/lib/richtext-doc';
 import { slugify } from '@/lib/slug';
 import {
   DEFAULT_IMAGE_FOCUS,
@@ -251,6 +251,12 @@ export function NewsEditor({ id }: { id?: string }) {
 
   const previewTitle = current.title || t.previewTitle;
   const previewExcerpt = current.excerpt || plainTextFromStoredBody(current.body, 220);
+  /**
+   * Тем же правилом, что и сервер (toPublicPost): пустой анонс — показываем
+   * начало статьи с оформлением. Иначе превью ленты в админке разошлось бы
+   * с сайтом ровно в том месте, ради которого превью и существует.
+   */
+  const previewExcerptRich = current.excerpt ? undefined : (richExcerptOf(current.body) ?? undefined);
   const titleLeft = TITLE_LIMIT - current.title.length;
 
   const editor = (
@@ -370,6 +376,7 @@ export function NewsEditor({ id }: { id?: string }) {
           localImage={localPreview}
           title={previewTitle}
           excerpt={previewExcerpt}
+          excerptRich={previewExcerptRich}
         />
       </div>
     </div>

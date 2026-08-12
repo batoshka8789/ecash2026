@@ -113,8 +113,6 @@ export function ProfileForm() {
    */
   const [pendingPhone, setPendingPhone] = useState<string | null>(null);
   const [otp, setOtp] = useState('');
-  /** только демо-режим: код показывается в интерфейсе вместо SMS */
-  const [devCode, setDevCode] = useState<string | null>(null);
 
   const digitsOf = (s: string) => s.replace(/\D/g, '');
   const phoneChanged =
@@ -125,9 +123,8 @@ export function ProfileForm() {
     // purpose 0 — «регистрация»: код уходит на ещё не занятый номер, занятый
     // апстрим отклонит сам (409 PHONE_ALREADY_REGISTERED) — это и нужно
     mutationFn: (phone: string) => api.auth.otp.send(phone, 0),
-    onSuccess: (res, phone) => {
+    onSuccess: (_res, phone) => {
       setPendingPhone(phone);
-      setDevCode(res.devCode ?? null);
       setOtp('');
     },
   });
@@ -182,7 +179,6 @@ export function ProfileForm() {
       setEditing(false);
       setPendingPhone(null);
       setOtp('');
-      setDevCode(null);
       setSaved(true);
       if (savedTimer.current) clearTimeout(savedTimer.current);
       savedTimer.current = setTimeout(() => setSaved(false), 3000);
@@ -212,7 +208,6 @@ export function ProfileForm() {
     sendCode.reset();
     setPendingPhone(null);
     setOtp('');
-    setDevCode(null);
     setEditing(false);
   };
 
@@ -364,11 +359,6 @@ export function ProfileForm() {
               {tAuth('resend')}
             </button>
           </div>
-          {devCode && (
-            <p className="mt-2 text-xs text-text-disabled">
-              {tAuth('devCodeHint', { code: devCode })}
-            </p>
-          )}
         </div>
       )}
 

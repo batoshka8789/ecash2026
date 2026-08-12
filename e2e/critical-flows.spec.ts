@@ -1,35 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * Критические пользовательские сценарии — три жалобы заказчика:
- * 1) лендинг франшизы не должен быть «чёрным экраном»;
- * 2) карта отделений: клик по пину показывает виджет с информацией;
- * 3) после отправки заявки есть полноценный послеоперационный экран.
+ * Критические пользовательские сценарии без авторизации: лендинг франшизы
+ * не должен быть «чёрным экраном», карта отделений открывает виджет по пину,
+ * 404 и локали отвечают корректно. Сценарии с бронью жили на демо-режиме
+ * и удалены вместе с ним: вход теперь только через настоящий Ecash с SMS.
  */
-
-const DEMO_PHONE = '+77001112233';
-const DEMO_PASSWORD = 'ecash2026';
-
-async function login(page: Page) {
-  const res = await page.request.post('/api/auth/login', {
-    data: { login: DEMO_PHONE, password: DEMO_PASSWORD },
-  });
-  expect(res.ok()).toBeTruthy();
-}
-
-/** Демо-аккаунт общий — снимаем чужие активные заявки, иначе дубль (409). */
-async function cancelActiveRequests(page: Page) {
-  const res = await page.request.get('/api/requests?page=1&pageSize=50');
-  if (!res.ok()) return;
-  const { requests } = (await res.json()) as {
-    requests: { requestId: number; status: number }[];
-  };
-  for (const r of requests) {
-    if (r.status === 0 || r.status === 8) {
-      await page.request.post(`/api/requests/${r.requestId}/cancel`, { data: {} });
-    }
-  }
-}
 
 /** Доля видимой площади строки героя внутри маски overflow-hidden. */
 async function heroLineVisibility(page: Page): Promise<number> {
@@ -79,8 +55,8 @@ test('карта: клик по пину открывает виджет отд�
   await page.goto('/locations');
   await page.getByRole('button', { name: /на карте/i }).click();
 
-  // Ждём маркеры MapLibre.
-  const pin = page.locator('.maplibregl-marker').first();
+  // Пины — наши узлы с data-testid, одинаковые у 2GIS и Yandex (pins.ts).
+  const pin = page.getByTestId('map-pin').first();
   await expect(pin).toBeVisible({ timeout: 15_000 });
   await pin.scrollIntoViewIfNeeded();
   // Карта в headless непрерывно перерисовывается — обходим проверку
@@ -89,65 +65,16 @@ test('карта: клик по пину открывает виджет отд�
 
   const widget = page.getByRole('dialog');
   await expect(widget).toBeVisible();
-  // В виджете — адрес, часы работы и действия.
+  // В виджете — курсы покупки/продажи, бронь и маршрут. Кнопка «Списком» —
+  // НЕ здесь: это переключатель вида всей страницы, он живёт над картой.
+  await expect(widget.getByText(/покупка/i)).toBeVisible();
+  await expect(widget.getByText(/продажа/i)).toBeVisible();
   await expect(widget.getByRole('button', { name: /забронировать/i })).toBeVisible();
-  await expect(widget.getByRole('button', { name: /списком/i })).toBeVisible();
+  await expect(widget.getByRole('link', { name: /маршрут/i })).toBeVisible();
 
   // Esc закрывает.
   await page.keyboard.press('Escape');
   await expect(widget).toBeHidden();
-});
-
-test('бронь: полный цикл до послеоперационного экрана и отмены', async ({ page }) => {
-  await login(page);
-  await cancelActiveRequests(page);
-  await page.goto('/booking');
-
-  // Сумма уже с плейсхолдером; вводим свою.
-  const amount = page.locator('input:not([readonly])').first();
-  await amount.fill('100000');
-  await page.getByRole('button', { name: /^забронировать$/i }).click();
-
-  // Послеоперационный экран: карточка заявки со статусом «на рассмотрении».
-  await page.waitForURL(/\/requests\/\d+/, { timeout: 15_000 });
-  await expect(page.locator('h1')).toContainText(/отправлена|рассмотрении/i);
-
-  // Блоки макета: валютная пара, адрес отделения, ваши данные.
-  await expect(page.getByRole('heading', { name: /валютная пара/i })).toBeVisible();
-  await expect(page.getByRole('heading', { name: /адрес отделения/i })).toBeVisible();
-  await expect(page.getByRole('heading', { name: /ваши данные/i })).toBeVisible();
-
-  // Мок-казначей отвечает ~8 с: ждём статус «Забронирована» + таймер.
-  await expect(page.locator('h1')).toContainText(/забронировали/i, { timeout: 30_000 });
-  await expect(page.getByRole('timer')).toBeVisible();
-
-  // Отмена возвращает статус «Отменена»/«Снято с брони».
-  await page.getByRole('button', { name: /отменить/i }).click();
-  await expect(page.locator('h1')).toContainText(/снято|отмен/i, { timeout: 10_000 });
-});
-
-test('индивидуальный курс: запрос → предложение казначея → согласие', async ({ page }) => {
-  await login(page);
-  await cancelActiveRequests(page);
-  await page.goto('/individual-rate');
-
-  // Первый редактируемый textbox — сумма (readonly-поля результата пропускаем).
-  const editable = page.locator('input:not([readonly])');
-  await editable.first().fill('2000000');
-
-  await page.getByRole('button', { name: /запросить|продолжить/i }).click();
-  await page.waitForURL(/\/requests\/\d+/, { timeout: 15_000 });
-
-  // Казначей согласует (мок ~8 с) → появляются кнопки решения клиента.
-  await expect(page.getByRole('button', { name: /согласен/i })).toBeVisible({
-    timeout: 30_000,
-  });
-  await page.getByRole('button', { name: /согласен/i }).click();
-
-  // После согласия — обычный процесс брони (статус 0 → 8).
-  await expect(page.locator('h1')).toContainText(/забронировали|отправлена/i, {
-    timeout: 30_000,
-  });
 });
 
 test('404 и локали', async ({ page }) => {

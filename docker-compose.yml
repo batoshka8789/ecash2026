@@ -23,7 +23,14 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    env_file: .env.local
+    # Оба файла необязательны: .env.local в .gitignore, и на свежем клоне его
+    # нет — с обычным `env_file: .env.local` команда из README падала бы сразу
+    # после `git clone`, ещё до сборки.
+    env_file:
+      - path: .env
+        required: false
+      - path: .env.local
+        required: false
     environment:
       DATABASE_URL: postgres://ecash:ecash@db:5432/ecash
     ports:

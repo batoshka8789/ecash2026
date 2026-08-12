@@ -23,6 +23,9 @@ export function makePin(marker: BranchMapMarker): HTMLButtonElement {
   el.type = 'button';
   el.title = marker.label;
   el.setAttribute('aria-label', marker.label);
+  // Стабильный крючок для e2e: узел один на все драйверы, а классы у
+  // Yandex/2GIS-обвязки свои и меняются с версиями их SDK.
+  el.dataset.testid = 'map-pin';
   el.className =
     'relative flex h-12 w-12 cursor-pointer items-center justify-center border-0 bg-transparent p-0';
 

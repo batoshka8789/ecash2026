@@ -14,6 +14,13 @@ export async function register() {
       const { runMigrations } = await import('./server/db/migrate');
       await runMigrations();
 
+      // Связь с Ecash: проверяем и громко пишем результат в лог. Процесс не
+      // роняем — без апстрима лендинг и новости работают, а сбой бывает
+      // временным. Главное, чтобы при переезде на боевые ключи ошибка была
+      // видна сразу, а не всплыла у первого посетителя.
+      const { checkEcashConnection } = await import('./server/startup-check');
+      void checkEcashConnection();
+
       const { startSnapshotter } = await import('./server/jobs/snapshots');
       startSnapshotter();
 

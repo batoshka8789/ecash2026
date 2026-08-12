@@ -61,3 +61,7 @@ tsconfig.tsbuildinfo
 
 # конфиг IDE JetBrains
 /.idea
+
+# Инструкции для ИИ-ассистентов — не часть проекта
+AGENTS.md
+CLAUDE.md

@@ -48,19 +48,36 @@ export function useUserPlace() {
 }
 
 /**
- * Ближайшее к «Моему адресу» отделение; пока адреса/координат нет —
- * fallback (исторически отделение №1). enabled=false не грузит точки
- * там, где они не нужны немедленно.
+ * Ближайшее к «Моему адресу» отделение. Пока адреса нет — ПЕРВОЕ отделение
+ * из живого списка.
+ *
+ * Раньше здесь стояло `fallback = 1`, и то же число дублировалось в
+ * четырёх компонентах. На дев-контуре Ecash отделение №1 существует
+ * («Гранд Парк»), но это совпадение: на боевом контуре такого id может не
+ * быть вовсе или он может принадлежать другому отделению — и курсы,
+ * калькулятор, бронь и подписка молча остались бы пустыми. Никаких
+ * предположений о конкретных id в коде больше нет.
+ *
+ * `null` = список ещё не загружен; вызывающий обязан отключить свой запрос
+ * (`enabled: depId != null`), иначе уйдёт запрос с несуществующим отделением.
  */
-export function useNearestDepId(fallback = 1, opts?: { enabled?: boolean }) {
+export function useNearestDepId(opts?: { enabled?: boolean }): {
+  depId: number | null;
+  resolved: boolean;
+} {
   const { coords } = useUserPlace();
   const { points, loading } = useBranchPoints({ enabled: opts?.enabled ?? true });
 
   const depId = useMemo(() => {
-    if (!coords || points.length === 0) return fallback;
-    const nearest: BranchPoint | null = nearestBranch(points, coords);
-    return nearest?.depId ?? fallback;
-  }, [coords, points, fallback]);
+    if (points.length === 0) return null;
+    if (coords) {
+      const nearest: BranchPoint | null = nearestBranch(points, coords);
+      if (nearest) return nearest.depId;
+    }
+    // Список приходит от Ecash в его же порядке — первый элемент и есть
+    // разумное «отделение по умолчанию», каким бы ни был контур.
+    return points[0].depId;
+  }, [coords, points]);
 
   return { depId, resolved: !loading };
 }

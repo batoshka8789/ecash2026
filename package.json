@@ -2,6 +2,9 @@
   "name": "ecash-tech1",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,6 +12,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "format": "prettier --write src messages",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -35,7 +39,6 @@
     "drizzle-orm": "^0.45.2",
     "flag-icons": "^7.5.0",
     "framer-motion": "^12.42.2",
-    "maplibre-gl": "^6.0.0",
     "material-symbols": "^0.45.8",
     "next": "16.2.11",
     "next-intl": "^4.13.3",

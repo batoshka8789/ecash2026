@@ -43,7 +43,6 @@ export function RecoveryFlow() {
   const [otp, setOtp] = useState('');
   const [password, setPassword] = useState('');
   const [password2, setPassword2] = useState('');
-  const [devCode, setDevCode] = useState<string | null>(null);
   const [resendLeft, setResendLeft] = useResendTimer();
   /** код ошибки OTP, показываемый на шаге «код» после отката с шага пароля */
   const [otpStepError, setOtpStepError] = useState<string | null>(null);
@@ -52,7 +51,6 @@ export function RecoveryFlow() {
     mutationFn: () => api.auth.otp.send(phone.trim(), 2),
     onSuccess: (res) => {
       setResendLeft(res.resendAfterSeconds);
-      setDevCode(res.devCode ?? null);
       setStep('code');
     },
   });
@@ -150,11 +148,6 @@ export function RecoveryFlow() {
               autoComplete="one-time-code"
               maxLength={6}
             />
-            {devCode && (
-              <p className="mt-2 text-center text-sm text-text-brand">
-                {t('devCode', { code: devCode })}
-              </p>
-            )}
             <div className="mt-3 text-center text-sm" aria-live="polite">
               {resendLeft > 0 ? (
                 <span className="text-text-disabled">{t('resendIn', { sec: resendLeft })}</span>
