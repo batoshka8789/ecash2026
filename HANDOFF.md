@@ -394,6 +394,47 @@ POST /mobile/auth/login          401   INVALID_CREDENTIALS
 
 Просьба проверить на своей стороне.
 
+### 9.3. Прокси не пропускает WebSocket на `/appHub`
+
+Живые события заявок (SignalR) на дев-контуре не поднимаются. Замерено
+13.08.2026:
+
+```
+POST /appHub/negotiate?negotiateVersion=1   200
+  availableTransports: WebSockets, ServerSentEvents, LongPolling
+
+апгрейд wss://api-dev.quiq.kz/appHub?id=<connectionToken>
+  -> HTTP 200 OK          ожидалось 101 Switching Protocols
+```
+
+Переговоры проходят и WebSockets заявлен как доступный, но на самом апгрейде
+приходит обычный ответ 200 вместо переключения протокола. Так ведёт себя
+прокси, которому не передали заголовки `Upgrade` и `Connection` — для nginx
+это `proxy_set_header Upgrade $http_upgrade;` и `proxy_set_header Connection
+"upgrade";` на location хаба, плюс `proxy_http_version 1.1`.
+
+Побочный эффект уже на нашей стороне: SignalR убивает транспорт во время
+рукопожатия, а его обработчик закрытия бросает мимо промисов —
+в логе шли `uncaughtException` и `unhandledRejection`. Это со стороны сайта
+закрыто (размыкатель + слушатель, см. `src/server/realtime/hub.ts`), процесс
+больше не трогается, интерфейс уходит на опрос сразу и тихо.
+
+**Пока не починено — realtime не работает, но всё остальное работает.**
+Статусы заявок обновляются опросом, просто с задержкой. Если нужно
+выключить попытки совсем, поставьте `REALTIME_ENABLED=false`: перезапуска
+достаточно, пересборка не нужна.
+
+Проверить после починки прокси:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' \
+  -H 'Connection: Upgrade' -H 'Upgrade: websocket' \
+  -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
+  "https://ваш-адрес/appHub?id=<connectionToken из negotiate>"
+```
+
+`101` — апгрейд проходит. `200` — прокси всё ещё съедает его.
+
 ---
 
 ## 10. Проверка кода
