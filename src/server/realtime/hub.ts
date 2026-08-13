@@ -25,10 +25,72 @@ type AccountHub = {
   closeTimer: ReturnType<typeof setTimeout> | null;
 };
 
-const g = globalThis as unknown as { __ecashHubs?: Map<string, AccountHub> };
+/** Состояние размыкателя: общее на процесс, а не на аккаунт. */
+type Breaker = { failures: number; blockedUntil: number };
+
+const g = globalThis as unknown as {
+  __ecashHubs?: Map<string, AccountHub>;
+  __ecashHubBreaker?: Breaker;
+  __ecashHubGuard?: boolean;
+};
 const hubs = (g.__ecashHubs ??= new Map());
+const breaker = (g.__ecashHubBreaker ??= { failures: 0, blockedUntil: 0 });
 
 const CLOSE_GRACE_MS = 30_000;
+
+/** После скольких подряд неудач перестаём дёргать хаб. */
+const BREAKER_THRESHOLD = 2;
+/** На сколько замолкаем. Клиенты это время живут на поллинге. */
+const BREAKER_COOLDOWN_MS = 5 * 60_000;
+
+/**
+ * Гасим броски, которые signalr делает мимо промисов.
+ *
+ * В HttpConnection обработчик закрытия транспорта объявлен так:
+ *
+ *   this.transport.onclose = async (e) => { ... this._stopConnection(e) ... }
+ *
+ * а `_stopConnection` в состоянии Connecting бросает. Промис этой async-функции
+ * никто не держит — в reconnect-ветке получается unhandledRejection, в обычной
+ * бросок уходит прямо в цикл событий как uncaughtException. Поймать это своим
+ * try/catch нельзя: наш `await connection.start()` к тому моменту уже вернулся.
+ *
+ * Воспроизводится, когда транспорт умирает во время рукопожатия — ровно наш
+ * случай: апстрим отвечает на WebSocket-апгрейд кодом 200 вместо 101.
+ *
+ * Поэтому один раз на процесс вешаем СЛУШАТЕЛЯ, который узнаёт этот бросок по
+ * тексту и размыкает цепь — превращает шум в сигнал «хаб мёртв, не ходи туда».
+ *
+ * Он именно слушатель, а не подавитель. Node вызывает всех подписчиков, так
+ * что обработчик Next отработает следом и залогирует ошибку как раньше; чужие
+ * ошибки мы просто пропускаем мимо. Бросать отсюда нельзя ни при каких
+ * условиях: бросок внутри обработчика uncaughtException Node считает
+ * фатальным и убивает процесс без шансов — то есть «защита» уронила бы сайт
+ * вернее самой ошибки.
+ */
+function installSignalrGuard() {
+  if (g.__ecashHubGuard) return;
+  g.__ecashHubGuard = true;
+
+  const noticed = (e: unknown) => {
+    if (e instanceof Error && e.message.includes('was called while the connection is still in')) {
+      openBreaker();
+    }
+  };
+
+  process.on('uncaughtException', noticed);
+  process.on('unhandledRejection', noticed);
+}
+
+function openBreaker() {
+  breaker.failures += 1;
+  if (breaker.failures >= BREAKER_THRESHOLD) {
+    breaker.blockedUntil = Date.now() + BREAKER_COOLDOWN_MS;
+    console.warn(
+      `[hub] хаб недоступен ${breaker.failures} раз подряд — молчу ${BREAKER_COOLDOWN_MS / 60_000} мин, клиенты на поллинге`,
+    );
+  }
+}
 
 function buildConnection(accessToken: string): HubConnection {
   return new HubConnectionBuilder()
@@ -63,6 +125,16 @@ export async function subscribeAccount(
   accessToken: string,
   onEvent: Subscriber,
 ): Promise<() => void> {
+  installSignalrGuard();
+
+  // Размыкатель. Без него каждый SSE-клиент, переподключаясь, поднимал новую
+  // попытку связи с мёртвым хабом: в логе шёл поток ошибок, а человек всё
+  // равно оставался на поллинге. Теперь после двух неудач подряд отвечаем
+  // сразу — интерфейс уходит на поллинг без задержки на таймаут рукопожатия.
+  if (Date.now() < breaker.blockedUntil) {
+    throw new Error('hub-unavailable');
+  }
+
   let hub = hubs.get(accountId);
 
   if (!hub) {
@@ -89,8 +161,15 @@ export async function subscribeAccount(
 
     try {
       await connection.start();
+      // связь есть — прошлые неудачи не в счёт
+      breaker.failures = 0;
+      breaker.blockedUntil = 0;
     } catch (e) {
       hubs.delete(accountId);
+      // соединение могло остаться в промежуточном состоянии и позже бросить
+      // мимо промисов — гасим его сами, ошибку закрытия игнорируем
+      void connection.stop().catch(() => {});
+      openBreaker();
       throw e;
     }
   }
@@ -109,7 +188,9 @@ export async function subscribeAccount(
       h.closeTimer = setTimeout(() => {
         if (h.subscribers.size === 0) {
           hubs.delete(accountId);
-          void h.connection.stop();
+          // stop() отклоняется, если соединение ещё не встало, — это не наша
+          // забота, но без catch отклонение улетело бы в unhandledRejection
+          void h.connection.stop().catch(() => {});
         }
       }, CLOSE_GRACE_MS);
     }

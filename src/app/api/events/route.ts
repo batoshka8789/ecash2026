@@ -62,8 +62,13 @@ export async function GET(req: Request) {
             send(JSON.stringify(event));
           });
         } catch (e) {
-          // хаб недоступен — клиент по событию 'degraded' переключится на поллинг
-          console.warn('[events] SignalR недоступен, отдаю degraded', e);
+          // хаб недоступен — клиент по событию 'degraded' переключится на поллинг.
+          // Печатаем одну строку, а не объект с трассировкой: при мёртвом хабе
+          // сюда заходит каждый переподключающийся клиент, и полный дамп
+          // забивал лог так, что в нём терялось всё остальное.
+          console.warn(
+            `[events] хаб недоступен (${e instanceof Error ? e.message : 'unknown'}) — отдаю degraded`,
+          );
           send('{"reason":"hub-unavailable"}', 'degraded');
         }
       } else {
