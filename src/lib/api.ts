@@ -100,6 +100,13 @@ export const api = {
     list: (signal?: AbortSignal) => request<{ departments: Department[] }>('/departments', { signal }),
     info: (depId: number, signal?: AbortSignal) =>
       request<{ department: DepartmentInfo }>(`/departments/${depId}`, { signal }),
+    /**
+     * Все отделения с карточками (координаты, расписание, курсы) одним
+     * ответом. Заменяет разворот «список + запрос на каждое отделение»:
+     * см. комментарий в /api/departments.
+     */
+    details: (signal?: AbortSignal) =>
+      request<{ departments: DepartmentInfo[] }>('/departments?details=1', { signal }),
   },
 
   rates: {

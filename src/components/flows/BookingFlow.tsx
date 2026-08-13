@@ -65,7 +65,6 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   const paramDep = Number(params.get('depId')) || null;
   const { depId: nearestDep } = useNearestDepId();
   const [pickedDep, setPickedDep] = useState<number | null>(paramDep);
-  const depId = pickedDep ?? nearestDep;
   const setDepId = setPickedDep;
   const [banknotes, setBanknotes] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -100,6 +99,20 @@ export function BookingFlow({ mode }: { mode: Mode }) {
     queryFn: ({ signal }) => api.departments.list(signal),
     staleTime: 5 * 60_000,
   });
+
+  /**
+   * Отделение из адресной строки — только если оно есть в живом списке.
+   *
+   * `?depId=` приходит по ссылке из карточки отделения, но подставить туда
+   * можно что угодно: `/booking?depId=40` открывал служебное отделение
+   * дев-контура с адресом «test». Проверяем по списку, до его прихода
+   * отделение не выбрано — мигания это не даёт, потому что и ближайшее
+   * отделение считается по тому же списку, и до него экран всё равно ждёт.
+   */
+  const known = (id: number | null) =>
+    id != null && (depsQ.data?.departments.some((d) => d.depId === id) ?? false);
+  const depId = (known(pickedDep) ? pickedDep : null) ?? nearestDep;
+
   const depQ = useQuery({
     queryKey: ['department', depId],
     enabled: depId != null,

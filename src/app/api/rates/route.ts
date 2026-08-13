@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/server/db/client';
 import { competitors, favorites } from '@/server/db/schema';
 import { rateStatistics } from '@/server/ecash/endpoints/rates';
-import { depList } from '@/server/ecash/endpoints/departments';
+import { assertVisibleDep, depList } from '@/server/ecash/endpoints/departments';
 import { allMarketRates, marketRate } from '@/server/ecash/market-rate';
 import { sessionAccountId } from '@/server/session';
 import { fromError, ok } from '@/server/api/respond';
@@ -60,7 +60,12 @@ const DEFAULT_COMPETITORS = [
  * не найдём рабочее; список закеширован на 5 минут, лишних запросов нет.
  */
 async function resolveRates(explicit: number | null) {
-  if (explicit != null) return { depId: explicit, rates: await rateStatistics(explicit) };
+  if (explicit != null) {
+    // явный id всё равно проверяем на видимость: иначе `?depId=40` отдавал бы
+    // курсы служебного отделения дев-контура в обход фильтра списка
+    await assertVisibleDep(explicit);
+    return { depId: explicit, rates: await rateStatistics(explicit) };
+  }
 
   const deps = await depList();
   let lastError: unknown = null;

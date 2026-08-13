@@ -42,7 +42,28 @@ export function depList(): Promise<Department[]> {
   });
 }
 
-export function depInfo(depId: number): Promise<DepartmentInfo> {
+/**
+ * Отделение видно посетителю? Единственный источник правды — отфильтрованный
+ * `depList()`.
+ *
+ * Раньше фильтр стоял только в списке, и служебные отделения дев-контура
+ * оставались доступны в обход него: `/api/departments/40` отдавал DEVTEST,
+ * `/api/rates?depId=34` — курсы «проверки лимитов», а ссылка вида
+ * `/booking?depId=40` открывала бронь на отделение с адресом «test». Список
+ * при этом был чистым, поэтому со стороны выглядело, будто всё в порядке.
+ *
+ * Ответ на скрытое отделение намеренно такой же, как на несуществующее:
+ * подтверждать, что id занят, незачем.
+ */
+export async function assertVisibleDep(depId: number): Promise<void> {
+  const deps = await depList();
+  if (!deps.some((d) => d.depId === depId)) {
+    throw new EcashError('DEPARTMENT_NOT_FOUND', 404, `Department ${depId} is not available`);
+  }
+}
+
+export async function depInfo(depId: number): Promise<DepartmentInfo> {
+  await assertVisibleDep(depId);
   return cachedUpstream(`depInfo:${depId}`, DEP_TTL_MS, async () => {
     const raw = await serviceGet<unknown>(`/Department/depInfo/${depId}`);
     return mapDepartmentInfo(raw as Parameters<typeof mapDepartmentInfo>[0]);

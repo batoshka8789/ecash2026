@@ -13,43 +13,39 @@ export type BranchPoint = {
 };
 
 /**
- * Отделения с координатами: `/departments` отдаёт список с адресами,
- * `/departments/{id}` — координаты (в upstream lat/lon перепутаны, нормализуются
- * на сервере, см. `src/server/ecash/coerce.ts`). Ключи запросов те же, что на
- * /locations и в профиле, — TanStack переиспользует кеш вместо повторной загрузки.
+ * Отделения с координатами одним запросом.
+ *
+ * Координаты Ecash отдаёт только в карточке отделения, списком — нет. Раньше
+ * этот разворот делался здесь: список, а следом по запросу на каждое
+ * отделение. На дев-контуре получалось 16 запросов браузер→сервер на каждой
+ * странице с картой или выбором отделения. Теперь разворачивает сервер
+ * (`/api/departments/points`), а обращения к Ecash закрыты его кешем.
+ *
+ * lat/lon в апстриме перепутаны местами — нормализуются на сервере,
+ * см. `src/server/ecash/coerce.ts`.
  */
 export function useBranchPoints(opts?: { enabled?: boolean }) {
   const enabled = opts?.enabled ?? true;
 
-  const list = useQuery({
-    queryKey: ['departments'],
-    queryFn: ({ signal }) => api.departments.list(signal),
+  const q = useQuery({
+    queryKey: ['departmentsDetails'],
+    queryFn: ({ signal }) => api.departments.details(signal),
     staleTime: 5 * 60_000,
     enabled,
-  });
-
-  const depIds = useMemo(() => list.data?.departments.map((d) => d.depId) ?? [], [list.data]);
-
-  const infos = useQuery({
-    queryKey: ['departmentsInfo', depIds],
-    enabled: enabled && depIds.length > 0,
-    staleTime: 5 * 60_000,
-    queryFn: ({ signal }) =>
-      Promise.all(depIds.map((id) => api.departments.info(id, signal).then((r) => r.department))),
   });
 
   // отделения без координат на карту не попадают — пин ставить некуда
   const points = useMemo<BranchPoint[]>(
     () =>
-      (infos.data ?? []).flatMap((d) =>
+      (q.data?.departments ?? []).flatMap((d) =>
         d.coords
           ? [{ depId: d.depId, address: d.address, lat: d.coords.lat, lon: d.coords.lon }]
           : [],
       ),
-    [infos.data],
+    [q.data],
   );
 
-  return { points, loading: list.isLoading || infos.isLoading };
+  return { points, loading: q.isLoading };
 }
 
 const EARTH_KM = 6371;

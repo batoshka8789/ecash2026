@@ -2,7 +2,7 @@ import { and, eq, gte } from 'drizzle-orm';
 import { db } from '@/server/db/client';
 import { rateSnapshots } from '@/server/db/schema';
 import { rateStatistics } from '@/server/ecash/endpoints/rates';
-import { depList } from '@/server/ecash/endpoints/departments';
+import { assertVisibleDep, depList } from '@/server/ecash/endpoints/departments';
 import { fail, fromError, ok } from '@/server/api/respond';
 
 /**
@@ -26,7 +26,11 @@ const PERIODS: Record<string, number> = {
  */
 async function resolveDepId(explicit: string | null): Promise<number> {
   const n = Number(explicit);
-  if (Number.isInteger(n) && n > 0) return n;
+  if (Number.isInteger(n) && n > 0) {
+    // тот же фильтр, что и в списке: скрытое отделение не должно рисовать график
+    await assertVisibleDep(n);
+    return n;
+  }
   const deps = await depList();
   const first = deps[0]?.depId;
   if (!first) throw new Error('Ecash: список отделений пуст');
@@ -35,7 +39,6 @@ async function resolveDepId(explicit: string | null): Promise<number> {
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const depId = await resolveDepId(url.searchParams.get('depId'));
   const code = (url.searchParams.get('code') ?? 'USD').toUpperCase();
   const period = url.searchParams.get('period') ?? 'week';
   const days = PERIODS[period];
@@ -44,7 +47,16 @@ export async function GET(req: Request) {
   const since = new Date(Date.now() - days * 86_400_000);
 
   try {
-    const [snapshots, stats] = await Promise.all([
+    // Внутри try намеренно: resolveDepId ходит в Ecash за списком и бросает на
+    // скрытом/несуществующем отделении. Снаружи этот бросок ловить было
+    // некому — Next отдавал голую 500 вместо честного 404.
+    const depId = await resolveDepId(url.searchParams.get('depId'));
+    // Наша история — необязательная часть графика: при недоступной базе
+    // рисуем по дневным точкам апстрима, а не отдаём пятисотку. Так же
+    // устроен /api/rates, где Postgres и nationalbank.kz идут через
+    // allSettled. Раньше здесь стоял Promise.all, и сбой базы уносил график
+    // целиком, хотя данные для него есть и без неё.
+    const [snapResult, stats] = await Promise.all([
       db
         .select()
         .from(rateSnapshots)
@@ -55,9 +67,14 @@ export async function GET(req: Request) {
             gte(rateSnapshots.takenAt, since),
           ),
         )
-        .orderBy(rateSnapshots.takenAt),
+        .orderBy(rateSnapshots.takenAt)
+        .catch((e) => {
+          console.warn('[rates/history] своя история недоступна, рисую по апстриму', e);
+          return [] as (typeof rateSnapshots.$inferSelect)[];
+        }),
       rateStatistics(depId).catch(() => []),
     ]);
+    const snapshots = snapResult;
 
     const stat = stats.find((s) => s.currencyCode === code);
 

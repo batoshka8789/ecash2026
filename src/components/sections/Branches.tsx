@@ -120,15 +120,19 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
     staleTime: 5 * 60_000,
   });
 
-  const depIds = useMemo(() => list.data?.departments.map((d) => d.depId) ?? [], [list.data]);
-
-  // Детали всех отделений (координаты, расписание, курсы) — одним запросом-обёрткой.
+  // Карточки всех отделений (координаты, расписание, курсы) — одним ответом.
+  // Ключ тот же, что у useBranchPoints, поэтому карта и список на одной
+  // странице делят один запрос вместо шестнадцати на каждого.
+  //
+  // queryFn обязан вернуть РОВНО ту же форму, что и там: TanStack кеширует по
+  // ключу, а не по функции, и распаковка здесь (`.then(r => r.departments)`)
+  // означала бы, что содержимое кеша зависит от того, чей запрос выполнился
+  // первым. Разворачиваем после, через select.
   const infos = useQuery({
-    queryKey: ['departmentsInfo', depIds],
-    enabled: depIds.length > 0,
+    queryKey: ['departmentsDetails'],
     staleTime: 5 * 60_000,
-    queryFn: ({ signal }) =>
-      Promise.all(depIds.map((id) => api.departments.info(id, signal).then((r) => r.department))),
+    queryFn: ({ signal }) => api.departments.details(signal),
+    select: (r) => r.departments,
   });
 
   /** Валюта секции: из ?currency= (пришли из строки курсов), иначе USD. */
@@ -398,7 +402,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
     };
   }, [mapFull, activeDepId]);
 
-  const loading = list.isPending || (depIds.length > 0 && infos.isPending);
+  const loading = list.isPending || infos.isPending;
   const failed = list.isError || infos.isError;
   const retry = () => {
     if (list.isError) void list.refetch();
