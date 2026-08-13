@@ -2,6 +2,7 @@ import { and, eq, gte } from 'drizzle-orm';
 import { db } from '@/server/db/client';
 import { rateSnapshots } from '@/server/db/schema';
 import { rateStatistics } from '@/server/ecash/endpoints/rates';
+import { depList } from '@/server/ecash/endpoints/departments';
 import { fail, fromError, ok } from '@/server/api/respond';
 
 /**
@@ -17,9 +18,24 @@ const PERIODS: Record<string, number> = {
   year: 365,
 };
 
+/**
+ * Отделение для графика. Задано — берём его; не задано — первое из живого
+ * списка. Раньше здесь стояло `?? '1'`: отделение №1 существует на
+ * дев-контуре Ecash по совпадению, на боевом такого id может не быть, и
+ * график молча строился бы по пустой выборке.
+ */
+async function resolveDepId(explicit: string | null): Promise<number> {
+  const n = Number(explicit);
+  if (Number.isInteger(n) && n > 0) return n;
+  const deps = await depList();
+  const first = deps[0]?.depId;
+  if (!first) throw new Error('Ecash: список отделений пуст');
+  return first;
+}
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const depId = Number(url.searchParams.get('depId') ?? '1') || 1;
+  const depId = await resolveDepId(url.searchParams.get('depId'));
   const code = (url.searchParams.get('code') ?? 'USD').toUpperCase();
   const period = url.searchParams.get('period') ?? 'week';
   const days = PERIODS[period];
