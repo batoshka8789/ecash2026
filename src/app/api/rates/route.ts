@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/server/db/client';
 import { competitors, favorites } from '@/server/db/schema';
 import { rateStatistics } from '@/server/ecash/endpoints/rates';
+import { depList } from '@/server/ecash/endpoints/departments';
 import { allMarketRates, marketRate } from '@/server/ecash/market-rate';
 import { sessionAccountId } from '@/server/session';
 import { fromError, ok } from '@/server/api/respond';
@@ -44,11 +45,43 @@ const DEFAULT_COMPETITORS = [
  * `marketRates` сужаем до валют этого отделения — контракт, на который
  * рассчитывают калькулятор, список курсов, бронь и подписка.
  */
+/**
+ * Отделение для ответа.
+ *
+ * Задано явно — берём его как есть: человек выбрал конкретную кассу, и
+ * подменять её нельзя, даже если курсов там нет (тогда честный 404).
+ *
+ * Не задано — выбираем САМИ, и обязательно то, у которого курсы есть.
+ * Раньше здесь стояло `?? '1'`: отделение №1 существует на дев-контуре
+ * Ecash по совпадению, на боевом такого id может не быть вовсе. Плюс даже
+ * существующее отделение может не иметь статистики — у нас такое есть
+ * (Onemotion отдаёт STATISTICS_NOT_FOUND), — и главная встречала бы
+ * посетителя ошибкой вместо курсов. Перебираем список по порядку, пока
+ * не найдём рабочее; список закеширован на 5 минут, лишних запросов нет.
+ */
+async function resolveRates(explicit: number | null) {
+  if (explicit != null) return { depId: explicit, rates: await rateStatistics(explicit) };
+
+  const deps = await depList();
+  let lastError: unknown = null;
+  for (const d of deps) {
+    try {
+      const rates = await rateStatistics(d.depId);
+      if (rates.length > 0) return { depId: d.depId, rates };
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  // ни одно отделение не отдало курсы — это уже сбой апстрима, не наш выбор
+  throw lastError ?? new Error('Ecash: ни одно отделение не отдало курсы');
+}
+
 export async function GET(req: Request) {
-  const depId = Number(new URL(req.url).searchParams.get('depId') ?? '1') || 1;
+  const raw = new URL(req.url).searchParams.get('depId');
+  const explicit = raw != null && Number(raw) > 0 ? Number(raw) : null;
 
   try {
-    const rates = await rateStatistics(depId);
+    const { depId, rates } = await resolveRates(explicit);
 
     const [marketResult, allResult, compsResult, favsResult] = await Promise.allSettled([
       marketRate('USD'),
