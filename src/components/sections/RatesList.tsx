@@ -15,6 +15,7 @@ import { useAuth } from '@/lib/auth';
 import { currencyFlagClass, currencyName, formatNumber } from '@/lib/format';
 import { useErrorText } from '@/lib/useErrorText';
 import { useNearestDepId } from '@/lib/user-place';
+import { sortCurrencyCodes } from '@/lib/currency-order';
 import type { Competitor, CurrencyCode, RateStat } from '@/lib/domain';
 
 /** Валюты «первого экрана» до нажатия «Показать все валюты». */
@@ -87,7 +88,15 @@ export function RatesList() {
         pinned.push(stat);
       }
     }
-    const rest = all.filter((r) => !seen.has(r.currencyCode));
+    // Остальные валюты — в НАШЕМ порядке, а не в том, что прислал апстрим.
+    // Ecash отдаёт их по-своему у каждого отделения, поэтому под «Показать
+    // все валюты» золотые слитки оказывались вперемешку с валютами:
+    // GOLD20, GOLD50, GOLD100, KGS, GBP, THB… Тот же порядок уже применяют
+    // калькулятор и бронь (sortCurrencyCodes), список курсов из него выпал.
+    const restByCode = new Map(
+      all.filter((r) => !seen.has(r.currencyCode)).map((r) => [r.currencyCode, r]),
+    );
+    const rest = sortCurrencyCodes([...restByCode.keys()]).map((c) => restByCode.get(c)!);
     return { list: showAll ? [...pinned, ...rest] : pinned, hasMore: rest.length > 0 };
   }, [data, showAll]);
 
