@@ -60,6 +60,51 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   output: 'standalone',
+  /**
+   * SignalR нельзя бандлить: в Node-ветке он грузит транспорты динамическим
+   * require, а бандлер подменяет require заглушкой, которая бросает
+   * «dynamic usage of require is not supported».
+   *
+   *   // @microsoft/signalr/dist/esm/HttpConnection.js
+   *   if (Platform.isNode && typeof require !== "undefined") {
+   *     const requireFunc = typeof __webpack_require__ === "function"
+   *       ? __non_webpack_require__ : require;
+   *     webSocketModule = requireFunc("ws");
+   *     eventSourceModule = requireFunc("eventsource");
+   *   }
+   *
+   * Обход по `__webpack_require__` рассчитан на webpack и здесь не срабатывает,
+   * а бросок происходит до любых опций — передать готовый WebSocket снаружи
+   * не помогает. В dev это незаметно (модули не бандлятся), в проде хаб падал
+   * при каждом подключении, кабинет молча уезжал на поллинг: в логе
+   * «[events] SignalR недоступен, отдаю degraded».
+   *
+   * ws, eventsource, node-fetch, abort-controller и tough-cookie — обычные
+   * dependencies самого signalr, в standalone-вывод они трассируются.
+   */
+  serverExternalPackages: ['@microsoft/signalr'],
+  /**
+   * Продолжение той же истории. Вывести signalr из бандла мало: его транспорты
+   * подключаются динамическим require, а трассировщик файлов видит только
+   * статические импорты — сам пакет в standalone попадает, его зависимости нет.
+   * В образе это дало бы ту же деградацию хаба, только с MODULE_NOT_FOUND.
+   *
+   * Список — полное транзитивное замыкание зависимостей signalr. Ветки под
+   * `fetch` и `AbortController` на Node 22 не срабатывают (оба есть глобально),
+   * но `ws`, `eventsource`, `tough-cookie` и `fetch-cookie` грузятся всегда:
+   * условие у cookie-jar — `typeof fetch === "undefined" || Platform.isNode`,
+   * на сервере вторая половина истинна. Пересчитать при обновлении signalr.
+   *
+   * Ключ — маршрут SSE-потока: единственное место, где мы поднимаем хаб.
+   */
+  outputFileTracingIncludes: {
+    '/api/events': [
+      './node_modules/{ws,eventsource,tough-cookie,fetch-cookie,node-fetch,abort-controller}/**/*',
+      './node_modules/{event-target-shim,set-cookie-parser,psl,punycode,universalify}/**/*',
+      './node_modules/{url-parse,querystringify,requires-port}/**/*',
+      './node_modules/{whatwg-url,tr46,webidl-conversions}/**/*',
+    ],
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
