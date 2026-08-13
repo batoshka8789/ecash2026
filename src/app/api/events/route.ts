@@ -13,7 +13,9 @@ export const dynamic = 'force-dynamic';
 const HEARTBEAT_MS = 15_000;
 
 export async function GET(req: Request) {
-  const token = await userToken();
+  // при сбое обновления токена поток не открываем, но и не падаем —
+  // клиент останется на поллинге
+  const token = await userToken().catch(() => null);
   const session = await readSession();
   if (!token || !session) {
     return new Response(null, { status: 401 });

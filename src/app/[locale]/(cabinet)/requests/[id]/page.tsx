@@ -17,7 +17,10 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
   const requestId = Number(id);
   if (!Number.isInteger(requestId) || requestId <= 0) notFound();
 
-  const token = await userToken();
+  // Сбой обновления токена (Ecash не ответил) не должен ронять страницу
+  // пятисоткой: показываем экран, данные подтянет клиентский компонент,
+  // а он умеет показать понятную ошибку и повторить запрос.
+  const token = await userToken().catch(() => null);
   // без токена страницу не покажет layout кабинета — гейт здесь только для 404
   if (token) {
     try {
