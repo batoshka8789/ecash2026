@@ -26,7 +26,12 @@ const csp = [
   // статика с yastatic.net) — конкретный набор не документирован и может
   // меняться, поэтому разрешаем весь поддомен, а не перечисляем хосты.
   // apex-домены (без поддомена) добавлены отдельно — см. комментарий у script-src.
-  `img-src 'self' data: blob: https://ecash.kz https://*.2gis.com https://*.yandex.ru https://*.yandex.net https://yastatic.net https://*.yastatic.net`,
+  // Своего домена в списке нет намеренно: 'self' покрывает его сам, каким бы
+  // он ни был. Раньше здесь стоял https://ecash.kz — при развёртывании на
+  // другом домене это была бы просто мёртвая строка с чужим адресом
+  // (флаги валют рисуются локальным flag-icons, картинки новостей отдаются
+  // своим же /api/media/, из апстрима изображения не грузятся).
+  `img-src 'self' data: blob: https://*.2gis.com https://*.yandex.ru https://*.yandex.net https://yastatic.net https://*.yastatic.net`,
   `font-src 'self' https://*.2gis.com https://yastatic.net https://*.yastatic.net`,
   // Апстрима Ecash здесь нет намеренно: в api-dev.quiq.kz ходит только сервер,
   // браузеру достаточно своего origin. Из тайлов карты — 2GIS и Yandex.

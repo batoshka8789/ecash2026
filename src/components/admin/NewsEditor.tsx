@@ -74,6 +74,15 @@ function Section({
  * type на submit внутри собственного onClick, браузер отправит форму
  * действием по умолчанию того же клика (этот баг здесь уже ловили).
  */
+/**
+ * Домен для показа адреса статьи в редакции — из NEXT_PUBLIC_SITE_URL.
+ * Раньше здесь было зашито «ecash.kz»: на чужом развёртывании админ видел
+ * бы в предпросмотре чужой домен вместо своего.
+ */
+const SITE_HOST = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://ecash.kz')
+  .replace(/^https?:\/\//, '')
+  .replace(/\/+$/, '');
+
 export function NewsEditor({ id }: { id?: string }) {
   const router = useRouter();
   const qc = useQueryClient();
@@ -360,7 +369,7 @@ export function NewsEditor({ id }: { id?: string }) {
           className="h-12 w-full rounded-2xl border border-transparent bg-surface-page-surf2 px-4 text-sm text-text-default outline-none transition-colors focus:border-stroke-brand placeholder:text-text-disabled"
         />
         <p className="mt-2 truncate text-xs text-text-disabled">
-          ecash.kz/news/<span className="text-text-brand">{effectiveSlug}</span>
+          {SITE_HOST}/news/<span className="text-text-brand">{effectiveSlug}</span>
         </p>
       </Section>
     </div>
@@ -461,7 +470,7 @@ export function NewsEditor({ id }: { id?: string }) {
 
       <DeviceFrame
         device={device}
-        url={screen === 'feed' ? 'ecash.kz/news' : `ecash.kz/news/${effectiveSlug}`}
+        url={screen === 'feed' ? `${SITE_HOST}/news` : `${SITE_HOST}/news/${effectiveSlug}`}
       >
         {screen === 'feed' ? feedScreen : pageScreen}
       </DeviceFrame>
