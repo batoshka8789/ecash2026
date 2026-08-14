@@ -208,6 +208,16 @@
       "locateDenied": "无法获取您的位置，请手动填写地址",
       "locateEmpty": "未找到带坐标的网点",
       "mapLoading": "正在加载网点…"
+    },
+    "password": {
+      "title": "修改密码",
+      "hint": "如果您记得当前密码，可在此处修改。忘记了请使用短信找回。",
+      "current": "当前密码",
+      "new": "新密码",
+      "repeat": "再次输入新密码",
+      "submit": "修改密码",
+      "done": "密码已修改",
+      "forgot": "忘记当前密码？"
     }
   },
   "notifications": {
@@ -665,7 +675,9 @@
     "emailInvalid": "请检查电子邮箱地址",
     "pushDisabled": "此部署未配置通知功能。",
     "WEAK_PASSWORD": "密码过于简单。至少 8 个字符并包含一个数字",
-    "INVALID_CLIENT_CREDENTIALS": "Ecash 拒绝了应用凭证。请联系管理员"
+    "INVALID_CLIENT_CREDENTIALS": "Ecash 拒绝了应用凭证。请联系管理员",
+    "passwordSame": "新密码与当前密码相同",
+    "currentPasswordWrong": "当前密码不正确"
   },
   "addressModal": {
     "title": "填写您的地址",

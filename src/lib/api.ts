@@ -285,6 +285,12 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify(patch),
       }),
+    /** Смена пароля тем, кто помнит текущий. Сброс по SMS — отдельный путь. */
+    changePassword: (payload: {
+      currentPassword: string;
+      newPassword: string;
+      newPassword2: string;
+    }) => post<{ changed: true }>('/account/password', payload),
   },
 
   profile: {

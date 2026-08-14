@@ -208,6 +208,16 @@
       "locateDenied": "Could not detect your location — enter the address manually",
       "locateEmpty": "No branches with coordinates found",
       "mapLoading": "Loading branches…"
+    },
+    "password": {
+      "title": "Change password",
+      "hint": "If you remember your current password, change it here. Forgot it — use SMS recovery.",
+      "current": "Current password",
+      "new": "New password",
+      "repeat": "Repeat new password",
+      "submit": "Change password",
+      "done": "Password changed",
+      "forgot": "Forgot your current password?"
     }
   },
   "notifications": {
@@ -665,7 +675,9 @@
     "emailInvalid": "Check the email address",
     "pushDisabled": "Notifications are not configured on this deployment.",
     "WEAK_PASSWORD": "Password is too weak. At least 8 characters and one digit",
-    "INVALID_CLIENT_CREDENTIALS": "Ecash rejected the application credentials. Contact the administrator"
+    "INVALID_CLIENT_CREDENTIALS": "Ecash rejected the application credentials. Contact the administrator",
+    "passwordSame": "New password matches the current one",
+    "currentPasswordWrong": "Current password is incorrect"
   },
   "addressModal": {
     "title": "Enter your address",

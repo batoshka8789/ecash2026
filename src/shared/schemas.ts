@@ -116,6 +116,28 @@ export const otpResetBody = z
     path: ['newPassword2'],
   });
 
+/**
+ * Смена пароля из профиля — для тех, кто текущий пароль помнит.
+ * `currentPassword` без ограничений по длине намеренно: это уже существующий
+ * пароль, и правила к нему могли быть другими; проверяет его всё равно ядро.
+ * Новый пароль обязан отличаться — иначе запрос ничего не меняет, а человек
+ * видит «пароль изменён» и думает, что смена прошла.
+ */
+export const changePasswordBody = z
+  .object({
+    currentPassword: z.string().min(1, 'errors.required'),
+    newPassword: passwordSchema,
+    newPassword2: z.string(),
+  })
+  .refine((d) => d.newPassword === d.newPassword2, {
+    message: 'errors.passwordMatch',
+    path: ['newPassword2'],
+  })
+  .refine((d) => d.currentPassword !== d.newPassword, {
+    message: 'errors.passwordSame',
+    path: ['newPassword'],
+  });
+
 // ------------------------------------------------------------------- заявки
 
 export const currencyCodeSchema = z
