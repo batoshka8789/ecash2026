@@ -138,7 +138,9 @@
     "consentBefore": "I consent to Ecash LLP collecting and processing my personal data in accordance with the ",
     "consentLink": "Consent to the collection and processing of personal data",
     "consentAfter": ".",
-    "consentRequired": "Registration is not possible without consent to personal data processing"
+    "consentRequired": "Registration is not possible without consent to personal data processing",
+    "firstNamePlaceholder": "First name",
+    "lastNamePlaceholder": "Last name"
   },
   "recovery": {
     "title": "Password recovery",
@@ -677,7 +679,9 @@
     "WEAK_PASSWORD": "Password is too weak. At least 8 characters and one digit",
     "INVALID_CLIENT_CREDENTIALS": "Ecash rejected the application credentials. Contact the administrator",
     "passwordSame": "New password matches the current one",
-    "currentPasswordWrong": "Current password is incorrect"
+    "currentPasswordWrong": "Current password is incorrect",
+    "nameTooLong": "Value is too long",
+    "nameInvalid": "Letters, hyphen and apostrophe only"
   },
   "addressModal": {
     "title": "Enter your address",

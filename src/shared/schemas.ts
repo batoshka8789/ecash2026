@@ -78,10 +78,31 @@ export const loginBody = z.object({
   password: z.string().min(1, 'errors.required'),
 });
 
+/**
+ * Имя и фамилия при регистрации.
+ *
+ * В ядре Ecash их нет: `/mobile/auth/register` принимает только телефон,
+ * пароль и ИИН, а ФИО там появляется лишь после привязки к клиенту в
+ * отделении. Поэтому имя живёт в нашей анкете — и спросить его больше негде,
+ * кроме как здесь: без него бронь приходилось подписывать вручную каждый раз.
+ *
+ * Требуем хотя бы две буквы: одна буква — почти всегда опечатка или попытка
+ * проскочить поле, а цифры и знаки в имени не нужны и мешают сверке с
+ * документом при выдаче денег в кассе.
+ */
+export const personNameSchema = z
+  .string()
+  .trim()
+  .min(2, 'errors.nameRequired')
+  .max(80, 'errors.nameTooLong')
+  .regex(/^[\p{L}][\p{L}\s'-]*$/u, 'errors.nameInvalid');
+
 export const registerBody = z
   .object({
     phoneNumber: phoneSchema,
     otp: otpSchema,
+    firstName: personNameSchema,
+    lastName: personNameSchema,
     password: passwordSchema,
     password2: z.string(),
     iin: iinSchema.optional(),

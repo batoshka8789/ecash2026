@@ -32,11 +32,47 @@ describe('registerBody', () => {
   const valid = {
     phoneNumber: '77058059595',
     otp: '123456',
+    firstName: 'Нурсултан',
+    lastName: 'Тайтелдиев',
     password: 'password1',
     password2: 'password1',
   };
   it('валидная регистрация проходит', () => {
     expect(registerBody.safeParse(valid).success).toBe(true);
+  });
+
+  /**
+   * Имя и фамилия обязательны: в ядре Ecash полей под них нет, а спросить
+   * больше негде — без них бронь пришлось бы подписывать вручную каждый раз.
+   */
+  it.each(['firstName', 'lastName'] as const)('%s обязателен', (field) => {
+    const r = registerBody.safeParse({ ...valid, [field]: '' });
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error.issues[0].message).toBe('errors.nameRequired');
+  });
+
+  it('одна буква — почти всегда опечатка, отклоняем', () => {
+    const r = registerBody.safeParse({ ...valid, firstName: 'Н' });
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error.issues[0].message).toBe('errors.nameRequired');
+  });
+
+  it('цифры и знаки в имени отклоняются: имя сверяют с документом в кассе', () => {
+    const r = registerBody.safeParse({ ...valid, firstName: 'Иван123' });
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error.issues[0].message).toBe('errors.nameInvalid');
+  });
+
+  it('составные имена и латиница проходят', () => {
+    for (const firstName of ['Анна-Мария', "O'Brien", 'Jean Luc', 'Әсел']) {
+      expect(registerBody.safeParse({ ...valid, firstName }).success).toBe(true);
+    }
+  });
+
+  it('пробелы по краям срезаются — «  Иван  » это Иван', () => {
+    const r = registerBody.safeParse({ ...valid, firstName: '  Иван  ' });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.firstName).toBe('Иван');
   });
   it('пароль без цифры отклоняется с кодом i18n', () => {
     const r = registerBody.safeParse({ ...valid, password: 'passwordx', password2: 'passwordx' });

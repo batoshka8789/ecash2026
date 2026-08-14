@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { db } from '@/server/db/client';
+import { profiles } from '@/server/db/schema';
 import { register } from '@/server/ecash/endpoints/auth';
 import { otpConfirm } from '@/server/ecash/endpoints/otp';
 import { accountMe } from '@/server/ecash/endpoints/account';
@@ -24,6 +26,32 @@ export async function POST(req: Request) {
     const tokens = await register(parsed.phoneNumber, parsed.password, parsed.iin);
     const account = await accountMe(tokens.accessToken);
     await createSession(sessionFromTokens(tokens, account.accountId, account.phoneNumber));
+
+    /**
+     * Имя и фамилию кладём в свою анкету: в ядре Ecash полей под них нет, а
+     * без них бронь пришлось бы подписывать вручную при каждом заказе.
+     *
+     * Сбой записи не отменяет регистрацию: аккаунт в Ecash уже создан и
+     * повторить тот же запрос нельзя — номер занят. Человек в этом случае
+     * зарегистрирован и вошёл, просто имя надо будет ввести в профиле.
+     */
+    try {
+      await db
+        .insert(profiles)
+        .values({
+          accountId: account.accountId,
+          firstName: parsed.firstName,
+          lastName: parsed.lastName,
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: profiles.accountId,
+          set: { firstName: parsed.firstName, lastName: parsed.lastName, updatedAt: new Date() },
+        });
+    } catch (e) {
+      console.warn('[register] имя не сохранилось, аккаунт создан', e);
+    }
+
     return ok({ account }, { status: 201 });
   } catch (e) {
     return fromError(e);
