@@ -9,6 +9,7 @@ import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useErrorText } from '@/lib/useErrorText';
 import { currencySymbol, formatNumber, intlLocale } from '@/lib/format';
+import { alertCurrency } from '@/lib/rate-alert';
 
 /**
  * «Мои подписки» на курс: список активных уведомлений с отключением.
@@ -83,7 +84,12 @@ export function SubscriptionsList() {
                 >
                   <div className="min-w-0">
                     <div className="text-base font-medium text-text-default">
-                      {formatNumber(a.targetRate, locale)} ₸ = 1 {currencySymbol(a.currencyTo)}
+                      {/* Валюта пары — та, что НЕ тенге: направление подписки
+                          закодировано порядком пары, и у «Продаю» (USD→KZT)
+                          currencyTo это KZT — строка выходила «470 ₸ = 1 ₸».
+                          alertCurrency() уже решает это и покрыт тестами. */}
+                      {formatNumber(a.targetRate, locale)} ₸ = 1{' '}
+                      {currencySymbol(alertCurrency(a.currencyFrom, a.currencyTo) ?? a.currencyTo)}
                     </div>
                     <div className="mt-0.5 text-sm text-text-disabled">
                       {t('untilDate', { date: dateFmt.format(new Date(a.until)) })}

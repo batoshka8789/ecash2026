@@ -681,7 +681,8 @@
     "passwordSame": "New password matches the current one",
     "currentPasswordWrong": "Current password is incorrect",
     "nameTooLong": "Value is too long",
-    "nameInvalid": "Letters, hyphen and apostrophe only"
+    "nameInvalid": "Letters, hyphen and apostrophe only",
+    "rateImplausible": "Check the value: this is the rate per unit, not the exchange amount"
   },
   "addressModal": {
     "title": "Enter your address",
