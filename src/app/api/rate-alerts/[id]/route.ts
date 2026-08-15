@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '@/server/db/client';
 import { rateAlerts } from '@/server/db/schema';
 import { withUser } from '@/server/api/guard';
-import { fail, fromError, ok } from '@/server/api/respond';
+import { fail, ok } from '@/server/api/respond';
 import { readSession } from '@/server/session';
 
 /** Отключение подписки. Проверка владельца — в WHERE, не после чтения. */
@@ -17,6 +17,9 @@ export const DELETE = withUser(async (_req, _token, ctx) => {
     if (rows.length === 0) return fail('errors.notFound', 404);
     return ok({ ok: true });
   } catch (e) {
-    return fromError(e);
+    // тот же случай, что в GET и в push/subscribe: путь целиком наш,
+    // упасть тут может только база — отвечаем «повторите позже»
+    console.warn('[rate-alerts] отключение не прошло', (e as Error).message);
+    return fail('errors.serverError', 503);
   }
 });
