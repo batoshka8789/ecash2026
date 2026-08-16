@@ -65,3 +65,4 @@ tsconfig.tsbuildinfo
 # Инструкции для ИИ-ассистентов — не часть проекта
 AGENTS.md
 CLAUDE.md
+.claude/
