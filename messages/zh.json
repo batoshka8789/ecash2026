@@ -682,7 +682,8 @@
     "currentPasswordWrong": "当前密码不正确",
     "nameTooLong": "内容过长",
     "nameInvalid": "仅限字母、连字符和撇号",
-    "rateImplausible": "请检查数值：这是单位汇率，而非兑换金额"
+    "rateImplausible": "请检查数值：这是单位汇率，而非兑换金额",
+    "CAMUNDA_TIMEOUT": "无法创建申请：Ecash 未响应，请重试"
   },
   "addressModal": {
     "title": "填写您的地址",

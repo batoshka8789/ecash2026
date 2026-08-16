@@ -682,7 +682,8 @@
     "currentPasswordWrong": "Current password is incorrect",
     "nameTooLong": "Value is too long",
     "nameInvalid": "Letters, hyphen and apostrophe only",
-    "rateImplausible": "Check the value: this is the rate per unit, not the exchange amount"
+    "rateImplausible": "Check the value: this is the rate per unit, not the exchange amount",
+    "CAMUNDA_TIMEOUT": "Could not create the request: Ecash did not respond. Please try again"
   },
   "addressModal": {
     "title": "Enter your address",
