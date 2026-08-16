@@ -4,6 +4,8 @@ import { body, fail, fromError, ok, zodFail } from '@/server/api/respond';
 import { createReserve, listOperations } from '@/server/ecash/endpoints/reserve';
 import { depList } from '@/server/ecash/endpoints/departments';
 import { createRequestBody, listRequestsQuery } from '@/shared/schemas';
+import { syncWatch, syncWatchMany } from '@/server/request-watch';
+import { readSession } from '@/server/session';
 
 /** GET /api/requests — постраничный список заявок аккаунта. */
 export const GET = withUser(async (req, token) => {
@@ -12,7 +14,11 @@ export const GET = withUser(async (req, token) => {
   if (!q.success) return zodFail(q.error);
 
   try {
-    return ok(await listOperations(token, q.data.page, q.data.pageSize));
+    const page = await listOperations(token, q.data.page, q.data.pageSize);
+    // человек видит актуальные статусы — наблюдателю не о чем сообщать
+    const s = await readSession();
+    if (s) void syncWatchMany(s.accountId, page.requests);
+    return ok(page);
   } catch (e) {
     return fromError(e);
   }
@@ -31,7 +37,10 @@ export const POST = withUser(async (req, token) => {
         return fail('errors.DEPARTMENT_NOT_FOUND', 404, { field: 'depId' });
       }
     }
-    return ok({ request: await createReserve(token, parsed) }, { status: 201 });
+    const request = await createReserve(token, parsed);
+    const s = await readSession();
+    if (s) void syncWatch(s.accountId, request); // с этого момента заявка под наблюдением
+    return ok({ request }, { status: 201 });
   } catch (e) {
     return fromError(e);
   }

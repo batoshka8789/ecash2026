@@ -2,6 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 
 /** POST /api/requests: depId проверяется по реальному списку отделений. */
 
+vi.mock('@/server/request-watch', () => ({
+  // наблюдение — побочный эффект; тесты роутов проверяют контракт ответа
+  syncWatch: vi.fn(),
+  syncWatchMany: vi.fn(),
+}));
+vi.mock('@/server/session', () => ({
+  readSession: vi.fn(async () => ({ accountId: 'a-1' })),
+}));
 vi.mock('@/server/api/guard', () => ({
   withUser:
     (h: (req: Request, token: string, ctx: unknown) => Promise<Response>) =>

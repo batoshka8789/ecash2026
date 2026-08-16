@@ -86,3 +86,88 @@ function formatRate(locale: PushLocale, v: number): string {
   const tag = locale === 'kk' ? 'kk-KZ' : locale === 'zh' ? 'zh-CN' : locale === 'en' ? 'en-US' : 'ru-RU';
   return v.toLocaleString(tag, { maximumFractionDigits: 2 });
 }
+
+// ------------------------------------------------------- решения казначея
+
+import type { ExchangeRequest } from '@/lib/domain';
+import type { WatchEvent } from '@/server/request-watch';
+
+const NUM_LOCALE: Record<PushLocale, string> = {
+  ru: 'ru-RU',
+  en: 'en-US',
+  kk: 'kk-KZ',
+  zh: 'zh-CN',
+};
+
+const fmtRate = (locale: PushLocale, rate: number) =>
+  new Intl.NumberFormat(NUM_LOCALE[locale], { maximumFractionDigits: 2 }).format(rate);
+
+const REQUEST_TITLES: Record<WatchEvent, Record<PushLocale, string>> = {
+  confirmed: {
+    ru: 'Бронь подтверждена',
+    en: 'Booking confirmed',
+    kk: 'Броньдау расталды',
+    zh: '预订已确认',
+  },
+  done: {
+    ru: 'Обмен проведён',
+    en: 'Exchange completed',
+    kk: 'Айырбас өткізілді',
+    zh: '兑换已完成',
+  },
+  cancelled: {
+    ru: 'Заявка отменена',
+    en: 'Request cancelled',
+    kk: 'Өтінім жойылды',
+    zh: '申请已取消',
+  },
+  offer: {
+    ru: 'Казначей предложил курс',
+    en: 'Individual rate offered',
+    kk: 'Қазынашы бағам ұсынды',
+    zh: '已提供个人汇率',
+  },
+};
+
+const REQUEST_BODIES: Record<WatchEvent, Record<PushLocale, (pair: string, n: number) => string>> = {
+  confirmed: {
+    ru: (pair, n) => `${pair}. Заявка №${n} — ждём вас в отделении.`,
+    en: (pair, n) => `${pair}. Request #${n} — see you at the branch.`,
+    kk: (pair, n) => `${pair}. №${n} өтінім — бөлімшеде күтеміз.`,
+    zh: (pair, n) => `${pair}。申请 #${n} — 请到网点办理。`,
+  },
+  done: {
+    ru: (pair, n) => `${pair}. Заявка №${n} выполнена.`,
+    en: (pair, n) => `${pair}. Request #${n} is complete.`,
+    kk: (pair, n) => `${pair}. №${n} өтінім орындалды.`,
+    zh: (pair, n) => `${pair}。申请 #${n} 已完成。`,
+  },
+  cancelled: {
+    ru: (pair, n) => `${pair}. Заявка №${n} отменена — подробности внутри.`,
+    en: (pair, n) => `${pair}. Request #${n} was cancelled — details inside.`,
+    kk: (pair, n) => `${pair}. №${n} өтінім жойылды — егжей-тегжейі ішінде.`,
+    zh: (pair, n) => `${pair}。申请 #${n} 已取消 — 详情见内。`,
+  },
+  offer: {
+    ru: (pair, n) => `${pair}. Ответ по заявке №${n} — подтвердите в течение часа.`,
+    en: (pair, n) => `${pair}. Reply on request #${n} — confirm within an hour.`,
+    kk: (pair, n) => `${pair}. №${n} өтінімге жауап — бір сағат ішінде растаңыз.`,
+    zh: (pair, n) => `${pair}。申请 #${n} 已有回复 — 请在一小时内确认。`,
+  },
+};
+
+/**
+ * Текст push о решении казначея. Пара с курсом даёт мгновенный контекст
+ * («KZT → USD, 526,4»), номер заявки связывает с кабинетом.
+ */
+export function requestEventText(
+  locale: PushLocale,
+  event: WatchEvent,
+  r: ExchangeRequest,
+): { title: string; body: string } {
+  const pair = `${r.currencyFrom} → ${r.currencyTo}, ${fmtRate(locale, r.rate)}`;
+  return {
+    title: REQUEST_TITLES[event][locale],
+    body: REQUEST_BODIES[event][locale](pair, r.requestId),
+  };
+}

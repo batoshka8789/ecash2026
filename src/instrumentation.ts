@@ -24,6 +24,11 @@ export async function register() {
       const { startSnapshotter } = await import('./server/jobs/snapshots');
       startSnapshotter();
 
+      // Наблюдатель заявок: замечает решения казначея, пока человека нет на
+      // сайте, и доставляет их push-ом (SignalR у Ecash не работает — 9.3).
+      const { startRequestWatcher } = await import('./server/jobs/request-watcher');
+      startRequestWatcher();
+
       // Разовый доперевод новостей (en/kk/zh) — в фоне, старт не ждёт:
       // закрывает записи, созданные до автоперевода, и упавшие попытки.
       const { sweepNewsTranslations } = await import('./server/news-autotranslate');

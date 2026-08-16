@@ -3,6 +3,8 @@ import { withUser } from '@/server/api/guard';
 import { fail, fromError, ok, optionalBody } from '@/server/api/respond';
 import { cancelRequest } from '@/server/ecash/endpoints/reserve';
 import { cancelRequestBody } from '@/shared/schemas';
+import { syncWatch } from '@/server/request-watch';
+import { readSession } from '@/server/session';
 
 /** POST /api/requests/[id]/cancel — отмена заявки/брони, резерв возвращается в кассу. */
 export const POST = withUser(async (req, token, ctx) => {
@@ -18,7 +20,10 @@ export const POST = withUser(async (req, token, ctx) => {
 
   try {
     // терминальная заявка → upstream отвечает REQUEST_NOT_CANCELLABLE (409 через fromError)
-    return ok({ request: await cancelRequest(token, requestId, parsed.comment) });
+    const request = await cancelRequest(token, requestId, parsed.comment);
+    const s = await readSession();
+    if (s) void syncWatch(s.accountId, request); // сам отменил — push об этом не нужен
+    return ok({ request });
   } catch (e) {
     return fromError(e);
   }

@@ -186,3 +186,25 @@ export const franchiseLeads = pgTable('franchise_leads', {
   tags: jsonb('tags').$type<string[]>().notNull().default([]),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+/**
+ * Заявки под наблюдением — для push о решении казначея.
+ *
+ * Живые события Ecash (SignalR) до нас не доходят (HANDOFF 9.3), а поллинг
+ * работает только пока вкладка открыта. Человек создал бронь, закрыл сайт —
+ * и не узнал бы, что казначей подтвердил. Эта таблица помнит последнее
+ * известное состояние каждой активной заявки; фоновый наблюдатель сверяет
+ * его с живым и на переходах шлёт push.
+ *
+ * Токенов здесь НЕТ намеренно: только номера заявок и статусы.
+ */
+export const watchedRequests = pgTable('watched_requests', {
+  requestId: integer('request_id').primaryKey(),
+  accountId: text('account_id').notNull(),
+  status: integer('status').notNull(),
+  /** казначей ответил по индивидуальному курсу, ждём решения клиента */
+  needsConfirm: boolean('needs_confirm').notNull().default(false),
+  isIndividual: boolean('is_individual').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});

@@ -6,6 +6,14 @@ import { EcashError } from '@/server/ecash/errors';
  * транслируются в HTTP — 409 у терминальной заявки, 404 у несуществующей.
  */
 
+vi.mock('@/server/request-watch', () => ({
+  // наблюдение — побочный эффект; тесты роутов проверяют контракт ответа
+  syncWatch: vi.fn(),
+  syncWatchMany: vi.fn(),
+}));
+vi.mock('@/server/session', () => ({
+  readSession: vi.fn(async () => ({ accountId: 'a-1' })),
+}));
 vi.mock('@/server/api/guard', () => ({
   withUser:
     (h: (req: Request, token: string, ctx: unknown) => Promise<Response>) =>

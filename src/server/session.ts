@@ -5,6 +5,7 @@ import { EcashError } from './ecash/errors';
 import { refreshTokens, type AuthTokens } from './ecash/endpoints/auth';
 import { seal, unseal } from './session-crypto';
 import { isAdminPhone } from './admin';
+import { rememberUserToken } from './token-cache';
 
 /**
  * Сессия = зашифрованная httpOnly-кука с токенами Ecash. Ничего не хранится
@@ -80,12 +81,18 @@ export async function readSession(): Promise<SessionData | null> {
 export async function userToken(): Promise<string | null> {
   const s = await readSession();
   if (!s) return null;
-  if (s.accessExpiresAt > Date.now()) return s.accessToken;
+  if (s.accessExpiresAt > Date.now()) {
+    // токен и так у нас в руках — запоминаем для наблюдателя заявок
+    // (см. token-cache.ts: память процесса, не диск и не база)
+    rememberUserToken(s.accountId, s.accessToken);
+    return s.accessToken;
+  }
 
   try {
     const fresh = await refreshTokens(s.refreshToken);
     const next = sessionFromTokens(fresh, s.accountId, s.phone ?? '');
     await createSession(next);
+    rememberUserToken(next.accountId, next.accessToken);
     return next.accessToken;
   } catch (e) {
     if (e instanceof EcashError && (e.httpStatus === 401 || e.httpStatus === 400)) {
