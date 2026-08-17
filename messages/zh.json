@@ -139,10 +139,7 @@
     "consentAfter": "收集和处理我的个人数据。",
     "consentRequired": "未同意个人数据处理则无法完成注册",
     "firstNamePlaceholder": "名字",
-    "lastNamePlaceholder": "姓氏",
-    "iinLabel": "个人识别号（12位）",
-    "byIin": "使用IIN登录",
-    "byPhoneNumber": "使用电话号码登录"
+    "lastNamePlaceholder": "姓氏"
   },
   "recovery": {
     "title": "找回密码",

@@ -139,10 +139,7 @@
     "consentAfter": ".",
     "consentRequired": "Без согласия на обработку персональных данных регистрация невозможна",
     "firstNamePlaceholder": "Имя",
-    "lastNamePlaceholder": "Фамилия",
-    "iinLabel": "ИИН (12 цифр)",
-    "byIin": "Войти по ИИН",
-    "byPhoneNumber": "Войти по номеру телефона"
+    "lastNamePlaceholder": "Фамилия"
   },
   "recovery": {
     "title": "Восстановление пароля",

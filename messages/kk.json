@@ -139,10 +139,7 @@
     "consentAfter": " сәйкес келісім беремін.",
     "consentRequired": "Дербес деректерді өңдеуге келісімсіз тіркелу мүмкін емес",
     "firstNamePlaceholder": "Аты",
-    "lastNamePlaceholder": "Тегі",
-    "iinLabel": "ЖСН (12 сан)",
-    "byIin": "ЖСН арқылы кіру",
-    "byPhoneNumber": "Телефон нөмірімен кіру"
+    "lastNamePlaceholder": "Тегі"
   },
   "recovery": {
     "title": "Құпиясөзді қалпына келтіру",
