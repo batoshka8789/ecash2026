@@ -122,7 +122,7 @@
       "submit": "Sign up",
       "phonePlaceholder": "Phone number"
     },
-    "loginLabel": "Phone number or email",
+    "loginLabel": "Phone number or IIN",
     "phoneLabel": "Phone number",
     "otpTitle": "Verify your number",
     "otpSent": "We sent an SMS code to {phone}. Enter it to continue",
@@ -683,7 +683,8 @@
     "nameTooLong": "Value is too long",
     "nameInvalid": "Letters, hyphen and apostrophe only",
     "rateImplausible": "Check the value: this is the rate per unit, not the exchange amount",
-    "CAMUNDA_TIMEOUT": "Could not create the request: Ecash did not respond. Please try again"
+    "CAMUNDA_TIMEOUT": "Could not create the request: Ecash did not respond. Please try again",
+    "loginInvalid": "Enter a phone number or IIN"
   },
   "addressModal": {
     "title": "Enter your address",

@@ -122,7 +122,7 @@
       "submit": "注册",
       "phonePlaceholder": "手机号码"
     },
-    "loginLabel": "手机号或电子邮箱",
+    "loginLabel": "电话号码或个人识别号(IIN)",
     "phoneLabel": "手机号码",
     "otpTitle": "验证手机号码",
     "otpSent": "我们已向 {phone} 发送短信验证码。请输入验证码以继续",
@@ -683,7 +683,8 @@
     "nameTooLong": "内容过长",
     "nameInvalid": "仅限字母、连字符和撇号",
     "rateImplausible": "请检查数值：这是单位汇率，而非兑换金额",
-    "CAMUNDA_TIMEOUT": "无法创建申请：Ecash 未响应，请重试"
+    "CAMUNDA_TIMEOUT": "无法创建申请：Ecash 未响应，请重试",
+    "loginInvalid": "请输入电话号码或个人识别号"
   },
   "addressModal": {
     "title": "填写您的地址",

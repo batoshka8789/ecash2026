@@ -28,6 +28,30 @@ describe('loginBody', () => {
   });
 });
 
+describe('loginValueSchema — только телефон или ИИН', () => {
+  it('мусор с буквами отклоняется с кодом поля, а не улетает в ядро', () => {
+    const r = loginBody.safeParse({ login: '343Зававыаыаыв', password: 'x' });
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error.issues[0].message).toBe('errors.loginInvalid');
+  });
+
+  it('ИИН (12 цифр) проходит', () => {
+    expect(loginBody.safeParse({ login: '990101300123', password: 'x' }).success).toBe(true);
+  });
+
+  it('телефон в любом написании проходит', () => {
+    for (const login of ['+77051234567', '87051234567', '7705123456', '+7 (705) 123 45 67']) {
+      expect(loginBody.safeParse({ login, password: 'x' }).success).toBe(true);
+    }
+  });
+
+  it('слишком короткий или длинный без «+» отклоняется', () => {
+    for (const login of ['12345', '1234567890123']) {
+      expect(loginBody.safeParse({ login, password: 'x' }).success).toBe(false);
+    }
+  });
+});
+
 describe('registerBody', () => {
   const valid = {
     phoneNumber: '77058059595',

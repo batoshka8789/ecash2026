@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/Input';
 import { PillTabs } from '@/components/ui/PillTabs';
 import { GoogleIcon, TelegramIcon } from '@/components/ui/BrandIcons';
 import { useAuth } from '@/lib/auth';
-import { formatLoginInput, formatPhoneInput } from '@/lib/format';
+import { formatLoginInput, formatPhoneInput, prettifyLoginOnBlur } from '@/lib/format';
 import { useResendTimer } from '@/lib/hooks';
 import { useErrorText } from '@/lib/useErrorText';
 import {
@@ -56,9 +56,10 @@ const SOCIAL_HINT_ID = 'social-auth-hint';
  * вкладки r20, поля 54×r20, кнопка 54×r20, под формой линия и соц-входы.
  *
  * Отличия от беты — по контракту самого Ecash:
- *   · подпись поля входа осталась «Номер телефона или ИИН» и с маской
- *     телефона: loginValueSchema принимает и то, и другое, а почту апстрим
- *     на входе не знает;
+ *   · поле входа принимает телефон или ИИН; буквы не набираются («почты»
+ *     у апстрима нет), маска не навязывается во время набора — она резала
+ *     ввод до 10 цифр и делала 12-значный ИИН ненабираемым — и надевается
+ *     на телефон при уходе из поля (formatLoginInput / prettifyLoginOnBlur);
  *   · регистрация телефонная (registerBody.phoneNumber = phoneSchema),
  *     поэтому экран кода всегда набран текстами про SMS.
  */
@@ -348,15 +349,20 @@ export function AuthCard({
                   /* поля с зазором 8, под ними ссылка, затем кнопка через 12 */
                   <div className="flex flex-col gap-3">
                     <div className="flex flex-col gap-1">
-                      {/* У поля логина НЕТ inputMode="tel": оно принимает и почту,
-                          а цифровая клавиатура на телефоне не даёт её набрать. */}
+                      {/* Логин — телефон или ИИН, оба из цифр, поэтому на телефоне
+                          уместна цифровая клавиатура. Во время набора маска не
+                          навязывается (ИИН 70-х–80-х начинается на 7/8, как и
+                          телефон с кодом), телефон прихорашивается на уходе из
+                          поля — см. prettifyLoginOnBlur. */}
                       <div className="flex flex-col gap-2">
                         <Input
                           placeholder={t('loginLabel')}
                           value={loginValue}
                           onChange={(e) => setLoginValue(formatLoginInput(e.target.value))}
+                          onBlur={() => setLoginValue((v) => prettifyLoginOnBlur(v))}
                           errors={err('login').concat(err('phoneNumber'))}
                           autoComplete="username"
+                          inputMode="tel"
                         />
                         <Input
                           placeholder={t('passwordPlaceholder')}
