@@ -122,7 +122,6 @@
       "submit": "Зарегистрироваться",
       "phonePlaceholder": "Номер телефона"
     },
-    "loginLabel": "Номер телефона или ИИН",
     "phoneLabel": "Номер телефона",
     "otpTitle": "Подтверждение номера",
     "otpSent": "Мы отправили SMS с кодом на номер {phone}. Введите код для продолжения",
@@ -140,7 +139,10 @@
     "consentAfter": ".",
     "consentRequired": "Без согласия на обработку персональных данных регистрация невозможна",
     "firstNamePlaceholder": "Имя",
-    "lastNamePlaceholder": "Фамилия"
+    "lastNamePlaceholder": "Фамилия",
+    "iinLabel": "ИИН (12 цифр)",
+    "byIin": "Войти по ИИН",
+    "byPhoneNumber": "Войти по номеру телефона"
   },
   "recovery": {
     "title": "Восстановление пароля",

@@ -122,7 +122,6 @@
       "submit": "Тіркелу",
       "phonePlaceholder": "Телефон нөмірі"
     },
-    "loginLabel": "Телефон нөмірі немесе ЖСН",
     "phoneLabel": "Телефон нөмірі",
     "otpTitle": "Нөмірді растау",
     "otpSent": "{phone} нөміріне SMS код жіберілді. Жалғастыру үшін енгізіңіз",
@@ -140,7 +139,10 @@
     "consentAfter": " сәйкес келісім беремін.",
     "consentRequired": "Дербес деректерді өңдеуге келісімсіз тіркелу мүмкін емес",
     "firstNamePlaceholder": "Аты",
-    "lastNamePlaceholder": "Тегі"
+    "lastNamePlaceholder": "Тегі",
+    "iinLabel": "ЖСН (12 сан)",
+    "byIin": "ЖСН арқылы кіру",
+    "byPhoneNumber": "Телефон нөмірімен кіру"
   },
   "recovery": {
     "title": "Құпиясөзді қалпына келтіру",

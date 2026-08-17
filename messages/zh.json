@@ -122,7 +122,6 @@
       "submit": "注册",
       "phonePlaceholder": "手机号码"
     },
-    "loginLabel": "电话号码或个人识别号(IIN)",
     "phoneLabel": "手机号码",
     "otpTitle": "验证手机号码",
     "otpSent": "我们已向 {phone} 发送短信验证码。请输入验证码以继续",
@@ -140,7 +139,10 @@
     "consentAfter": "收集和处理我的个人数据。",
     "consentRequired": "未同意个人数据处理则无法完成注册",
     "firstNamePlaceholder": "名字",
-    "lastNamePlaceholder": "姓氏"
+    "lastNamePlaceholder": "姓氏",
+    "iinLabel": "个人识别号（12位）",
+    "byIin": "使用IIN登录",
+    "byPhoneNumber": "使用电话号码登录"
   },
   "recovery": {
     "title": "找回密码",

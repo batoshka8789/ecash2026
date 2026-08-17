@@ -122,7 +122,6 @@
       "submit": "Sign up",
       "phonePlaceholder": "Phone number"
     },
-    "loginLabel": "Phone number or IIN",
     "phoneLabel": "Phone number",
     "otpTitle": "Verify your number",
     "otpSent": "We sent an SMS code to {phone}. Enter it to continue",
@@ -140,7 +139,10 @@
     "consentAfter": ".",
     "consentRequired": "Registration is not possible without consent to personal data processing",
     "firstNamePlaceholder": "First name",
-    "lastNamePlaceholder": "Last name"
+    "lastNamePlaceholder": "Last name",
+    "iinLabel": "IIN (12 digits)",
+    "byIin": "Log in with IIN",
+    "byPhoneNumber": "Log in with phone number"
   },
   "recovery": {
     "title": "Password recovery",

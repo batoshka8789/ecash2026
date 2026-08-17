@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/Input';
 import { PillTabs } from '@/components/ui/PillTabs';
 import { GoogleIcon, TelegramIcon } from '@/components/ui/BrandIcons';
 import { useAuth } from '@/lib/auth';
-import { formatLoginInput, formatPhoneInput, prettifyLoginOnBlur } from '@/lib/format';
+import { formatPhoneInput } from '@/lib/format';
 import { useResendTimer } from '@/lib/hooks';
 import { useErrorText } from '@/lib/useErrorText';
 import {
@@ -56,10 +56,12 @@ const SOCIAL_HINT_ID = 'social-auth-hint';
  * вкладки r20, поля 54×r20, кнопка 54×r20, под формой линия и соц-входы.
  *
  * Отличия от беты — по контракту самого Ecash:
- *   · поле входа принимает телефон или ИИН; буквы не набираются («почты»
- *     у апстрима нет), маска не навязывается во время набора — она резала
- *     ввод до 10 цифр и делала 12-значный ИИН ненабираемым — и надевается
- *     на телефон при уходе из поля (formatLoginInput / prettifyLoginOnBlur);
+ *   · логин — телефон ИЛИ ИИН («почты» у апстрима нет), и это ДВА РЕЖИМА
+ *     поля, а не одно свободное: по умолчанию телефон с живой маской, ИИН —
+ *     по явной ссылке под полем. Совместить в одном поле нельзя: ИИН
+ *     родившегося в 70-е–80-е начинается на 7/8, как телефон с кодом
+ *     страны, и на середине набора их не различить — любая «умная» маска
+ *     либо съедает 11-ю цифру ИИН, либо лишает телефон форматирования;
  *   · регистрация телефонная (registerBody.phoneNumber = phoneSchema),
  *     поэтому экран кода всегда набран текстами про SMS.
  */
@@ -100,6 +102,8 @@ export function AuthCard({
    * в другом после переключения вкладок.
    */
   const [loginMode, setLoginMode] = useState<'password' | 'otp'>('password');
+  /** Режим поля логина: телефон (живая маска) или ИИН (12 цифр без маски). */
+  const [loginKind, setLoginKind] = useState<'phone' | 'iin'>('phone');
   const [loginOtpStep, setLoginOtpStep] = useState<'phone' | 'code'>('phone');
   const [otpResendLeft, setOtpResendLeft] = useResendTimer();
   /**
@@ -349,21 +353,37 @@ export function AuthCard({
                   /* поля с зазором 8, под ними ссылка, затем кнопка через 12 */
                   <div className="flex flex-col gap-3">
                     <div className="flex flex-col gap-1">
-                      {/* Логин — телефон или ИИН, оба из цифр, поэтому на телефоне
-                          уместна цифровая клавиатура. Во время набора маска не
-                          навязывается (ИИН 70-х–80-х начинается на 7/8, как и
-                          телефон с кодом), телефон прихорашивается на уходе из
-                          поля — см. prettifyLoginOnBlur. */}
+                      {/* Два режима одного поля — см. комментарий в шапке файла:
+                          телефон и ИИН неразличимы на середине набора, поэтому
+                          режим выбирается явно, и маска телефона живёт при
+                          наборе, а ИИН набирается всеми 12 цифрами. */}
                       <div className="flex flex-col gap-2">
                         <Input
-                          placeholder={t('loginLabel')}
+                          placeholder={loginKind === 'phone' ? t('phoneLabel') : t('iinLabel')}
                           value={loginValue}
-                          onChange={(e) => setLoginValue(formatLoginInput(e.target.value))}
-                          onBlur={() => setLoginValue((v) => prettifyLoginOnBlur(v))}
+                          onChange={(e) =>
+                            setLoginValue(
+                              loginKind === 'phone'
+                                ? formatPhoneInput(e.target.value)
+                                : e.target.value.replace(/\D/g, '').slice(0, 12),
+                            )
+                          }
                           errors={err('login').concat(err('phoneNumber'))}
                           autoComplete="username"
-                          inputMode="tel"
+                          inputMode={loginKind === 'phone' ? 'tel' : 'numeric'}
+                          maxLength={loginKind === 'phone' ? 18 : 12}
                         />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            resetErrors();
+                            setLoginValue('');
+                            setLoginKind((k) => (k === 'phone' ? 'iin' : 'phone'));
+                          }}
+                          className="w-fit cursor-pointer text-sm font-medium leading-5 text-text-brand transition-opacity hover:opacity-80"
+                        >
+                          {loginKind === 'phone' ? t('byIin') : t('byPhoneNumber')}
+                        </button>
                         <Input
                           placeholder={t('passwordPlaceholder')}
                           value={password}
@@ -392,8 +412,11 @@ export function AuthCard({
                         resetErrors();
                         // если в поле логина уже набран телефон — переносим
                         // его в SMS-режим, чтобы не набирать второй раз
+                        // (из режима ИИН не переносим: коду нужен именно номер)
                         const digits = loginValue.replace(/\D/g, '');
-                        if (digits.length >= 10) setPhone(formatPhoneInput(loginValue));
+                        if (loginKind === 'phone' && digits.length >= 10) {
+                          setPhone(formatPhoneInput(loginValue));
+                        }
                         setLoginMode('otp');
                       }}
                       className="cursor-pointer text-center text-sm font-medium leading-5 text-text-brand transition-opacity hover:opacity-80"
