@@ -1,5 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { formatPhoneInput } from './format';
+import { currencyFlagClass, formatPhoneInput } from './format';
+
+describe('currencyFlagClass', () => {
+  it('у каждой валюты живого контура есть свой флаг, а не золотая заглушка', () => {
+    // Полный список кодов, которые реально отдаёт api-dev по всем
+    // отделениям (замер 18.08.2026). Валюта без строки в карте флагов
+    // рендерится золотым бейджем — так уже терялись 11 валют, потом ILS и
+    // OMR; при появлении нового кода у Ecash этот тест укажет на пропуск.
+    const live = [
+      'AED', 'AMD', 'AUD', 'AZN', 'CAD', 'CHF', 'CNY', 'CZK', 'DZD', 'EUR',
+      'GBP', 'GEL', 'IDR', 'ILS', 'INR', 'JPY', 'KGS', 'KRW', 'KZT', 'MXN',
+      'OMR', 'PLN', 'QAR', 'RUB', 'SAR', 'SEK', 'SGD', 'THB', 'TJS', 'TRY',
+      'UAH', 'USD', 'UZS', 'VND',
+    ];
+    const missing = live.filter((code) => currencyFlagClass(code) === null);
+    expect(missing).toEqual([]);
+  });
+
+  it('золото и неизвестные коды — null (золотой бейдж)', () => {
+    expect(currencyFlagClass('GOLD5')).toBeNull();
+    expect(currencyFlagClass('XXX')).toBeNull();
+  });
+});
 
 describe('formatPhoneInput', () => {
   it('набирает номер с нуля по цифре, не теряя первую', () => {

@@ -163,7 +163,9 @@ export function currencyFlagClass(code: string): string | null {
     AZN: 'az',
     DZD: 'dz',
     IDR: 'id',
+    ILS: 'il',
     MXN: 'mx',
+    OMR: 'om',
     PLN: 'pl',
     QAR: 'qa',
     SAR: 'sa',
@@ -224,6 +226,7 @@ export function currencySymbol(code: string): string {
     KRW: '₩',
     INR: '₹',
     UAH: '₴',
+    ILS: '₪',
   };
   return map[code] ?? code;
 }
