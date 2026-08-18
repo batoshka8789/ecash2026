@@ -7,7 +7,7 @@ import { accountMe } from '@/server/ecash/endpoints/account';
 import { checkOrigin, rateLimited } from '@/server/api/guard';
 import { body, fail, fromError, ok } from '@/server/api/respond';
 import { createSession, sessionFromTokens } from '@/server/session';
-import { registerBody } from '@/shared/schemas';
+import { registerBody, splitFullName } from '@/shared/schemas';
 
 /** Регистрация: телефон подтверждён OTP (purpose 0) → пароль → сессия. */
 export async function POST(req: Request) {
@@ -36,17 +36,15 @@ export async function POST(req: Request) {
      * зарегистрирован и вошёл, просто имя надо будет ввести в профиле.
      */
     try {
+      // форма спрашивает ФИО одной строкой — раскладываем по полям анкеты,
+      // чтобы профиль и ядро Ecash видели привычные им части
+      const name = splitFullName(parsed.fullName);
       await db
         .insert(profiles)
-        .values({
-          accountId: account.accountId,
-          firstName: parsed.firstName,
-          lastName: parsed.lastName,
-          updatedAt: new Date(),
-        })
+        .values({ accountId: account.accountId, ...name, updatedAt: new Date() })
         .onConflictDoUpdate({
           target: profiles.accountId,
-          set: { firstName: parsed.firstName, lastName: parsed.lastName, updatedAt: new Date() },
+          set: { ...name, updatedAt: new Date() },
         });
     } catch (e) {
       console.warn('[register] имя не сохранилось, аккаунт создан', e);

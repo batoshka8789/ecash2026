@@ -138,8 +138,7 @@
     "consentLink": "《个人数据收集与处理同意书》",
     "consentAfter": "收集和处理我的个人数据。",
     "consentRequired": "未同意个人数据处理则无法完成注册",
-    "firstNamePlaceholder": "名字",
-    "lastNamePlaceholder": "姓氏"
+    "fullNamePlaceholder": "姓 名 父称"
   },
   "recovery": {
     "title": "找回密码",
@@ -609,7 +608,6 @@
     "amountRequired": "请输入金额",
     "rateRequired": "请输入期望汇率",
     "dateRequired": "请选择日期",
-    "nameRequired": "请输入姓名",
     "notFound": "未找到",
     "badBody": "请求格式有误",
     "branchUnknown": "未找到该网点",
@@ -683,7 +681,9 @@
     "nameInvalid": "仅限字母、连字符和撇号",
     "rateImplausible": "请检查数值：这是单位汇率，而非兑换金额",
     "CAMUNDA_TIMEOUT": "无法创建申请：Ecash 未响应，请重试",
-    "loginInvalid": "请输入电话号码或个人识别号"
+    "loginInvalid": "请输入电话号码或个人识别号",
+    "fullNameRequired": "请输入姓和名",
+    "fullNameParts": "请用空格分隔姓和名"
   },
   "addressModal": {
     "title": "填写您的地址",

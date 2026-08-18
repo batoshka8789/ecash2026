@@ -138,8 +138,7 @@
     "consentLink": "Consent to the collection and processing of personal data",
     "consentAfter": ".",
     "consentRequired": "Registration is not possible without consent to personal data processing",
-    "firstNamePlaceholder": "First name",
-    "lastNamePlaceholder": "Last name"
+    "fullNamePlaceholder": "Last name First name Middle name"
   },
   "recovery": {
     "title": "Password recovery",
@@ -609,7 +608,6 @@
     "amountRequired": "Enter an amount",
     "rateRequired": "Enter the desired rate",
     "dateRequired": "Choose a date",
-    "nameRequired": "Enter your name",
     "notFound": "Not found",
     "badBody": "Malformed request",
     "branchUnknown": "Branch not found",
@@ -683,7 +681,9 @@
     "nameInvalid": "Letters, hyphen and apostrophe only",
     "rateImplausible": "Check the value: this is the rate per unit, not the exchange amount",
     "CAMUNDA_TIMEOUT": "Could not create the request: Ecash did not respond. Please try again",
-    "loginInvalid": "Enter a phone number or IIN"
+    "loginInvalid": "Enter a phone number or IIN",
+    "fullNameRequired": "Enter your last and first name",
+    "fullNameParts": "Enter last and first name separated by a space"
   },
   "addressModal": {
     "title": "Enter your address",

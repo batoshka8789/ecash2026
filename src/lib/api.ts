@@ -250,8 +250,7 @@ export const api = {
     register: (payload: {
       phoneNumber: string;
       otp: string;
-      firstName: string;
-      lastName: string;
+      fullName: string;
       password: string;
       password2: string;
       iin?: string;

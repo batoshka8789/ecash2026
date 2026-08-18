@@ -138,8 +138,7 @@
     "consentLink": "Согласием на сбор и обработку персональных данных",
     "consentAfter": ".",
     "consentRequired": "Без согласия на обработку персональных данных регистрация невозможна",
-    "firstNamePlaceholder": "Имя",
-    "lastNamePlaceholder": "Фамилия"
+    "fullNamePlaceholder": "Фамилия Имя Отчество"
   },
   "recovery": {
     "title": "Восстановление пароля",
@@ -609,7 +608,6 @@
     "amountRequired": "Укажите сумму",
     "rateRequired": "Укажите желаемый курс",
     "dateRequired": "Укажите дату",
-    "nameRequired": "Укажите имя",
     "notFound": "Не найдено",
     "badBody": "Некорректный запрос",
     "branchUnknown": "Отделение не найдено",
@@ -683,7 +681,9 @@
     "nameInvalid": "Только буквы, дефис и апостроф",
     "rateImplausible": "Проверьте отметку: это курс за 1 единицу валюты, а не сумма обмена",
     "CAMUNDA_TIMEOUT": "Не удалось оформить заявку: сервис Ecash не ответил. Попробуйте ещё раз",
-    "loginInvalid": "Введите номер телефона или ИИН"
+    "loginInvalid": "Введите номер телефона или ИИН",
+    "fullNameRequired": "Укажите фамилию и имя",
+    "fullNameParts": "Укажите фамилию и имя через пробел"
   },
   "addressModal": {
     "title": "Укажите свой адрес",

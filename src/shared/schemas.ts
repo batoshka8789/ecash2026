@@ -89,30 +89,55 @@ export const loginBody = z.object({
 });
 
 /**
- * Имя и фамилия при регистрации.
+ * ФИО при регистрации — ОДНО поле, «Фамилия Имя Отчество» в одну строку.
  *
- * В ядре Ecash их нет: `/mobile/auth/register` принимает только телефон,
+ * В ядре Ecash его нет: `/mobile/auth/register` принимает только телефон,
  * пароль и ИИН, а ФИО там появляется лишь после привязки к клиенту в
- * отделении. Поэтому имя живёт в нашей анкете — и спросить его больше негде,
+ * отделении. Поэтому оно живёт в нашей анкете — и спросить его больше негде,
  * кроме как здесь: без него бронь приходилось подписывать вручную каждый раз.
  *
- * Требуем хотя бы две буквы: одна буква — почти всегда опечатка или попытка
- * проскочить поле, а цифры и знаки в имени не нужны и мешают сверке с
- * документом при выдаче денег в кассе.
+ * Одним полем, а не тремя: человек пишет ФИО так, как привык и как оно
+ * стоит в документе, — а разложить строку на части умеет сервер
+ * (`splitFullName`). Три поля на форме регистрации были лишними движениями
+ * ради данных, которые всё равно сводятся в одну подпись под заявкой.
+ *
+ * Минимум два слова: одна фамилия без имени в кассе бесполезна. Цифры и
+ * знаки отклоняются намеренно — ФИО сверяют с документом при выдаче денег.
  */
-export const personNameSchema = z
+export const fullNameSchema = z
   .string()
   .trim()
-  .min(2, 'errors.nameRequired')
-  .max(80, 'errors.nameTooLong')
-  .regex(/^[\p{L}][\p{L}\s'-]*$/u, 'errors.nameInvalid');
+  .min(3, 'errors.fullNameRequired')
+  .max(160, 'errors.nameTooLong')
+  .regex(/^[\p{L}][\p{L}\s'-]*$/u, 'errors.nameInvalid')
+  // двойные пробелы между словами — не повод отказывать, просто чистим
+  .transform((s: string) => s.replace(/\s+/g, ' '))
+  .refine((s: string) => s.split(' ').length >= 2, 'errors.fullNameParts');
+
+/**
+ * Раскладка «Фамилия Имя Отчество» на поля анкеты. Порядок — тот, в котором
+ * ФИО пишут в Казахстане и в документах; хвост из четырёх и более слов
+ * (двойные фамилии, «оглы»/«кызы») целиком уходит в отчество, чтобы ничего
+ * не потерялось.
+ */
+export function splitFullName(fullName: string): {
+  firstName: string;
+  lastName: string;
+  middleName: string;
+} {
+  const parts = fullName.trim().replace(/\s+/g, ' ').split(' ');
+  return {
+    lastName: parts[0] ?? '',
+    firstName: parts[1] ?? '',
+    middleName: parts.slice(2).join(' '),
+  };
+}
 
 export const registerBody = z
   .object({
     phoneNumber: phoneSchema,
     otp: otpSchema,
-    firstName: personNameSchema,
-    lastName: personNameSchema,
+    fullName: fullNameSchema,
     password: passwordSchema,
     password2: z.string(),
     iin: iinSchema.optional(),

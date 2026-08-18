@@ -22,13 +22,13 @@ import {
   writeConsent,
 } from '@/lib/legal/consent-storage';
 import { ConsentModal } from '@/components/legal/ConsentModal';
-import { passwordSchema, personNameSchema } from '@/shared/schemas';
+import { fullNameSchema, passwordSchema } from '@/shared/schemas';
 import { api, ApiError } from '@/lib/api';
 
 type Tab = 'login' | 'signup';
 
 /** Поля первого экрана регистрации — их ошибки видны только на нём. */
-const REG_FORM_FIELDS = ['login', 'phoneNumber', 'firstName', 'lastName', 'password', 'password2'];
+const REG_FORM_FIELDS = ['login', 'phoneNumber', 'fullName', 'password', 'password2'];
 
 /**
  * Кнопки соц-входа есть в макете, но нажать их нельзя: в контракте Ecash
@@ -93,8 +93,7 @@ export function AuthCard({
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [password2, setPassword2] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [fullName, setFullName] = useState('');
   /** Обратный отсчёт до повторной отправки кода. */
   const [resendLeft, setResendLeft] = useResendTimer();
   /**
@@ -173,8 +172,7 @@ export function AuthCard({
       api.auth.register({
         phoneNumber: phone.trim(),
         otp,
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
+        fullName: fullName.trim(),
         password,
         password2,
       }),
@@ -248,17 +246,12 @@ export function AuthCard({
         setConsentError(true);
         return;
       }
-      // Имя и фамилия — там же, до SMS: полей для них на экране кода нет,
+      // ФИО — там же, до SMS: поля для него на экране кода нет,
       // а серверный отказ после ввода кода сжёг бы код впустую.
-      for (const [field, value] of [
-        ['firstName', firstName],
-        ['lastName', lastName],
-      ] as const) {
-        const parsed = personNameSchema.safeParse(value);
-        if (!parsed.success) {
-          setFormError({ field, message: parsed.error.issues[0].message });
-          return;
-        }
+      const name = fullNameSchema.safeParse(fullName);
+      if (!name.success) {
+        setFormError({ field: 'fullName', message: name.error.issues[0].message });
+        return;
       }
       // Пароль сервер проверит только финальным POST-ом — со второго экрана,
       // где полей уже нет. Проверяем той же схемой до отправки SMS.
@@ -449,28 +442,20 @@ export function AuthCard({
                       inputMode="tel"
                       maxLength={18}
                     />
-                    {/* Имя и фамилия — наша анкета, в ядре Ecash их нет.
+                    {/* ФИО одной строкой — наша анкета, в ядре Ecash его нет.
                         Спрашиваем здесь, чтобы бронь подписывалась сама:
-                        иначе человек вводил бы своё имя при каждом заказе. */}
+                        иначе человек вводил бы себя при каждом заказе.
+                        Одно поле вместо трёх: на части строку раскладывает
+                        сервер (splitFullName), человеку лишних движений нет. */}
                     <Input
-                      placeholder={t('firstNamePlaceholder')}
-                      value={firstName}
+                      placeholder={t('fullNamePlaceholder')}
+                      value={fullName}
                       onChange={(e) => {
                         setFormError(null);
-                        setFirstName(e.target.value.slice(0, 80));
+                        setFullName(e.target.value.slice(0, 160));
                       }}
-                      errors={err('firstName')}
-                      autoComplete="given-name"
-                    />
-                    <Input
-                      placeholder={t('lastNamePlaceholder')}
-                      value={lastName}
-                      onChange={(e) => {
-                        setFormError(null);
-                        setLastName(e.target.value.slice(0, 80));
-                      }}
-                      errors={err('lastName')}
-                      autoComplete="family-name"
+                      errors={err('fullName')}
+                      autoComplete="name"
                     />
                     <Input
                       placeholder={t('passwordPlaceholder')}

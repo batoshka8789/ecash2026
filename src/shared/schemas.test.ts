@@ -7,6 +7,7 @@ import {
   phoneSchema,
   rateAlertBody,
   registerBody,
+  splitFullName,
 } from './schemas';
 
 describe('phoneSchema', () => {
@@ -56,8 +57,7 @@ describe('registerBody', () => {
   const valid = {
     phoneNumber: '77058059595',
     otp: '123456',
-    firstName: 'Нурсултан',
-    lastName: 'Тайтелдиев',
+    fullName: 'Тайтелдиев Нурсултан',
     password: 'password1',
     password2: 'password1',
   };
@@ -66,38 +66,39 @@ describe('registerBody', () => {
   });
 
   /**
-   * Имя и фамилия обязательны: в ядре Ecash полей под них нет, а спросить
-   * больше негде — без них бронь пришлось бы подписывать вручную каждый раз.
+   * ФИО обязательно: в ядре Ecash поля под него нет, а спросить больше
+   * негде — без него бронь пришлось бы подписывать вручную каждый раз.
    */
-  it.each(['firstName', 'lastName'] as const)('%s обязателен', (field) => {
-    const r = registerBody.safeParse({ ...valid, [field]: '' });
+  it('пустое ФИО отклоняется', () => {
+    const r = registerBody.safeParse({ ...valid, fullName: '' });
     expect(r.success).toBe(false);
-    if (!r.success) expect(r.error.issues[0].message).toBe('errors.nameRequired');
+    if (!r.success) expect(r.error.issues[0].message).toBe('errors.fullNameRequired');
   });
 
-  it('одна буква — почти всегда опечатка, отклоняем', () => {
-    const r = registerBody.safeParse({ ...valid, firstName: 'Н' });
+  it('одна фамилия без имени отклоняется — в кассе бесполезна', () => {
+    const r = registerBody.safeParse({ ...valid, fullName: 'Тайтелдиев' });
     expect(r.success).toBe(false);
-    if (!r.success) expect(r.error.issues[0].message).toBe('errors.nameRequired');
+    if (!r.success) expect(r.error.issues[0].message).toBe('errors.fullNameParts');
   });
 
-  it('цифры и знаки в имени отклоняются: имя сверяют с документом в кассе', () => {
-    const r = registerBody.safeParse({ ...valid, firstName: 'Иван123' });
+  it('цифры и знаки отклоняются: ФИО сверяют с документом в кассе', () => {
+    const r = registerBody.safeParse({ ...valid, fullName: 'Иванов Иван123' });
     expect(r.success).toBe(false);
     if (!r.success) expect(r.error.issues[0].message).toBe('errors.nameInvalid');
   });
 
   it('составные имена и латиница проходят', () => {
-    for (const firstName of ['Анна-Мария', "O'Brien", 'Jean Luc', 'Әсел']) {
-      expect(registerBody.safeParse({ ...valid, firstName }).success).toBe(true);
+    for (const fullName of ['Ким Анна-Мария', "O'Brien John", 'Дюпон Жан Люк', 'Әсетова Әсел']) {
+      expect(registerBody.safeParse({ ...valid, fullName }).success).toBe(true);
     }
   });
 
-  it('пробелы по краям срезаются — «  Иван  » это Иван', () => {
-    const r = registerBody.safeParse({ ...valid, firstName: '  Иван  ' });
+  it('лишние пробелы схлопываются', () => {
+    const r = registerBody.safeParse({ ...valid, fullName: '  Тайтелдиев   Нурсултан  ' });
     expect(r.success).toBe(true);
-    if (r.success) expect(r.data.firstName).toBe('Иван');
+    if (r.success) expect(r.data.fullName).toBe('Тайтелдиев Нурсултан');
   });
+
   it('пароль без цифры отклоняется с кодом i18n', () => {
     const r = registerBody.safeParse({ ...valid, password: 'passwordx', password2: 'passwordx' });
     expect(r.success).toBe(false);
@@ -107,6 +108,40 @@ describe('registerBody', () => {
     const r = registerBody.safeParse({ ...valid, password2: 'password2' });
     expect(r.success).toBe(false);
     if (!r.success) expect(r.error.issues[0].message).toBe('errors.passwordMatch');
+  });
+});
+
+describe('splitFullName — раскладка строки по полям анкеты', () => {
+  it('«Фамилия Имя» — порядок как в документах', () => {
+    expect(splitFullName('Тайтелдиев Нурсултан')).toEqual({
+      lastName: 'Тайтелдиев',
+      firstName: 'Нурсултан',
+      middleName: '',
+    });
+  });
+
+  it('три слова — с отчеством', () => {
+    expect(splitFullName('Иванов Иван Иванович')).toEqual({
+      lastName: 'Иванов',
+      firstName: 'Иван',
+      middleName: 'Иванович',
+    });
+  });
+
+  it('хвост длиннее трёх слов не теряется — «оглы», двойные части', () => {
+    expect(splitFullName('Алиев Рашид Мамед оглы')).toEqual({
+      lastName: 'Алиев',
+      firstName: 'Рашид',
+      middleName: 'Мамед оглы',
+    });
+  });
+
+  it('лишние пробелы не создают пустых частей', () => {
+    expect(splitFullName('  Ким   Анна  ')).toEqual({
+      lastName: 'Ким',
+      firstName: 'Анна',
+      middleName: '',
+    });
   });
 });
 
