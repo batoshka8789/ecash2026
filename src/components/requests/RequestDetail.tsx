@@ -9,6 +9,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Iconsax } from '@/components/ui/Iconsax';
 import { Button } from '@/components/ui/Button';
 import { api, ApiError } from '@/lib/api';
+import { counterAmount } from '@/lib/exchange';
 import { useCountdown } from '@/lib/hooks';
 import { useErrorText } from '@/lib/useErrorText';
 import {
@@ -202,12 +203,19 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
             readOnly
             currency={r.currencyFrom}
           />
-          {/* Сумма показывается всегда, даже пока казначей не ответил: это
-              расчёт по курсу на момент заявки, и он полезнее заглушки
-              «На рассмотрении» — итоговый курс всё равно виден рядом. */}
+          {/* Сумма получения считается У НАС из value и rate, а не берётся из
+              поля amount апстрима. Поле производное, и после ответа казначея
+              по индивидуальному курсу ядро пересчитывает его умножением без
+              учёта направления: живой пример — заявка №6729, отдал 10 000 ₸
+              по курсу 461, ядро прислало amount = 4 610 000 $ вместо 21,69.
+              Показывать человеку абсурдную сумму денег нельзя, а value и
+              rate — согласованные факты сделки, из которых сумма выводится
+              однозначно (counterAmount, под тестами). Для обычной брони
+              формула совпадает с тем, что мы сами и отправили. Дефект ядра
+              задокументирован в HANDOFF 9.5. */}
           <AmountBox
             label={`${tf('pair.get')} (${currencySymbol(r.currencyTo)})`}
-            value={formatMoney(r.amount, locale)}
+            value={formatMoney(counterAmount(r.value, r.rate, r.currencyFrom) || r.amount, locale)}
             readOnly
             currency={r.currencyTo}
           />
