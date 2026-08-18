@@ -73,6 +73,23 @@ describe('mapRequest', () => {
     const r = mapRequest({ ...base, status: 0, accepts: [] });
     expect(r.needsClientConfirmation).toBe(false);
   });
+
+  it('после согласия клиента (появился accept брони) повторного подтверждения не требует', () => {
+    // раздел 5, шаг 3 контракта: confirm автоматически создаёт запрос брони
+    // казначею — accept типа 1; заявка при этом остаётся в статусе 0
+    const r = mapRequest({
+      ...base,
+      status: 0,
+      isIndividual: true,
+      accepts: [
+        { acceptId: 1, actionType: 2, status: 2, statusName: 'Подтверждена' },
+        { acceptId: 2, actionType: 1, status: 0, statusName: 'Заведена' },
+      ],
+    });
+    expect(r.needsClientConfirmation).toBe(false);
+    expect(r.bookingRequested).toBe(true);
+    expect(r.phase).toBe('pending');
+  });
 });
 
 describe('mapRateStat', () => {

@@ -163,6 +163,8 @@ export type ExchangeRequest = {
   phase: RequestPhase;
   /** индивидуальный курс согласован, ждём решения клиента (60 мин) */
   needsClientConfirmation: boolean;
+  /** клиент согласился с курсом — запрос брони уже у казначея (accept типа 1) */
+  bookingRequested: boolean;
   clientId: number | null;
   currencyFrom: CurrencyCode;
   currencyTo: CurrencyCode;

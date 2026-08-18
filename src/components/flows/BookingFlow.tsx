@@ -248,7 +248,10 @@ export function BookingFlow({ mode }: { mode: Mode }) {
         currencyTo: kztGive ? foreign : 'KZT',
         value: round2(effValue),
         rate: round2(effRate),
-        amount: Math.round(effAmount),
+        // до сотых, а не до целого: при получении валюты в amount живут центы
+        // (10 000 ₸ / 461 = 21,69 $ — не 22). Для апстрима сервер всё равно
+        // пересчитает amount сам (см. upstreamAmount в reserve.ts).
+        amount: round2(effAmount),
         // проверено в tryCreate: без отделения мутация не запускается
         depId: depId ?? undefined,
         fullName: name.trim() || undefined,

@@ -255,10 +255,25 @@ export function mapRequest(raw: RawRequest): ExchangeRequest {
   const accepts = (raw.accepts ?? []).map(mapAccept);
   const isIndividual = raw.isIndividual === true;
 
+  /**
+   * Согласие клиента уже переросло в запрос брони: по контракту (раздел 5,
+   * шаг 3) после /individual-rate/confirm ядро автоматически создаёт
+   * обращение к казначею на резервирование — это accept типа 1. Признак
+   * нужен, чтобы после согласия экран не предлагал согласиться ещё раз.
+   */
+  const bookingRequested = isIndividual && accepts.some((a) => a.actionType === 1);
+
   // индивидуальный курс согласован казначеем (accept типа 2 подтверждён),
-  // заявка ещё в статусе 0 → ждём решения клиента, окно 60 минут
+  // заявка ещё в статусе 0 → ждём решения клиента, окно 60 минут.
+  // После согласия появляется accept брони (bookingRequested) — решение
+  // принято, повторно спрашивать нечего: раньше это условие оставалось
+  // истинным и после согласия, кнопки «Согласен/Отказываюсь» не исчезали,
+  // а повторное нажатие got 409 BOOKING_ALREADY_REQUESTED.
   const needsClientConfirmation =
-    status === 0 && isIndividual && accepts.some((a) => a.actionType === 2 && a.status === 2);
+    status === 0 &&
+    isIndividual &&
+    !bookingRequested &&
+    accepts.some((a) => a.actionType === 2 && a.status === 2);
 
   return {
     requestId: int(raw.requestId) ?? 0,
@@ -266,6 +281,7 @@ export function mapRequest(raw: RawRequest): ExchangeRequest {
     statusName: str(raw.statusName),
     phase: phaseOf(status),
     needsClientConfirmation,
+    bookingRequested,
     clientId: int(raw.clientId),
     currencyFrom,
     currencyTo: str(raw.currencyTo),

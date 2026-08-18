@@ -226,8 +226,10 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
             {formatNumber(r.rate, locale)} ₸ = 1 {currencySymbol(foreign)}
           </span>
         </div>
-        {/* комментарий клиента — сюда попадает выбранный тип купюр */}
-        {r.comment && (
+        {/* Комментарий клиента — сюда попадает выбранный тип купюр. При отмене
+            ядро пишет «Отменено клиентом» и в comment, и в acceptComment —
+            не показываем одну строку дважды («Комментарий» + «Причина»). */}
+        {r.comment && r.comment !== r.acceptComment && (
           <p className="mt-4 text-sm text-text-disabled">
             {t('commentLabel')}: <span className="text-text-default">{r.comment}</span>
           </p>
@@ -422,7 +424,11 @@ function StatusHead({ request: r }: { request: ExchangeRequest }) {
       ? tn('titles.bookedPair')
       : r.phase === 'pending'
         ? r.isIndividual
-          ? tn('titles.offerSent')
+          ? r.bookingRequested
+            ? // курс согласован обеими сторонами, запрос брони у казначея
+              // (раздел 5, шаг 4 контракта) — это уже не «заявка отправлена»
+              t('bookingRequested')
+            : tn('titles.offerSent')
           : t('status0')
         : r.phase === 'done'
           ? t('status1')
