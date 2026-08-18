@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/server/db/client';
 import { profiles } from '@/server/db/schema';
 import { withUser } from '@/server/api/guard';
-import { body, fromError, ok } from '@/server/api/respond';
+import { body, fail, ok } from '@/server/api/respond';
 import { profilePatchBody } from '@/shared/schemas';
 import { profileFromRow } from '@/server/db/profile';
 import { readSession } from '@/server/session';
@@ -31,7 +31,12 @@ export const PATCH = withUser(async (req) => {
 
     return ok({ profile: profileFromRow(row) });
   } catch (e) {
-    return fromError(e);
+    // анкета живёт только в нашей базе — Ecash в этом пути не участвует,
+    // единственный возможный сбой здесь её недоступность. Голая 500
+    // «Что-то пошло не так» выглядела как поломка сайта; 503 «Ошибка
+    // сервера, попробуйте позже» — правда и подсказка повторить.
+    console.warn('[profile] анкета не сохранилась', (e as Error).message);
+    return fail('errors.serverError', 503);
   }
 });
 

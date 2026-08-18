@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '@/server/db/client';
 import { favorites } from '@/server/db/schema';
 import { withUser } from '@/server/api/guard';
-import { body, fromError, ok } from '@/server/api/respond';
+import { body, fail, ok } from '@/server/api/respond';
 import { favoriteToggleBody } from '@/shared/schemas';
 import { readSession } from '@/server/session';
 
@@ -43,6 +43,8 @@ export const POST = withUser(async (req) => {
     const rows = await db.select().from(favorites).where(eq(favorites.accountId, accountId));
     return ok({ favorites: rows.map((r) => r.currencyCode) });
   } catch (e) {
-    return fromError(e);
+    // тот же случай, что в profile: путь целиком наш, упасть может только база
+    console.warn('[favorites] переключение не сохранилось', (e as Error).message);
+    return fail('errors.serverError', 503);
   }
 });
