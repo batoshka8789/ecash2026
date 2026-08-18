@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/server/db/client';
 import { franchiseLeads } from '@/server/db/schema';
 import { submitFranchise } from '@/server/ecash/endpoints/franchise';
+import { EcashError } from '@/server/ecash/errors';
 import { checkOrigin, rateLimited } from '@/server/api/guard';
 import { body, fail, ok } from '@/server/api/respond';
 import { franchiseLeadBody, type FranchiseLeadBody } from '@/shared/schemas';
@@ -51,6 +52,22 @@ export async function POST(req: Request) {
       comment: parsed.comment,
     });
   } catch (e) {
+    // 4xx ядра — заявка отклонена по СОДЕРЖИМОМУ (у ядра с 18.08.2026 своя
+    // валидация: INVALID_PHONE, INVALID_FULLNAME «только буквы, пробелы,
+    // дефис и апостроф», INVALID_AMOUNT). Человек может поправить поле —
+    // показываем ошибку у поля, а не безликий «serverError»; локальная
+    // запись невалидной анкеты не нужна.
+    if (e instanceof EcashError && e.httpStatus >= 400 && e.httpStatus < 500) {
+      const field =
+        e.code === 'INVALID_PHONE'
+          ? 'phoneNumber'
+          : e.code === 'INVALID_FULLNAME'
+            ? 'fullName'
+            : e.code === 'INVALID_AMOUNT'
+              ? 'amount'
+              : e.fields?.[0];
+      return fail(`errors.${e.code}`, e.httpStatus, { field });
+    }
     console.warn('[franchise] upstream недоступен, лид сохраняем локально с пометкой', e);
     ecashDown = true;
   }

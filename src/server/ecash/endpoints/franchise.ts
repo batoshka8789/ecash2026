@@ -15,11 +15,12 @@ export type FranchisePayload = {
 };
 
 /**
- * В контракте заказчика все пять полей присутствуют в теле всегда
- * (businessDescription/comment — строки, amount — число). Наша анкета
- * сокращена до ФИО + телефона, поэтому отсутствующие поля добиваем
- * пустыми значениями сами — чтобы не зависеть от того, как упстрим
- * относится к отсутствующим ключам.
+ * Отсутствующие текстовые поля добиваем пустыми строками (упстрим их
+ * принимает), а вот amount при неизвестной сумме НЕ передаём вовсе:
+ * 18.08.2026 у ядра появилась валидация «от 1 до 1000000000», и прежний
+ * `amount: 0` стал ронять каждую заявку с 400 INVALID_AMOUNT — сайт
+ * отвечал 502 на честно заполненную форму. Без ключа amount ядро заявку
+ * принимает (проверено живой пробой: id 3, «Заявка принята»).
  */
 export const submitFranchise = (payload: FranchisePayload) =>
   ecashFetch<unknown>('/mobile/franchise', {
@@ -28,7 +29,7 @@ export const submitFranchise = (payload: FranchisePayload) =>
       fullName: payload.fullName,
       phoneNumber: payload.phoneNumber,
       businessDescription: payload.businessDescription ?? '',
-      amount: payload.amount ?? 0,
+      ...(payload.amount != null && payload.amount > 0 ? { amount: payload.amount } : {}),
       comment: payload.comment ?? '',
     },
   });
