@@ -683,7 +683,9 @@
     "CAMUNDA_TIMEOUT": "Could not create the request: Ecash did not respond. Please try again",
     "loginInvalid": "Enter a phone number or IIN",
     "fullNameRequired": "Enter your last and first name",
-    "fullNameParts": "Enter last and first name separated by a space"
+    "fullNameParts": "Enter last and first name separated by a space",
+    "CAMUNDA_START_FAILED": "Could not create the request: the Ecash service is not responding. Please try again later",
+    "camundaFamily": "Could not create the request: the Ecash service is not responding. Please try again later"
   },
   "addressModal": {
     "title": "Enter your address",

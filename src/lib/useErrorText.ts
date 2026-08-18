@@ -18,8 +18,19 @@ export function useErrorText() {
   return (code: string | null | undefined) => {
     if (!code) return '';
     const key = code.startsWith('errors.') ? code : `errors.${code}`;
-    // нет перевода → человеку показываем «непредвиденную ошибку»
-    if (!t.has(key)) return t('errors.unknown');
+    if (!t.has(key)) {
+      /**
+       * Семейство ошибок Camunda — обработчика заявок внутри Ecash. Коды у
+       * него плодятся по мере их починок (видели CAMUNDA_TIMEOUT, затем
+       * CAMUNDA_START_FAILED), и каждый новый без этого фолбэка показывался
+       * бы безликим «Что-то пошло не так» — ровно так человек и узнал о
+       * втором коде. Для человека же все они означают одно: заявку сейчас
+       * не оформить, ядро не отвечает — говорим это прямо.
+       */
+      if (key.startsWith('errors.CAMUNDA')) return t('errors.camundaFamily');
+      // нет перевода → человеку показываем «непредвиденную ошибку»
+      return t('errors.unknown');
+    }
     return t(key as Parameters<typeof t>[0]);
   };
 }

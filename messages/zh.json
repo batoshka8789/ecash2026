@@ -683,7 +683,9 @@
     "CAMUNDA_TIMEOUT": "无法创建申请：Ecash 未响应，请重试",
     "loginInvalid": "请输入电话号码或个人识别号",
     "fullNameRequired": "请输入姓和名",
-    "fullNameParts": "请用空格分隔姓和名"
+    "fullNameParts": "请用空格分隔姓和名",
+    "CAMUNDA_START_FAILED": "无法创建申请：Ecash 服务无响应，请稍后重试",
+    "camundaFamily": "无法创建申请：Ecash 服务无响应，请稍后重试"
   },
   "addressModal": {
     "title": "填写您的地址",
