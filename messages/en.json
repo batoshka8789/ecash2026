@@ -160,7 +160,9 @@
     "phonePlaceholder": "Phone number",
     "resend": "Resend code",
     "resendIn": "Resend available in {sec} s",
-    "toLogin": "Back to log in"
+    "toLogin": "Back to log in",
+    "resetUnstable": "Password reset may currently fail due to an issue on the Ecash side (already being fixed). The reliable way to access your account without a password is to",
+    "resetUnstableAction": "log in with an SMS code"
   },
   "sidebar": {
     "profile": "My profile",

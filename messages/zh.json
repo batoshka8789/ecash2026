@@ -160,7 +160,9 @@
     "phonePlaceholder": "手机号码",
     "resend": "重新发送验证码",
     "resendIn": "{sec} 秒后可重新发送",
-    "toLogin": "前往登录"
+    "toLogin": "前往登录",
+    "resetUnstable": "由于 Ecash 方面的故障（正在修复），密码重置目前可能无法生效。无需密码进入账户的可靠方式是",
+    "resetUnstableAction": "使用短信验证码登录"
   },
   "sidebar": {
     "profile": "个人中心",

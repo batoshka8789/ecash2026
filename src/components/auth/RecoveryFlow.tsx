@@ -115,6 +115,21 @@ export function RecoveryFlow() {
             <p className="mx-auto mt-3 max-w-80 text-center text-sm leading-relaxed text-text-disabled">
               {t('phoneStep')}
             </p>
+            {/* Сброс пароля на стороне ядра Ecash сейчас отвечает успехом, но
+                пароль не меняет (HANDOFF 9.2, у них в работе). Честно
+                предупреждаем ДО прохождения шагов и даём рабочий путь —
+                вход по SMS-коду, который пароль не использует. Убрать блок,
+                когда Ecash подтвердят починку сброса. */}
+            <div className="mx-auto mt-4 max-w-96 rounded-2xl bg-surface-page-surf2 p-4 text-sm leading-relaxed text-text-default">
+              {t('resetUnstable')}{' '}
+              <button
+                type="button"
+                onClick={() => router.push('/login')}
+                className="cursor-pointer font-medium text-text-brand transition-opacity hover:opacity-80"
+              >
+                {t('resetUnstableAction')}
+              </button>
+            </div>
             <Input
               className="mt-6"
               label={t('phonePlaceholder')}
