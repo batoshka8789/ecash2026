@@ -182,6 +182,57 @@ describe('mapRequest', () => {
     expect(r.phase).toBe('held');
   });
 
+  /**
+   * Индивидуальный курс при «восьмёрочном» поведении ядра (статус 8 с
+   * создания). Ловушка: на этапе «казначей предложил курс» ядро кладёт в
+   * reservedUntil окно РЕШЕНИЯ КЛИЕНТА (раздел 5, шаг 3) — по одному этому
+   * полю предложение выглядело бы действующей бронью, а требование
+   * «статус строго 0» прятало бы кнопки «Согласен/Отказываюсь» навсегда.
+   */
+  it('индивидуальная: предложение курса при статусе 8 — это решение клиента, не бронь', () => {
+    const r = mapRequest({
+      ...base,
+      status: 8,
+      isIndividual: true,
+      reservedAt: '2026-08-19T09:00:00Z',
+      reservedUntil: '2026-08-19T10:00:00Z', // окно решения клиента
+      accepts: [
+        { acceptId: 1, actionType: 2, status: 2, statusName: 'Подтверждена', rate: 470 },
+      ],
+    });
+    expect(r.needsClientConfirmation).toBe(true);
+    expect(r.treasurerConfirmed).toBe(false);
+    expect(r.phase).toBe('pending');
+  });
+
+  it('индивидуальная: ждёт казначея при статусе 8 — pending без кнопок решения', () => {
+    const r = mapRequest({
+      ...base,
+      status: 8,
+      isIndividual: true,
+      reservedUntil: null,
+      accepts: [{ acceptId: 1, actionType: 2, status: 0, statusName: 'Заведена' }],
+    });
+    expect(r.needsClientConfirmation).toBe(false);
+    expect(r.phase).toBe('pending');
+  });
+
+  it('индивидуальная: бронь подтверждена (accept типа 1) — только тогда held', () => {
+    const r = mapRequest({
+      ...base,
+      status: 8,
+      isIndividual: true,
+      reservedUntil: '2026-08-19T11:00:00Z',
+      accepts: [
+        { acceptId: 1, actionType: 2, status: 2, statusName: 'Подтверждена' },
+        { acceptId: 2, actionType: 1, status: 2, statusName: 'Подтверждена' },
+      ],
+    });
+    expect(r.treasurerConfirmed).toBe(true);
+    expect(r.phase).toBe('held');
+    expect(r.needsClientConfirmation).toBe(false); // bookingRequested гасит
+  });
+
   it('после согласия клиента (появился accept брони) повторного подтверждения не требует', () => {
     // раздел 5, шаг 3 контракта: confirm автоматически создаёт запрос брони
     // казначею — accept типа 1; заявка при этом остаётся в статусе 0
