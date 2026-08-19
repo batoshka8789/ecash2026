@@ -236,6 +236,7 @@
     },
     "titles": {
       "bookedPair": "您已预订货币对",
+      "requestPending": "申请审核中",
       "alertsOn": "汇率通知已开启",
       "alertsOff": "通知已关闭",
       "rateReached": "汇率已达到您设定的目标",

@@ -41,6 +41,10 @@ function fromRequest(r: ExchangeRequest): NotificationDto {
   if (r.isIndividual) {
     titleKey = r.needsClientConfirmation ? 'offerReviewed' : 'offerSent';
     if (r.needsClientConfirmation) actions.push('individual');
+  } else if (r.phase === 'pending') {
+    // казначей ещё не подтвердил (ядро ставит статус 8 сразу при создании,
+    // см. treasurerConfirmed) — «вы забронировали» здесь было бы неправдой
+    titleKey = 'requestPending';
   } else if (r.phase === 'cancelled') {
     titleKey = 'bookedPair';
   }

@@ -236,6 +236,7 @@
     },
     "titles": {
       "bookedPair": "You booked a currency pair",
+      "requestPending": "Request under review",
       "alertsOn": "Rate notifications enabled",
       "alertsOff": "Notifications disabled",
       "rateReached": "The rate reached your mark",
