@@ -547,7 +547,14 @@ export function BookingFlow({ mode }: { mode: Mode }) {
             className="mt-6 w-full md:mt-8 md:w-auto"
             disabled={create.isPending || !validAmount}
           >
-            {mode === 'individual' || individual ? t('data.requestIndividualCta') : t('data.book')}
+            {/* Создание идёт через Camunda и легитимно длится до ~25 с —
+                без живой подписи кнопка выглядела «залипшей», человек уходил
+                или жал повторно. */}
+            {create.isPending
+              ? t('data.sending')
+              : mode === 'individual' || individual
+                ? t('data.requestIndividualCta')
+                : t('data.book')}
           </Button>
           {!validAmount && (
             <p className="mt-2 text-sm text-text-disabled">{t('data.amountRequired')}</p>

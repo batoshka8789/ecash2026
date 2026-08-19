@@ -82,8 +82,22 @@ function httpFallback(status: number): string {
   return 'errors.unknown';
 }
 
-const post = <T>(path: string, payload?: unknown) =>
-  request<T>(path, { method: 'POST', body: payload !== undefined ? JSON.stringify(payload) : '{}' });
+const post = <T>(path: string, payload?: unknown, opts?: { timeoutMs?: number }) =>
+  request<T>(path, {
+    method: 'POST',
+    body: payload !== undefined ? JSON.stringify(payload) : '{}',
+    ...opts,
+  });
+
+/**
+ * Таймаут для операций, идущих через Camunda внутри Ecash (создание,
+ * отмена, решения по индивидуальному курсу): наш сервер честно ждёт
+ * вердикт ядра до 25 с (CREATE_TIMEOUT_MS в reserve.ts) — клиент обязан
+ * ждать ДОЛЬШЕ сервера. Со стандартными 15 с браузер сдавался первым:
+ * человек видел «нет соединения», а заявка создавалась у него за спиной
+ * секундами позже — и повторная попытка упиралась в «уже существует».
+ */
+const CAMUNDA_TIMEOUT_MS = 30_000;
 
 /**
  * Единая точка доступа к данным: браузер ходит ТОЛЬКО на свой origin (`/api/*`).
@@ -330,7 +344,7 @@ export const api = {
       kassaId?: number;
       fullName?: string;
       comment?: string;
-    }) => post<{ request: ExchangeRequest }>('/requests', payload),
+    }) => post<{ request: ExchangeRequest }>('/requests', payload, { timeoutMs: CAMUNDA_TIMEOUT_MS }),
     createIndividual: (payload: {
       currencyFrom: CurrencyCode;
       currencyTo: CurrencyCode;
@@ -341,13 +355,22 @@ export const api = {
       kassaId?: number;
       fullName?: string;
       comment?: string;
-    }) => post<{ request: ExchangeRequest }>('/requests/individual-rate', payload),
+    }) =>
+      post<{ request: ExchangeRequest }>('/requests/individual-rate', payload, {
+        timeoutMs: CAMUNDA_TIMEOUT_MS,
+      }),
     cancel: (id: number, comment?: string) =>
-      post<{ request: ExchangeRequest }>(`/requests/${id}/cancel`, comment ? { comment } : {}),
+      post<{ request: ExchangeRequest }>(`/requests/${id}/cancel`, comment ? { comment } : {}, {
+        timeoutMs: CAMUNDA_TIMEOUT_MS,
+      }),
     confirmIndividual: (id: number) =>
-      post<{ request: ExchangeRequest }>(`/requests/${id}/individual-rate/confirm`),
+      post<{ request: ExchangeRequest }>(`/requests/${id}/individual-rate/confirm`, undefined, {
+        timeoutMs: CAMUNDA_TIMEOUT_MS,
+      }),
     rejectIndividual: (id: number) =>
-      post<{ request: ExchangeRequest }>(`/requests/${id}/individual-rate/reject`),
+      post<{ request: ExchangeRequest }>(`/requests/${id}/individual-rate/reject`, undefined, {
+        timeoutMs: CAMUNDA_TIMEOUT_MS,
+      }),
   },
 
   notifications: {
