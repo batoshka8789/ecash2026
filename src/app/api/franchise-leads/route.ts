@@ -66,7 +66,7 @@ export async function POST(req: Request) {
             : e.code === 'INVALID_AMOUNT'
               ? 'amount'
               : e.fields?.[0];
-      return fail(`errors.${e.code}`, e.httpStatus, { field });
+      return fail(`errors.${e.code}`, e.httpStatus, { field, detail: e.upstreamMessage });
     }
     console.warn('[franchise] upstream недоступен, лид сохраняем локально с пометкой', e);
     ecashDown = true;

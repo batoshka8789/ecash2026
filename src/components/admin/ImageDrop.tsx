@@ -88,7 +88,7 @@ export function ImageDrop({
       setPreview(null);
       releaseObjectUrl();
     } catch (e) {
-      setError(e instanceof ApiError ? errorText(e.message) : errorText('errors.unknown'));
+      setError(e instanceof ApiError ? errorText(e) : errorText('errors.unknown'));
       setPreview(null);
       releaseObjectUrl();
     } finally {

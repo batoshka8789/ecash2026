@@ -239,7 +239,7 @@ export function NewsEditor({ id }: { id?: string }) {
       if (!id) router.replace(`/admin/news/${res.post.id}`);
     },
     onError: (e) => {
-      setError(e instanceof ApiError ? errorText(e.message) : errorText('errors.unknown'));
+      setError(e instanceof ApiError ? errorText(e) : errorText('errors.unknown'));
     },
   });
 

@@ -119,7 +119,7 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
 
   if (q.isError || !r) {
     const message =
-      q.error instanceof ApiError ? errorText(q.error.message) : errorText('errors.notFound');
+      q.error instanceof ApiError ? errorText(q.error) : errorText('errors.notFound');
     return (
       <div className="container-page flex flex-col items-center gap-4 pt-16 text-center">
         <p className="text-text-disabled">{message}</p>
@@ -131,7 +131,7 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
   }
 
   const mutError = [cancelMut, confirmMut, rejectMut]
-    .map((m) => (m.error instanceof ApiError ? errorText(m.error.message) : null))
+    .map((m) => (m.error instanceof ApiError ? errorText(m.error) : null))
     .find(Boolean);
 
   const cancellable = r.phase === 'pending' || r.phase === 'held';

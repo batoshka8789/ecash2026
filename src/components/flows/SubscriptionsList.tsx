@@ -44,12 +44,12 @@ export function SubscriptionsList() {
   const alerts = (q.data?.alerts ?? []).filter((a) => a.active);
   const removeError =
     removeMut.error instanceof ApiError
-      ? errorText(removeMut.error.message)
+      ? errorText(removeMut.error)
       : removeMut.error
         ? errorText('errors.unknown')
         : null;
   const listError =
-    q.error instanceof ApiError ? errorText(q.error.message) : q.error ? errorText('errors.unknown') : null;
+    q.error instanceof ApiError ? errorText(q.error) : q.error ? errorText('errors.unknown') : null;
 
   const dateFmt = new Intl.DateTimeFormat(intlLocale(locale), {
     day: '2-digit',

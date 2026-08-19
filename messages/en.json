@@ -627,6 +627,7 @@
     "passwordMatch": "Passwords do not match",
     "INVALID_CREDENTIALS": "Wrong login or password",
     "INVALID_TOKEN": "Session expired. Log in again",
+    "INVALID_REFRESH_TOKEN": "Session expired — sign in again",
     "INVALID_OTP": "Wrong code",
     "OTP_EXPIRED": "Code expired — more than 5 minutes passed",
     "OTP_COOLDOWN": "You can request a new code in a minute",

@@ -18,6 +18,16 @@ export class EcashError extends Error {
     /** полезная нагрузка доменной ошибки — напр. существующая заявка при REQUEST_ALREADY_EXISTS */
     readonly data?: unknown,
     readonly traceId?: string,
+    /**
+     * Человеческий текст ошибки ОТ САМОГО ЯДРА (поле message доменной
+     * формы, по-русски). Заполняется только для доменных ошибок — не для
+     * наших синтетических (таймаут, пустые 401/403). Интерфейс показывает
+     * его, когда код не найден в словаре: у ядра плодятся
+     * недокументированные коды (AMOUNT_MISMATCH, REQUEST_NOT_CREATED…),
+     * и до добавления перевода человек видел «Что-то пошло не так» вместо
+     * внятной причины, которая уже лежала в ответе.
+     */
+    readonly upstreamMessage?: string,
   ) {
     super(message);
     this.name = 'EcashError';
@@ -33,12 +43,18 @@ export function normalizeError(status: number, body: unknown): EcashError {
 
     // форма 1: доменная
     if (typeof b.error === 'string' && b.error.length > 0) {
+      const human =
+        typeof b.message === 'string' && b.message.trim() && b.message !== b.error
+          ? b.message
+          : undefined;
       return new EcashError(
         b.error,
         status,
-        typeof b.message === 'string' ? b.message : b.error,
+        human ?? b.error,
         undefined,
         b.data,
+        undefined,
+        human,
       );
     }
 

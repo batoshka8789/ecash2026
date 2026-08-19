@@ -26,6 +26,8 @@ export class ApiError extends Error {
     readonly status?: number,
     /** полезная нагрузка — напр. существующая заявка при REQUEST_ALREADY_EXISTS */
     readonly data?: unknown,
+    /** человеческий текст ошибки от ядра Ecash — фолбэк для кодов вне словаря */
+    readonly detail?: string,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -65,6 +67,7 @@ async function request<T>(path: string, init?: RequestInit & { timeoutMs?: numbe
       data?.field as string | undefined,
       res.status,
       data?.data,
+      data?.detail as string | undefined,
     );
   }
   if (data === null) throw new ApiError('errors.unknown', undefined, res.status);

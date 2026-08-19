@@ -3,32 +3,37 @@
 import { useTranslations } from 'next-intl';
 
 /**
- * Переводит код ошибки бэкенда («errors.INVALID_OTP») в текст.
+ * Переводит ошибку бэкенда в текст для человека.
+ *
+ * Принимает и голый код («errors.INVALID_OTP»), и саму ошибку (ApiError /
+ * Error) — во втором случае у ApiError подхватывается detail: человеческий
+ * текст от ядра Ecash. Порядок выбора текста:
+ *   1) перевод кода из словаря (все документированные коды переведены);
+ *   2) семейный фолбэк CAMUNDA_* — коды этого семейства плодятся;
+ *   3) detail — русское message самого ядра: у него появляются
+ *      недокументированные коды (AMOUNT_MISMATCH, REQUEST_NOT_CREATED…),
+ *      и до этого фолбэка человек видел «Что-то пошло не так», хотя
+ *      внятная причина уже лежала в ответе — заказчик прямо просил её
+ *      показывать;
+ *   4) общий «Что-то пошло не так» — только если не нашлось ничего.
  *
  * Наличие ключа спрашиваем через t.has, а НЕ пробным вызовом t(): на
- * неизвестном ключе next-intl зовёт свой обработчик ошибок и пишет в консоль
- * IntlError MISSING_MESSAGE — даже когда фоллбэк у нас предусмотрен. Коды
- * приходят от апстрима Ecash, словарь покрывает не все (например
- * INVALID_CLIENT_CREDENTIALS — это ошибка конфигурации, а не для человека),
- * поэтому такой «безобидный» промах случался на каждом рендере с ошибкой и
- * забивал оверлей ошибок Next.
+ * неизвестном ключе next-intl зовёт свой обработчик ошибок и пишет в
+ * консоль IntlError MISSING_MESSAGE — даже когда фолбэк предусмотрен.
  */
 export function useErrorText() {
   const t = useTranslations();
-  return (code: string | null | undefined) => {
-    if (!code) return '';
+  return (err: string | Error | null | undefined, detail?: string | null) => {
+    if (!err) return '';
+    const code = typeof err === 'string' ? err : err.message;
+    const upstream =
+      detail ??
+      (typeof err === 'object' && 'detail' in err ? (err as { detail?: string }).detail : undefined);
+
     const key = code.startsWith('errors.') ? code : `errors.${code}`;
     if (!t.has(key)) {
-      /**
-       * Семейство ошибок Camunda — обработчика заявок внутри Ecash. Коды у
-       * него плодятся по мере их починок (видели CAMUNDA_TIMEOUT, затем
-       * CAMUNDA_START_FAILED), и каждый новый без этого фолбэка показывался
-       * бы безликим «Что-то пошло не так» — ровно так человек и узнал о
-       * втором коде. Для человека же все они означают одно: заявку сейчас
-       * не оформить, ядро не отвечает — говорим это прямо.
-       */
       if (key.startsWith('errors.CAMUNDA')) return t('errors.camundaFamily');
-      // нет перевода → человеку показываем «непредвиденную ошибку»
+      if (upstream) return upstream;
       return t('errors.unknown');
     }
     return t(key as Parameters<typeof t>[0]);

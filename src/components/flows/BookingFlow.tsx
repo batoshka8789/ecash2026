@@ -296,7 +296,7 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   };
 
   const createError =
-    create.error instanceof ApiError ? errorText(create.error.message) : null;
+    create.error instanceof ApiError ? errorText(create.error) : null;
 
   return (
     // AuthModal рендерится вне <form> — иначе её собственная форма входа

@@ -18,10 +18,16 @@ export function ok<T>(data: T, init?: ResponseInit): NextResponse {
 export function fail(
   error: string,
   status = 400,
-  extra?: { field?: string; data?: unknown },
+  extra?: { field?: string; data?: unknown; detail?: string },
 ): NextResponse {
   return NextResponse.json(
-    { error, ...(extra?.field ? { field: extra.field } : {}), ...(extra?.data !== undefined ? { data: extra.data } : {}) },
+    {
+      error,
+      ...(extra?.field ? { field: extra.field } : {}),
+      ...(extra?.data !== undefined ? { data: extra.data } : {}),
+      // человеческий текст ядра — фолбэк интерфейса для кодов вне словаря
+      ...(extra?.detail ? { detail: extra.detail } : {}),
+    },
     { status, headers: serverTime() },
   );
 }
@@ -70,6 +76,7 @@ export function fromError(e: unknown): NextResponse {
     return fail(`errors.${e.code}`, e.httpStatus, {
       field: e.fields?.[0],
       data: e.data,
+      detail: e.upstreamMessage,
     });
   }
   console.error('[api] unexpected', e);
