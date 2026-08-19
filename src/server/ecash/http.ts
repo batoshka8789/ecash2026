@@ -1,6 +1,7 @@
 import 'server-only';
 import { env } from '@/server/env';
 import { EcashError, networkError, normalizeError } from './errors';
+import { formatTrace } from './trace';
 
 /**
  * Типизированный fetch к api-dev.quiq.kz: таймаут, ретраи только для
@@ -15,6 +16,12 @@ type FetchOpts = {
   /** переопределение таймаута, мс */
   timeoutMs?: number;
   signal?: AbortSignal;
+  /**
+   * Писать в лог полный JSON запроса и ответа (секреты и ПДн замаскированы,
+   * см. trace.ts). Включено у методов брони: их дефекты разбираются вместе
+   * с командой Ecash, и им нужен буквальный обмен, а не пересказ.
+   */
+  trace?: boolean;
 };
 
 const RETRIABLE = new Set([502, 503, 504]);
@@ -23,6 +30,7 @@ export async function ecashFetch<T>(path: string, opts: FetchOpts = {}): Promise
   const { method = 'GET', body, token, timeoutMs = env.ECASH_TIMEOUT_MS, signal } = opts;
   const url = `${env.ECASH_API_BASE_URL}${path}`;
   const maxAttempts = method === 'GET' ? 3 : 1;
+  const tracing = opts.trace === true || env.ECASH_TRACE;
 
   let lastErr: EcashError | null = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -45,16 +53,41 @@ export async function ecashFetch<T>(path: string, opts: FetchOpts = {}): Promise
         await backoff(attempt);
         continue;
       }
-      logCall(method, path, 0, Date.now() - started, lastErr.code);
+      const ms = Date.now() - started;
+      logCall(method, path, 0, ms, lastErr.code);
+      // Ответа нет вовсе — но именно так выглядит зависание Camunda, и это
+      // тот случай, ради которого след и заводился: видно, что ушло и
+      // сколько мы ждали, прежде чем оборвать по таймауту.
+      if (tracing) {
+        console.warn(
+          formatTrace({
+            method,
+            url,
+            body,
+            withToken: Boolean(token),
+            status: 0,
+            ms,
+            responseText: '(ответа нет: таймаут или обрыв соединения)',
+            errCode: lastErr.code,
+          }),
+        );
+      }
       throw lastErr;
     }
 
+    // Тело читаем один раз, до ветвления: оно нужно и для результата, и для
+    // следа — второй раз Response прочитать нельзя.
+    const text = await res.text().catch(() => '');
     const ms = Date.now() - started;
 
     if (res.ok) {
       logCall(method, path, res.status, ms);
+      if (tracing) {
+        console.warn(
+          formatTrace({ method, url, body, withToken: Boolean(token), status: res.status, ms, responseText: text }),
+        );
+      }
       // часть эндпоинтов отвечает literal true / пустым телом
-      const text = await res.text();
       if (!text) return undefined as T;
       try {
         return JSON.parse(text) as T;
@@ -63,9 +96,28 @@ export async function ecashFetch<T>(path: string, opts: FetchOpts = {}): Promise
       }
     }
 
-    const errBody = await res.json().catch(() => null);
+    let errBody: unknown = null;
+    try {
+      errBody = text ? JSON.parse(text) : null;
+    } catch {
+      errBody = null;
+    }
     const err = normalizeError(res.status, errBody);
     logCall(method, path, res.status, ms, err.code, err.traceId);
+    if (tracing) {
+      console.warn(
+        formatTrace({
+          method,
+          url,
+          body,
+          withToken: Boolean(token),
+          status: res.status,
+          ms,
+          responseText: text,
+          errCode: err.code,
+        }),
+      );
+    }
 
     if (RETRIABLE.has(res.status) && attempt < maxAttempts) {
       lastErr = err;

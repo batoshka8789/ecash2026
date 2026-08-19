@@ -26,6 +26,17 @@ const schema = z.object({
   ECASH_HUB_PATH: z.string().default('/appHub'),
   ECASH_TIMEOUT_MS: z.coerce.number().int().min(1000).max(30000).default(8000),
 
+  /**
+   * Писать в лог полный JSON КАЖДОГО обмена с ядром Ecash (см. trace.ts).
+   * Методы брони пишут его всегда и без этого флага — он нужен, когда
+   * разбирается дефект в другом месте (профиль, OTP, справочники).
+   * Секреты и ПДн маскируются в любом случае.
+   */
+  ECASH_TRACE: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+
   SESSION_SECRET: b64Bytes(32),
   SESSION_SECRET_PREVIOUS: b64Bytes(32).optional(),
 

@@ -87,6 +87,9 @@ async function createWithAmountFallback(
       token: accessToken,
       body: toUpstreamBody(body, amount),
       timeoutMs: CREATE_TIMEOUT_MS,
+      // создание заявки — открытый блокер на стороне Ecash (HANDOFF §9.0):
+      // их разработчикам нужен буквальный JSON обмена, а не пересказ
+      trace: true,
     });
 
   const first = upstreamAmount(body);
@@ -126,6 +129,7 @@ export async function cancelRequest(
     method: 'POST',
     token: accessToken,
     body: comment ? { comment } : {},
+    trace: true,
   });
   return mapRequest(raw);
 }
@@ -136,7 +140,7 @@ export async function confirmIndividualRate(
 ): Promise<ExchangeRequest> {
   const raw = await ecashFetch<RawRequest>(
     `/mobile/reserve/${requestId}/individual-rate/confirm`,
-    { method: 'POST', token: accessToken, body: {} },
+    { method: 'POST', token: accessToken, body: {}, trace: true },
   );
   return mapRequest(raw);
 }
@@ -147,7 +151,7 @@ export async function rejectIndividualRate(
 ): Promise<ExchangeRequest> {
   const raw = await ecashFetch<RawRequest>(
     `/mobile/reserve/${requestId}/individual-rate/reject`,
-    { method: 'POST', token: accessToken, body: {} },
+    { method: 'POST', token: accessToken, body: {}, trace: true },
   );
   return mapRequest(raw);
 }
