@@ -261,7 +261,15 @@ export function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
                 <Icon name="schedule" size={18} className="mt-0.5 shrink-0 text-text-disabled" />
                 <span>
                   <span className="text-text-default">
-                    {h.oldStatusName} → {h.statusName}
+                    {/* Запись без прежнего статуса — момент создания заявки.
+                        Ядро и сюда пишет свой мгновенный «Забронирована»
+                        (статус 8 с первой секунды, HANDOFF §9.7) — показывать
+                        «→ Забронирована» рядом с «На рассмотрении» выше
+                        значило бы противоречить самим себе. Настоящие
+                        переходы (ответ казначея, отмена) остаются как есть. */}
+                    {h.oldStatusName
+                      ? `${h.oldStatusName} → ${h.statusName}`
+                      : t('sentAt')}
                   </span>
                   <span className="ml-2 text-text-disabled">
                     {formatDateTime(h.updatedAt, locale)}
