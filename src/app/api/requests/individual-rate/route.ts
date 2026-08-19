@@ -12,6 +12,11 @@ export const POST = withUser(async (req, token) => {
   const parsed = await body(req, createRequestBody);
   if (parsed instanceof NextResponse) return parsed;
 
+  // как и у обычной брони: меньше цены одной единицы валюты — заявки нет
+  if (parsed.currencyFrom === 'KZT' && Math.floor(parsed.value / parsed.rate + 1e-9) < 1) {
+    return fail('errors.AMOUNT_TOO_SMALL', 400, { field: 'value' });
+  }
+
   try {
     // depId проверяем по реальному списку отделений — та же дыра, что и у обычной брони.
     if (parsed.depId != null) {

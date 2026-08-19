@@ -454,7 +454,7 @@ rates/best-rate         11 мс
 
 ```
 [ecash:trace] POST https://api-dev.quiq.kz/mobile/reserve
-  отправлено: {"currencyFrom":"KZT","currencyTo":"USD","value":"216.22","rate":"462.5","amount":100000,"depId":1,"fullName":"«ПДн»"}
+  отправлено: {"currencyFrom":"KZT","currencyTo":"USD","value":"216","rate":"462.5","amount":99900,"depId":1,"fullName":"«ПДн»"}
   ответ 500 CAMUNDA_START_FAILED за 138 мс
   тело ответа: {"success":false,"code":500,"error":"CAMUNDA_START_FAILED","message":"..."}
   воспроизвести: curl -sS -i -X POST 'https://api-dev.quiq.kz/mobile/reserve' -H 'content-type: application/json' -H 'authorization: Bearer <ТОКЕН>' -d '{"currencyFrom":"KZT",...}'
@@ -479,7 +479,7 @@ rates/best-rate         11 мс
 # нужен пользовательский токен из /mobile/otp/login
 curl -w '\n%{time_total}s\n' -X POST https://api-dev.quiq.kz/mobile/reserve \
   -H 'content-type: application/json' -H 'authorization: Bearer <token>' \
-  -d '{"currencyFrom":"KZT","currencyTo":"USD","value":"216.22","rate":"462.5","amount":100000,"depId":10}'
+  -d '{"currencyFrom":"KZT","currencyTo":"USD","value":"216","rate":"462.5","amount":99900,"depId":10}'
 ```
 
 Ожидается `200` с `requestId` за доли секунды.

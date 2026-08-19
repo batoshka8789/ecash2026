@@ -74,4 +74,24 @@ describe('POST /api/requests', () => {
     expect(res.status).toBe(201);
     expect(depList).not.toHaveBeenCalled();
   });
+
+  it('тенге меньше цены одной единицы валюты → 400 без обращения к ядру', async () => {
+    const { createReserve } = await import('@/server/ecash/endpoints/reserve');
+    vi.mocked(createReserve).mockClear();
+    // сделка идёт целыми единицами: 100 ₸ при курсе 462.5 — это 0 долларов
+    const res = await post({
+      currencyFrom: 'KZT',
+      currencyTo: 'USD',
+      value: 100,
+      rate: 462.5,
+      amount: 0.22,
+      kassaId: 3,
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({
+      error: 'errors.AMOUNT_TOO_SMALL',
+      field: 'value',
+    });
+    expect(createReserve).not.toHaveBeenCalled();
+  });
 });

@@ -29,6 +29,12 @@ export const POST = withUser(async (req, token) => {
   const parsed = await body(req, createRequestBody);
   if (parsed instanceof NextResponse) return parsed;
 
+  // сделка идёт целыми единицами валюты (см. toUpstreamBody): сумма меньше
+  // цены одной единицы дала бы заявку на «0 долларов» — отклоняем сразу
+  if (parsed.currencyFrom === 'KZT' && Math.floor(parsed.value / parsed.rate + 1e-9) < 1) {
+    return fail('errors.AMOUNT_TOO_SMALL', 400, { field: 'value' });
+  }
+
   try {
     // depId проверяем по реальному списку отделений до обращения к ядру
     if (parsed.depId != null) {

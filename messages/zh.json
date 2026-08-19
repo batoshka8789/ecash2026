@@ -643,6 +643,7 @@
     "REQUEST_NOT_CANCELLABLE": "该申请已无法取消",
     "BOOKING_ALREADY_REQUESTED": "该申请已提交过预订",
     "AMOUNT_MISMATCH": "金额与汇率不符，请刷新页面重试",
+    "AMOUNT_TOO_SMALL": "金额低于一个货币单位的价格，请增加金额",
     "REQUEST_NOT_CREATED": "上一笔申请仍在 Ecash 处理中，请稍候一分钟后重试",
     "INVALID_PHONE": "电话号码无效",
     "INVALID_FULLNAME": "姓名只能包含字母、空格、连字符和撇号",
