@@ -74,6 +74,60 @@ describe('mapRequest', () => {
     expect(r.needsClientConfirmation).toBe(false);
   });
 
+  /**
+   * Суммы: ядро хранит value в валюте, amount в тенге при любом направлении
+   * (текст его ошибки AMOUNT_MISMATCH, замер 19.08.2026). Домен — value:
+   * что отдаёт клиент, amount: что получает.
+   */
+  it('отдаю тенге: value/amount ядра разворачиваются в доменные', () => {
+    // живая заявка №6766: клиент отдал 100 000 ₸, получает 216.22 $
+    const r = mapRequest({
+      ...base,
+      currencyFrom: 'KZT',
+      currencyTo: 'USD',
+      value: '216.22',
+      rate: '462.5',
+      amount: 100000,
+    });
+    expect(r.value).toBe(100000); // отдаёт: тенге
+    expect(r.amount).toBe(216.22); // получает: валюта
+    expect(r.actionType).toBe('sell');
+  });
+
+  it('отдаю валюту: поля совпадают с ядром, разворота нет', () => {
+    const r = mapRequest(base); // USD → KZT: value 1000 $, amount 512 400 ₸
+    expect(r.value).toBe(1000);
+    expect(r.amount).toBe(512400);
+  });
+
+  it('историческая запись прежнего формата (тенге в value) не разворачивается', () => {
+    // №6713 и ранее: наш старый код слал value в тенге, amount — в валюте;
+    // у таких value × rate на порядки больше amount — семантика не ядровая
+    const r = mapRequest({
+      ...base,
+      currencyFrom: 'KZT',
+      currencyTo: 'USD',
+      value: '100000000',
+      rate: '466.7',
+      amount: 214270,
+    });
+    expect(r.value).toBe(100000000);
+    expect(r.amount).toBe(214270);
+  });
+
+  it('нулевой курс не приводит к развороту', () => {
+    const r = mapRequest({
+      ...base,
+      currencyFrom: 'KZT',
+      currencyTo: 'USD',
+      value: '100',
+      rate: '0',
+      amount: 0,
+    });
+    expect(r.value).toBe(100);
+    expect(r.amount).toBe(0);
+  });
+
   it('после согласия клиента (появился accept брони) повторного подтверждения не требует', () => {
     // раздел 5, шаг 3 контракта: confirm автоматически создаёт запрос брони
     // казначею — accept типа 1; заявка при этом остаётся в статусе 0

@@ -256,6 +256,31 @@ export function mapRequest(raw: RawRequest): ExchangeRequest {
   const isIndividual = raw.isIndividual === true;
 
   /**
+   * Суммы. Ядро хранит value в ИНОСТРАННОЙ валюте, amount в ТЕНГЕ при
+   * любом направлении пары (текст его же ошибки AMOUNT_MISMATCH: «value —
+   * сумма в валюте (не в тенге), amount — сумма в тенге»). Наша доменная
+   * модель — value: что клиент отдаёт, amount: что получает. Для пары
+   * «отдаю тенге» это противоположные поля — разворачиваем.
+   *
+   * Разворот только когда числа реально в семантике ядра: value × rate ≈
+   * amount. Проверка нужна из-за исторических записей дев-контура,
+   * созданных нашим прежним форматом (тенге лежали в value — №6713 и
+   * ранее, июль–август): у них value × rate на порядки больше amount, и
+   * разворот показал бы «отдаю 214 270 ₸» вместо 100 000 000 ₸. Записи
+   * же, где прежний код слал произведение (№6729, 6735, 6763–6765),
+   * неотличимы от новых математически — они отменены и отображаются в
+   * семантике ядра, с этим ничего не сделать.
+   */
+  const rawValue = num(raw.value);
+  const rawAmount = num(raw.amount);
+  const rawRate = num(raw.rate);
+  const coreOriented =
+    rawRate > 0 && Math.abs(rawValue * rawRate - rawAmount) <= Math.max(1, rawAmount * 0.02);
+  const swap = currencyFrom === 'KZT' && coreOriented;
+  const value = swap ? rawAmount : rawValue;
+  const amount = swap ? rawValue : rawAmount;
+
+  /**
    * Согласие клиента уже переросло в запрос брони: по контракту (раздел 5,
    * шаг 3) после /individual-rate/confirm ядро автоматически создаёт
    * обращение к казначею на резервирование — это accept типа 1. Признак
@@ -285,9 +310,9 @@ export function mapRequest(raw: RawRequest): ExchangeRequest {
     clientId: int(raw.clientId),
     currencyFrom,
     currencyTo: str(raw.currencyTo),
-    value: num(raw.value),
-    rate: num(raw.rate),
-    amount: num(raw.amount),
+    value,
+    rate: rawRate,
+    amount,
     actionType: raw.actionType === 'sell' || raw.actionType === 'buy' ? raw.actionType : sideOf(currencyFrom),
     depId: int(raw.depId),
     kassaId: int(raw.kassaId),
