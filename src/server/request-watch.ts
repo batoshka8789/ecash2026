@@ -20,6 +20,17 @@ export type WatchState = {
   needsConfirm: boolean;
 };
 
+/**
+ * Статус для наблюдения — фаза, приведённая к каноническим кодам ядра.
+ * Сырой статус для переходов непригоден: ядро ставит 8 «Забронирована»
+ * сразу при создании, до ответа казначея, — наблюдатель видел бы 8 → 8 и
+ * никогда не отправил бы «бронь подтверждена». Фаза же становится held
+ * только после настоящего подтверждения (mappers.ts, treasurerConfirmed) —
+ * переход 0 → 8 случается ровно в момент решения казначея.
+ */
+const PHASE_STATUS = { pending: 0, held: 8, done: 1, cancelled: 3 } as const;
+export const watchStatus = (r: ExchangeRequest): number => PHASE_STATUS[r.phase];
+
 export type WatchEvent = 'confirmed' | 'done' | 'cancelled' | 'offer';
 
 /**
@@ -58,12 +69,13 @@ export async function syncWatch(accountId: string, r: ExchangeRequest): Promise<
       await db.delete(watchedRequests).where(eq(watchedRequests.requestId, r.requestId));
       return;
     }
+    const status = watchStatus(r);
     await db
       .insert(watchedRequests)
       .values({
         requestId: r.requestId,
         accountId,
-        status: r.status,
+        status,
         needsConfirm: r.needsClientConfirmation,
         isIndividual: r.isIndividual ?? false,
         updatedAt: new Date(),
@@ -71,12 +83,12 @@ export async function syncWatch(accountId: string, r: ExchangeRequest): Promise<
       .onConflictDoUpdate({
         target: watchedRequests.requestId,
         set: {
-          status: r.status,
+          status,
           needsConfirm: r.needsClientConfirmation,
           updatedAt: new Date(),
         },
         // без лишних записей: строка трогается только при реальном изменении
-        setWhere: sql`${watchedRequests.status} <> ${r.status} or ${watchedRequests.needsConfirm} <> ${r.needsClientConfirmation}`,
+        setWhere: sql`${watchedRequests.status} <> ${status} or ${watchedRequests.needsConfirm} <> ${r.needsClientConfirmation}`,
       });
   } catch (e) {
     console.warn('[watch] синхронизация наблюдения не удалась', (e as Error).message);

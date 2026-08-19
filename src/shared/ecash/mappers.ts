@@ -288,6 +288,23 @@ export function mapRequest(raw: RawRequest): ExchangeRequest {
    */
   const bookingRequested = isIndividual && accepts.some((a) => a.actionType === 1);
 
+  /**
+   * Настоящий ответ казначея. Ядро (вопреки собственной документации,
+   * раздел 4: статус 8 — ПОСЛЕ подтверждения) ставит «Забронирована» сразу
+   * при создании: живой пример — №6781, статус 8 при acceptStatus 0,
+   * answeredAt null и пустом окне брони. Если верить одному статусу, все
+   * заявки «зелёные» с первой секунды, а момент решения казначея невидим.
+   * Подтверждение отличаем по фактам: заполненное окно брони или
+   * подтверждённый accept резервирования (№6774: status 2, answeredAt).
+   */
+  const treasurerConfirmed =
+    iso(raw.reservedUntil) !== null ||
+    accepts.some((a) => a.actionType === 1 && a.status === 2);
+
+  // статус 8 без ответа казначея — для человека это всё ещё «на
+  // рассмотрении»: бронь не действует, окна нет, резерв не подтверждён
+  const phase = status === 8 && !treasurerConfirmed ? 'pending' : phaseOf(status);
+
   // индивидуальный курс согласован казначеем (accept типа 2 подтверждён),
   // заявка ещё в статусе 0 → ждём решения клиента, окно 60 минут.
   // После согласия появляется accept брони (bookingRequested) — решение
@@ -304,7 +321,8 @@ export function mapRequest(raw: RawRequest): ExchangeRequest {
     requestId: int(raw.requestId) ?? 0,
     status,
     statusName: str(raw.statusName),
-    phase: phaseOf(status),
+    phase,
+    treasurerConfirmed,
     needsClientConfirmation,
     bookingRequested,
     clientId: int(raw.clientId),

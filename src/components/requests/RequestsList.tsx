@@ -21,8 +21,20 @@ const phaseStyles: Record<RequestPhase, string> = {
   cancelled: 'bg-surface-page-surf2 text-text-disabled',
 };
 
+/**
+ * Подпись статуса — по ФАЗЕ, а не по сырому статусу ядра: оно ставит 8
+ * «Забронирована» сразу при создании, до ответа казначея (см. mappers.ts,
+ * treasurerConfirmed). Пока казначей не подтвердил, честная подпись —
+ * «На рассмотрении», зелёной заявка становится только после его решения.
+ */
 const statusKey = (r: ExchangeRequest) =>
-  (`status${r.status}` as 'status0' | 'status1' | 'status3' | 'status8');
+  r.phase === 'held'
+    ? 'status8'
+    : r.phase === 'done'
+      ? 'status1'
+      : r.phase === 'cancelled'
+        ? 'status3'
+        : 'status0';
 
 /** Список заявок аккаунта: статусы 0/8/1/3, пагинация «Показать ещё». */
 export function RequestsList() {

@@ -8,7 +8,7 @@ process.env.SESSION_SECRET = Buffer.alloc(32, 7).toString('base64');
 process.env.DATABASE_URL = 'postgres://t:t@localhost:5432/t';
 process.env.APP_ORIGIN = 'http://localhost:3000';
 
-const { isTerminal, watchEvents } = await import('./request-watch');
+const { isTerminal, watchEvents, watchStatus } = await import('./request-watch');
 const { requestEventText, toPushLocale } = await import('./push-text');
 import type { ExchangeRequest } from '@/lib/domain';
 
@@ -45,6 +45,16 @@ describe('watchEvents — решения казначея', () => {
     expect(watchEvents(st(0), st(0))).toEqual([]);
     expect(watchEvents(st(8), st(8))).toEqual([]);
     expect(watchEvents(st(0, true), st(0, true))).toEqual([]);
+  });
+
+  it('watchStatus: статус по фазе — сырая «восьмёрка» без казначея это 0', () => {
+    // ядро ставит 8 сразу при создании; наблюдатель считает по фазе, иначе
+    // переход «казначей подтвердил» выглядел бы как 8 → 8 и push бы не ушёл
+    const req = (phase: ExchangeRequest['phase']) => ({ phase }) as ExchangeRequest;
+    expect(watchStatus(req('pending'))).toBe(0);
+    expect(watchStatus(req('held'))).toBe(8);
+    expect(watchStatus(req('done'))).toBe(1);
+    expect(watchStatus(req('cancelled'))).toBe(3);
   });
 
   it('needsConfirm при уже подтверждённой броне не даёт «offer»', () => {

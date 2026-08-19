@@ -7,7 +7,7 @@ import { EcashError } from '@/server/ecash/errors';
 import { cachedUserToken, forgetUserToken } from '@/server/token-cache';
 import { sendToAccounts } from '@/server/push';
 import { requestEventText } from '@/server/push-text';
-import { isTerminal, watchEvents, type WatchState } from '@/server/request-watch';
+import { isTerminal, watchEvents, watchStatus, type WatchState } from '@/server/request-watch';
 
 /**
  * Наблюдатель заявок: замечает решения казначея, пока человека нет на сайте,
@@ -58,7 +58,9 @@ export async function watchTick(): Promise<void> {
       }
 
       const prev: WatchState = { status: row.status, needsConfirm: row.needsConfirm };
-      const next: WatchState = { status: live.status, needsConfirm: live.needsClientConfirmation };
+      // статус по фазе, не сырой: «бронь подтверждена» — это момент ответа
+      // казначея, а не момент создания заявки (см. watchStatus)
+      const next: WatchState = { status: watchStatus(live), needsConfirm: live.needsClientConfirmation };
       const events = watchEvents(prev, next);
 
       for (const event of events) {
@@ -83,7 +85,7 @@ export async function watchTick(): Promise<void> {
       } else if (events.length > 0) {
         await db
           .update(watchedRequests)
-          .set({ status: live.status, needsConfirm: live.needsClientConfirmation, updatedAt: new Date() })
+          .set({ status: watchStatus(live), needsConfirm: live.needsClientConfirmation, updatedAt: new Date() })
           .where(eq(watchedRequests.requestId, row.requestId));
       }
     }

@@ -128,6 +128,60 @@ describe('mapRequest', () => {
     expect(r.amount).toBe(0);
   });
 
+  /**
+   * Ядро ставит статус 8 «Забронирована» сразу при создании, до ответа
+   * казначея (вопреки своей документации). Фаза held — только после
+   * настоящего подтверждения, иначе все заявки «зелёные» с первой секунды.
+   */
+  it('статус 8 без ответа казначея — это ещё pending', () => {
+    // реальная заявка №6781: создана, казначей не отвечал
+    const r = mapRequest({
+      ...base,
+      status: 8,
+      reservedAt: null,
+      reservedUntil: null,
+      reserveMinutes: null,
+      acceptStatus: 0,
+      treasurerLogin: null,
+      accepts: [
+        { acceptId: 571, actionType: 1, status: 0, statusName: 'Заведена', answeredAt: null },
+      ],
+    });
+    expect(r.treasurerConfirmed).toBe(false);
+    expect(r.phase).toBe('pending');
+  });
+
+  it('казначей подтвердил (accept 2 + окно брони) — фаза held', () => {
+    // реальная заявка №6774: подтверждена живым казначеем 19.08.2026
+    const r = mapRequest({
+      ...base,
+      status: 8,
+      reservedAt: '2026-08-19T07:17:37.335029Z',
+      reservedUntil: '2026-08-19T08:17:37.335029Z',
+      reserveMinutes: 60,
+      acceptStatus: 2,
+      accepts: [
+        {
+          acceptId: 564,
+          actionType: 1,
+          status: 2,
+          statusName: 'Подтверждена',
+          rate: 463.5,
+          answeredAt: '2026-08-19T07:17:37.335029Z',
+        },
+      ],
+    });
+    expect(r.treasurerConfirmed).toBe(true);
+    expect(r.phase).toBe('held');
+  });
+
+  it('подтверждение видно и по одному окну брони, без accepts в ответе', () => {
+    // в списке /mobile/operations accepts может не быть — достаточно reservedUntil
+    const r = mapRequest({ ...base, status: 8, accepts: null });
+    expect(r.treasurerConfirmed).toBe(true);
+    expect(r.phase).toBe('held');
+  });
+
   it('после согласия клиента (появился accept брони) повторного подтверждения не требует', () => {
     // раздел 5, шаг 3 контракта: confirm автоматически создаёт запрос брони
     // казначею — accept типа 1; заявка при этом остаётся в статусе 0

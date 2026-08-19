@@ -165,6 +165,12 @@ export type ExchangeRequest = {
   needsClientConfirmation: boolean;
   /** клиент согласился с курсом — запрос брони уже у казначея (accept типа 1) */
   bookingRequested: boolean;
+  /**
+   * Казначей действительно ответил (окно брони заполнено или accept
+   * резервирования подтверждён). Ядро ставит статус 8 сразу при создании —
+   * без этого признака «Забронирована» видна до всякого решения казначея.
+   */
+  treasurerConfirmed: boolean;
   clientId: number | null;
   currencyFrom: CurrencyCode;
   currencyTo: CurrencyCode;
