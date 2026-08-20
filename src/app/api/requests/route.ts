@@ -29,10 +29,11 @@ export const POST = withUser(async (req, token) => {
   const parsed = await body(req, createRequestBody);
   if (parsed instanceof NextResponse) return parsed;
 
-  // сделка идёт целыми единицами валюты (см. toUpstreamBody): сумма меньше
-  // цены одной единицы дала бы заявку на «0 долларов» — отклоняем сразу
+  // Сделка идёт целыми единицами валюты. Ядро отвечает на такое тело
+  // 400 VALUE_TOO_SMALL (раздел 4.1 его документации) — отвечаем тем же
+  // кодом сразу, не тратя обращение к ядру.
   if (parsed.currencyFrom === 'KZT' && Math.floor(parsed.value / parsed.rate + 1e-9) < 1) {
-    return fail('errors.AMOUNT_TOO_SMALL', 400, { field: 'value' });
+    return fail('errors.VALUE_TOO_SMALL', 400, { field: 'value' });
   }
 
   try {

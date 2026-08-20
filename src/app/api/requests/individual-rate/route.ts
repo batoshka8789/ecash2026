@@ -12,9 +12,10 @@ export const POST = withUser(async (req, token) => {
   const parsed = await body(req, createRequestBody);
   if (parsed instanceof NextResponse) return parsed;
 
-  // как и у обычной брони: меньше цены одной единицы валюты — заявки нет
+  // как и у обычной брони: меньше одной целой единицы валюты — заявки нет
+  // (у ядра это 400 VALUE_TOO_SMALL, раздел 4.1)
   if (parsed.currencyFrom === 'KZT' && Math.floor(parsed.value / parsed.rate + 1e-9) < 1) {
-    return fail('errors.AMOUNT_TOO_SMALL', 400, { field: 'value' });
+    return fail('errors.VALUE_TOO_SMALL', 400, { field: 'value' });
   }
 
   try {

@@ -78,7 +78,8 @@ describe('POST /api/requests', () => {
   it('тенге меньше цены одной единицы валюты → 400 без обращения к ядру', async () => {
     const { createReserve } = await import('@/server/ecash/endpoints/reserve');
     vi.mocked(createReserve).mockClear();
-    // сделка идёт целыми единицами: 100 ₸ при курсе 462.5 — это 0 долларов
+    // сделка идёт целыми единицами: 100 ₸ при курсе 462.5 — это 0 долларов;
+    // тот же код, которым отвечает ядро (VALUE_TOO_SMALL, раздел 4.1)
     const res = await post({
       currencyFrom: 'KZT',
       currencyTo: 'USD',
@@ -89,7 +90,7 @@ describe('POST /api/requests', () => {
     });
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({
-      error: 'errors.AMOUNT_TOO_SMALL',
+      error: 'errors.VALUE_TOO_SMALL',
       field: 'value',
     });
     expect(createReserve).not.toHaveBeenCalled();

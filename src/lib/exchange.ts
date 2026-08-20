@@ -51,3 +51,34 @@ export function isPlausibleTargetRate(target: number, current: number): boolean 
   if (!Number.isFinite(current) || current <= 0) return true;
   return target >= current / RATE_TOLERANCE && target <= current * RATE_TOLERANCE;
 }
+
+/**
+ * Суммы сделки: сколько валюты и сколько тенге реально уйдёт в заявку.
+ *
+ * Обменник оперирует целыми единицами валюты и целыми тенге — так же
+ * считает и ядро Ecash (раздел 4.1 «Суммы» его документации: «Остатка не
+ * остаётся: валюта — целыми единицами… Бэкенд срезает дробный хвост и
+ * пересчитывает тенге по целой валюте… Тенге тоже уходят целым числом»).
+ * Ядро прямо рекомендует фронту делать этот расчёт заранее и показывать
+ * его человеку, чтобы экран не расходился с заявкой.
+ *
+ * Функция общая для формы и для серверной отправки — оба места обязаны
+ * получать одни и те же числа, иначе клиент увидит одно, а забронирует
+ * другое.
+ *
+ * @param value  сумма, которую ввёл клиент (что он ОТДАЁТ)
+ * @param rate   тенге за единицу валюты
+ * @param kztGive клиент отдаёт тенге (пара KZT → валюта)
+ */
+export function dealAmounts(
+  value: number,
+  rate: number,
+  kztGive: boolean,
+): { foreign: number; tenge: number } {
+  if (!Number.isFinite(value) || !Number.isFinite(rate) || rate <= 0 || value <= 0) {
+    return { foreign: 0, tenge: 0 };
+  }
+  // +1e-9 гасит двоичную пыль плавающей точки: 64.8 / 0.72 = 89.999… ≠ 90
+  const foreign = Math.floor((kztGive ? value / rate : value) + 1e-9);
+  return { foreign, tenge: Math.round(foreign * rate) };
+}

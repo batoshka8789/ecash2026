@@ -22,7 +22,7 @@ import {
   formatNumber,
   formatPhoneInput,
 } from '@/lib/format';
-import { counterAmount } from '@/lib/exchange';
+import { dealAmounts } from '@/lib/exchange';
 import { sortCurrencyCodes } from '@/lib/currency-order';
 import { accountDisplayName, type ExchangeRequest } from '@/lib/domain';
 import { AmountBox, BranchAddress, BanknotesPicker, type BranchOption } from './PairFields';
@@ -193,20 +193,18 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   const validAmount = Number.isFinite(amountNum) && amountNum > 0;
 
   /**
-   * По контракту Ecash (раздел 4.3 ответа по интеграции, карточка заявки):
-   * value — сколько клиент ОТДАЁТ, в currencyFrom; amount — сколько
-   * ПОЛУЧАЕТ, в currencyTo. Не «валюта/тенге» — направление в паре может
-   * быть любым. Раньше value был жёстко привязан к иностранной валюте,
-   * а amount — к тенге: при покупке валюты за тенге (обычный сценарий
-   * калькулятора, currencyFrom=KZT) в апстрим уходила бы перепутанная
-   * пара — сумма в тенге как value, сумма в валюте как amount, ровно
-   * наоборот контракту. Тот же перекос был виден и локально: карточка
-   * уведомления показывала «19,72 (KZT)» вместо «10 000 (KZT)».
+   * Суммы сделки — ровно те, что уйдут в заявку: валюта целыми единицами,
+   * тенге целым числом. Считаются общей с сервером функцией (dealAmounts),
+   * поэтому экран не может разойтись с заявкой. Ядро Ecash делает такой же
+   * срез у себя и прямо рекомендует показывать результат заранее
+   * (раздел 4.1 его документации).
    */
-  const amount = useMemo(() => {
-    if (!validAmount) return 0;
-    return counterAmount(amountNum, rate, kztGive ? 'KZT' : foreign);
-  }, [validAmount, rate, kztGive, amountNum, foreign]);
+  const deal = useMemo(
+    () => (validAmount ? dealAmounts(amountNum, rate, kztGive) : { foreign: 0, tenge: 0 }),
+    [validAmount, amountNum, rate, kztGive],
+  );
+  /** сколько клиент получит: отдаёт тенге → валюту, отдаёт валюту → тенге */
+  const amount = kztGive ? deal.foreign : deal.tenge;
 
   /**
    * Эквивалент считается ВСЕГДА, в том числе для индивидуального курса.
@@ -220,6 +218,15 @@ export function BookingFlow({ mode }: { mode: Mode }) {
       ? `${formatMoney(amount, locale)} ${currencySymbol(foreign)}`
       : `${formatMoney(amount, locale)} ₸`;
   }, [validAmount, rate, kztGive, amount, foreign, locale]);
+
+  /**
+   * Сумма сделки отличается от введённой — при срезе до целых единиц
+   * валюты остаётся хвост, который клиент не вносит («ввёл 100 000 ₸,
+   * сделка — 216 $ за 99 900 ₸»). Показываем это ДО отправки: иначе
+   * человек увидит непонятно откуда взявшиеся 99 900 уже в заявке.
+   */
+  const dealDiffers =
+    validAmount && rate > 0 && deal.foreign > 0 && Math.round(amountNum) !== deal.tenge;
 
   // Порядок общий с калькулятором: тенге сверху, золото в конце
   const currencyOptions = useMemo(
@@ -238,21 +245,16 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   const create = useMutation({
     mutationFn: () => {
       const isInd = mode === 'individual' || individual;
-      // value — currencyFrom (то, что отдаём), amount — currencyTo (что получаем)
-      const effRate = rate;
-      const effValue = amountNum;
-      const effAmount = counterAmount(amountNum, effRate, kztGive ? 'KZT' : foreign);
       const comment = banknotes ? t(`banknotes.${banknotes as 'small' | 'large'}`) : undefined;
       const payload = {
         currencyFrom: kztGive ? 'KZT' : foreign,
         currencyTo: kztGive ? foreign : 'KZT',
-        value: round2(effValue),
-        rate: round2(effRate),
-        // до сотых, а не до целого: при получении валюты в amount живут центы
-        // (10 000 ₸ / 461 = 21,69 $ — не 22). В ядро эта оценка не уходит:
-        // сервер сам конвертирует суммы в семантику ядра из value и rate
-        // (toUpstreamBody в reserve.ts).
-        amount: round2(effAmount),
+        // отправляем ровно ту сделку, что показана на экране: суммы уже
+        // срезаны до целых единиц валюты (deal), пересчёт в семантику ядра
+        // делает сервер той же функцией (toUpstreamBody в reserve.ts)
+        value: kztGive ? deal.tenge : deal.foreign,
+        rate: round2(rate),
+        amount: kztGive ? deal.foreign : deal.tenge,
         // проверено в tryCreate: без отделения мутация не запускается
         depId: depId ?? undefined,
         fullName: name.trim() || undefined,
@@ -558,6 +560,18 @@ export function BookingFlow({ mode }: { mode: Mode }) {
           </Button>
           {!validAmount && (
             <p className="mt-2 text-sm text-text-disabled">{t('data.amountRequired')}</p>
+          )}
+          {/* Сделка идёт целыми единицами валюты, поэтому от введённой суммы
+              остаётся хвост. Показываем итог ДО отправки — ровно как советует
+              документация ядра (раздел 4.1): «показывать пересчитанные тенге,
+              чтобы клиент видел ровно ту сумму, что уйдёт в заявку». */}
+          {dealDiffers && (
+            <p className="mt-2 text-sm text-text-disabled">
+              {t('data.dealHint', {
+                foreign: `${formatMoney(deal.foreign, locale)} ${currencySymbol(foreign)}`,
+                tenge: `${formatMoney(deal.tenge, locale)} ₸`,
+              })}
+            </p>
           )}
           </>
         )}

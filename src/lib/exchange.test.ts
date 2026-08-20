@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { counterAmount, isKztGive, isPlausibleTargetRate } from './exchange';
+import { counterAmount, dealAmounts, isKztGive, isPlausibleTargetRate } from './exchange';
 
 describe('isKztGive', () => {
   it('тенге отдаём — обменник продаёт валюту', () => {
@@ -72,5 +72,48 @@ describe('isPlausibleTargetRate', () => {
   it('малые курсы (рубль, сом) работают так же', () => {
     expect(isPlausibleTargetRate(6.5, 6.01)).toBe(true);
     expect(isPlausibleTargetRate(500, 6.01)).toBe(false);
+  });
+});
+
+describe('dealAmounts — суммы, которые реально уйдут в заявку', () => {
+  /**
+   * Правило ядра (раздел 4.1 его документации): валюта — целыми единицами,
+   * тенге — целым числом, amount = value × rate. Наш расчёт обязан совпадать
+   * с их срезом, иначе экран разойдётся с заявкой.
+   */
+  it('отдаю тенге: валюта вниз до целого, тенге — цена этих целых единиц', () => {
+    // 100 000 / 462,5 = 216,2… → 216 $; 216 × 462,5 = 99 900 ₸
+    expect(dealAmounts(100_000, 462.5, true)).toEqual({ foreign: 216, tenge: 99_900 });
+  });
+
+  it('пример из документации ядра воспроизводится точно', () => {
+    // «{amount: 10000, rate: 455, value: 21.978} → value = 21, amount = 9555»
+    expect(dealAmounts(10_000, 455, true)).toEqual({ foreign: 21, tenge: 9_555 });
+  });
+
+  it('дробный курс: тенге округляются до целого', () => {
+    // 21 × 461,25 = 9686,25 → 9686 (пример из документации ядра)
+    expect(dealAmounts(9_686.25, 461.25, true)).toEqual({ foreign: 21, tenge: 9_686 });
+  });
+
+  it('отдаю валюту: купюры целые, тенге целые', () => {
+    expect(dealAmounts(20, 466.71, false)).toEqual({ foreign: 20, tenge: 9_334 });
+    // дробные купюры обменник не принимает — срезаем так же, как ядро
+    expect(dealAmounts(20.9, 466.71, false)).toEqual({ foreign: 20, tenge: 9_334 });
+  });
+
+  it('двоичная пыль не съедает целую единицу', () => {
+    // 64,8 / 0,72 в float = 89,999… , математически ровно 90
+    expect(dealAmounts(64.8, 0.72, true)).toEqual({ foreign: 90, tenge: 65 });
+  });
+
+  it('не набирается целой единицы валюты — нули (вызывающий отдаёт VALUE_TOO_SMALL)', () => {
+    expect(dealAmounts(100, 462.5, true)).toEqual({ foreign: 0, tenge: 0 });
+  });
+
+  it('некорректные входные данные не дают NaN', () => {
+    expect(dealAmounts(NaN, 462.5, true)).toEqual({ foreign: 0, tenge: 0 });
+    expect(dealAmounts(1000, 0, true)).toEqual({ foreign: 0, tenge: 0 });
+    expect(dealAmounts(-5, 462.5, true)).toEqual({ foreign: 0, tenge: 0 });
   });
 });
