@@ -13,8 +13,18 @@
  * страницы (заголовки, города) — namespace `documents` в messages.
  *
  * Часть отделений на старом сайте есть, а PDF по ним нам не передали
- * (ASIA PARK, EURASIA, ARUJAN, АЭРОПОРТ) — таких строк здесь нет
- * намеренно: ссылка без файла хуже отсутствующей ссылки.
+ * (ASIA PARK, EURASIA, ARUJAN, АЭРОПОРТ). Строки для них здесь всё же
+ * есть: список должен совпадать со старым сайтом, иначе человек ищет
+ * знакомое отделение и решает, что оно закрылось. Такая строка выводится
+ * неактивной плиткой с подписью «скоро» — кликнуть по ней нельзя.
+ *
+ * ДОБАВИТЬ НЕДОСТАЮЩИЙ PDF: положить файл в public/documents/licenses под
+ * именем, указанным в поле `file` этой записи, — и всё. Кода менять не
+ * нужно: страница спрашивает у диска, есть ли файл (src/server/licenses.ts),
+ * и сама превращает плитку в рабочую ссылку при следующей сборке. Если имя
+ * файла удобнее другое — поменять `file` здесь на фактическое имя. Тест
+ * src/server/licenses.test.ts ловит расхождение: лишний PDF в каталоге,
+ * на который не ссылается ни одна запись, роняет прогон.
  */
 
 export type License = {
@@ -55,7 +65,17 @@ export const LICENSE_CITIES: LicenseCity[] = [
     licenses: [
       { name: 'ДОКУМЕНТЫ ECASH 3 - ХАНШАТЫР', file: 'License_Khanshatyr_Astana.pdf' },
       { name: 'ДОКУМЕНТЫ САРЫАРКА EXCHANGE - САРЫАРКА', file: 'License_Saryarka_Astana.pdf' },
+      {
+        name: 'ДОКУМЕНТЫ ECASH АСТАНИНСКИЙ ФИЛИАЛ - ASIA PARK',
+        file: 'License_Asia_Park_Astana.pdf',
+      },
+      { name: 'ДОКУМЕНТЫ ECASH АСТАНИНСКИЙ ФИЛИАЛ - EURASIA', file: 'License_Eurasia_Astana.pdf' },
+      { name: 'ДОКУМЕНТЫ ECASH АСТАНИНСКИЙ ФИЛИАЛ - ARUJAN', file: 'License_Arujan_Astana.pdf' },
       { name: 'ДОКУМЕНТЫ TANDAU EXCHANGE - ABU DHABI', file: 'License_Abu_Dhabi_Astana.pdf' },
+      {
+        name: 'ДОКУМЕНТЫ ECASH АСТАНИНСКИЙ ФИЛИАЛ - АЭРОПОРТ',
+        file: 'License_Aeroport_Astana.pdf',
+      },
     ],
   },
 ];

@@ -3,6 +3,7 @@ import { PageShell } from '@/components/layout/PageShell';
 import { Icon } from '@/components/ui/Icon';
 import { pageMetadata } from '@/lib/metadata';
 import { LICENSE_CITIES, licenseHref, type License } from '@/lib/licenses';
+import { hasLicenseFile } from '@/server/licenses';
 
 /**
  * «Документы» из футера: лицензии Нацбанка по отделениям, сгруппированные
@@ -15,6 +16,13 @@ import { LICENSE_CITIES, licenseHref, type License } from '@/lib/licenses';
  *
  * Список статический: PDF лежат в репозитории, ходить за ними в Ecash API
  * незачем — страница остаётся полностью серверной и попадает в SSG.
+ *
+ * Отделения, по которым лицензию нам ещё не передали, из списка не
+ * выброшены: человек ищет знакомое название и по его отсутствию решил бы,
+ * что отделение закрылось. Такая строка рисуется неактивной плиткой с
+ * подписью «скоро» — и становится обычной ссылкой в тот момент, когда PDF
+ * ляжет в public/documents/licenses (проверяем сам файл, см.
+ * src/server/licenses.ts, — отдельного флага в данных нет).
  */
 export default function DocumentsLicensePage() {
   const t = useTranslations('documents');
@@ -43,7 +51,11 @@ export default function DocumentsLicensePage() {
                 <ul className="mt-3 grid gap-2 md:mt-4 md:gap-3 lg:grid-cols-2">
                   {city.licenses.map((license) => (
                     <li key={license.file}>
-                      <LicenseLink license={license} hint={t('hint')} />
+                      {hasLicenseFile(license) ? (
+                        <LicenseLink license={license} hint={t('hint')} />
+                      ) : (
+                        <LicensePending license={license} label={t('soon')} />
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -84,6 +96,28 @@ function LicenseLink({ license, hint }: { license: License; hint: string }) {
         className="shrink-0 text-text-disabled transition-colors group-hover:text-text-brand"
       />
     </a>
+  );
+}
+
+/**
+ * Отделение, по которому PDF ещё нет. Не ссылка и не кнопка: нажимать
+ * нечего, а disabled-ссылка, которая выглядит нажимаемой, — обещание,
+ * которого страница не сдержит. Отсюда пунктирная обводка, приглушённый
+ * текст и подпись «скоро» на месте стрелки «откроется в новой вкладке».
+ */
+function LicensePending({ license, label }: { license: License; label: string }) {
+  return (
+    <div className="flex h-full items-center gap-3 rounded-[20px] border border-dashed border-stroke-surface1 bg-surface-page-surf2/50 p-3 md:gap-4 md:p-4">
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-surface-page-surf3 text-text-disabled md:h-12 md:w-12">
+        <Icon name="description" size={24} />
+      </span>
+      <span className="min-w-0 flex-1 text-sm font-medium leading-[1.3] text-text-disabled md:text-base md:leading-5">
+        {license.name}
+      </span>
+      <span className="shrink-0 rounded-full border border-stroke-surface1 px-2 py-0.5 text-xs leading-4 text-text-disabled">
+        {label}
+      </span>
+    </div>
   );
 }
 
