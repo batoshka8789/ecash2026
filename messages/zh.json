@@ -88,7 +88,9 @@
     "scheduleValue": "周一至周日；9:00 — 22:00",
     "additional": "更多",
     "documents": "文件资料",
-    "rights": "版权所有"
+    "rights": "版权所有",
+    "privacy": "隐私及个人数据处理政策",
+    "privacyHint": "PDF 文件，将在新标签页中打开"
   },
   "appBanner": {
     "text": "使用 App 更方便！汇率通知、预订钞票面额、锁定汇率",

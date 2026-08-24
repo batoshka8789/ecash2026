@@ -88,7 +88,9 @@
     "scheduleValue": "Mon - Sun; 9:00 AM — 10:00 PM",
     "additional": "More",
     "documents": "Documents",
-    "rights": "All rights reserved"
+    "rights": "All rights reserved",
+    "privacy": "Privacy and personal data processing policy",
+    "privacyHint": "PDF, opens in a new tab"
   },
   "appBanner": {
     "text": "Even better in the app! Rate notifications, banknote orders, booking",

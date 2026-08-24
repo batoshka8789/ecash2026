@@ -284,8 +284,8 @@ export function Landing() {
           </Section>
         </Container>
 
-        {/* общий футер сайта; лендингу нужен только свой ритм отбивки */}
-        <Footer className="mt-40 md:mt-[300px] lg:mt-[400px]" />
+        {/* у лендинга в макете свой футер — крупнее и с другими полями */}
+        <Footer variant="landing" className="mt-40 md:mt-[300px] lg:mt-[400px]" />
       </div>
 
       <ScrollToTopButton label={t("scrollTop")} />
