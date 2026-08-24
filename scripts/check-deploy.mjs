@@ -124,7 +124,7 @@ if (sitemap.status !== 200) {
 
 /* --------------------------------------------------------- 4. страницы */
 console.log('\n4. Публичные страницы');
-const pages = ['/', '/news', '/franchise', '/locations', '/booking', '/individual-rate', '/subscribe', '/login', '/signup', '/legal/consent'];
+const pages = ['/', '/news', '/franchise', '/locations', '/booking', '/individual-rate', '/subscribe', '/login', '/signup', '/legal/consent', '/legal/privacy'];
 const badPages = [];
 for (const p of pages) {
   const r = await get(p);

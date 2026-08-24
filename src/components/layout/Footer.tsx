@@ -39,11 +39,9 @@ import { Icon } from '@/components/ui/Icon';
  * Исключения — «Документы» (обязательная публикация лицензий, в макете стоит
  * именно здесь) и политика конфиденциальности: её в макете нет, но публикация
  * тоже обязательная, поэтому она уходит в строку копирайта — единственное
- * место, где ссылка не ломает высоту футера (327 на 1920).
+ * место, где ссылка не ломает высоту футера (327 на 1920). Обе ведут на
+ * страницы сайта: /documents-license и /legal/privacy.
  */
-/** Политика конфиденциальности — PDF в public/documents. */
-const PRIVACY_POLICY_HREF = '/documents/Privacy_Policy_Ecash.pdf';
-
 export function Footer({
   className,
   variant = 'app',
@@ -206,17 +204,17 @@ export function Footer({
           <div className={clsx(!landing && 'md:whitespace-nowrap')}>
             © {new Date().getFullYear()}. {t('rights')}
           </div>
-          {/* Политика лежит готовым PDF в public/documents — как и лицензии,
-              это документ, а не страница сайта, поэтому обычный <a> в новую
-              вкладку, а не Link роутера.
+          {/* Раньше отсюда открывался PDF из public/documents. Теперь это
+              страница сайта (/legal/privacy) с тем же текстом: документ
+              читают чаще всего с телефона, и чужой просмотрщик, в котором
+              А4 разводят пальцами, для этого не годится. Сам файл никуда не
+              делся — он лежит кнопкой «Скачать» в шапке той страницы.
 
               На 768 колонка контента всего 664 — политика в 16 туда не встаёт
               рядом с копирайтом и ломает строку (а с ней и высоту футера),
               поэтому до 1024 держим её на ступень мельче. */}
-          <a
-            href={PRIVACY_POLICY_HREF}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/legal/privacy"
             className={clsx(
               'transition-colors hover:text-text-brand',
               'md:text-balance',
@@ -226,10 +224,7 @@ export function Footer({
             )}
           >
             {t('privacy')}
-            {/* формат и новая вкладка видны глазом по значку в PDF-вьюере,
-                но не экранному диктору — ему их проговаривает эта подпись */}
-            <span className="sr-only"> — {t('privacyHint')}</span>
-          </a>
+          </Link>
         </div>
       </div>
     </footer>

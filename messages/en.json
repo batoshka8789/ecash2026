@@ -89,8 +89,7 @@
     "additional": "More",
     "documents": "Documents",
     "rights": "All rights reserved",
-    "privacy": "Privacy and personal data processing policy",
-    "privacyHint": "PDF, opens in a new tab"
+    "privacy": "Privacy and personal data processing policy"
   },
   "appBanner": {
     "text": "Even better in the app! Rate notifications, banknote orders, booking",
@@ -897,6 +896,10 @@
     "documents": {
       "title": "Documents and licences — ecash",
       "description": "National Bank of Kazakhstan exchange licences: a separate document for every ecash branch in Almaty and Astana, in PDF."
+    },
+    "privacy": {
+      "title": "Privacy policy — ecash",
+      "description": "Ecash LLP privacy and personal data processing policy: what data is collected, why, who it is shared with and how to withdraw consent."
     }
   },
   "push": {
@@ -931,5 +934,8 @@
       "almaty": "Almaty",
       "astana": "Astana"
     }
+  },
+  "privacy": {
+    "crumb": "Privacy policy"
   }
 }

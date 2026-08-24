@@ -89,8 +89,7 @@
     "additional": "更多",
     "documents": "文件资料",
     "rights": "版权所有",
-    "privacy": "隐私及个人数据处理政策",
-    "privacyHint": "PDF 文件，将在新标签页中打开"
+    "privacy": "隐私及个人数据处理政策"
   },
   "appBanner": {
     "text": "使用 App 更方便！汇率通知、预订钞票面额、锁定汇率",
@@ -897,6 +896,10 @@
     "documents": {
       "title": "文件与牌照 — ecash",
       "description": "哈萨克斯坦国家银行兑换业务牌照：阿拉木图和阿斯塔纳每个 ecash 网点各一份文件，PDF 格式。"
+    },
+    "privacy": {
+      "title": "隐私政策 — ecash",
+      "description": "Ecash 有限责任合伙企业的隐私及个人数据处理政策：收集哪些数据、用于何种目的、向谁提供以及如何撤回同意。"
     }
   },
   "push": {
@@ -931,5 +934,8 @@
       "almaty": "阿拉木图",
       "astana": "阿斯塔纳"
     }
+  },
+  "privacy": {
+    "crumb": "隐私政策"
   }
 }
