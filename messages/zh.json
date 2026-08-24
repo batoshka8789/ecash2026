@@ -891,6 +891,10 @@
     "consent": {
       "title": "个人数据处理同意书 — ecash",
       "description": "Ecash 有限责任合伙企业收集和处理个人数据同意书全文。"
+    },
+    "documents": {
+      "title": "文件与牌照 — ecash",
+      "description": "哈萨克斯坦国家银行兑换业务牌照：阿拉木图和阿斯塔纳每个 ecash 网点各一份文件，PDF 格式。"
     }
   },
   "push": {
@@ -915,5 +919,14 @@
     "toSignup": "前往注册",
     "acceptAndContinue": "接受并继续",
     "close": "关闭"
+  },
+  "documents": {
+    "crumb": "文件资料",
+    "title": "文件与牌照",
+    "hint": "PDF 文件，将在新标签页中打开",
+    "cities": {
+      "almaty": "阿拉木图",
+      "astana": "阿斯塔纳"
+    }
   }
 }

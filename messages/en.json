@@ -891,6 +891,10 @@
     "consent": {
       "title": "Personal data processing consent — ecash",
       "description": "Full text of the consent to the collection and processing of personal data by Ecash LLP."
+    },
+    "documents": {
+      "title": "Documents and licences — ecash",
+      "description": "National Bank of Kazakhstan exchange licences: a separate document for every ecash branch in Almaty and Astana, in PDF."
     }
   },
   "push": {
@@ -915,5 +919,14 @@
     "toSignup": "Go to sign-up",
     "acceptAndContinue": "Accept and continue",
     "close": "Close"
+  },
+  "documents": {
+    "crumb": "Documents",
+    "title": "Documents and licences",
+    "hint": "PDF, opens in a new tab",
+    "cities": {
+      "almaty": "Almaty",
+      "astana": "Astana"
+    }
   }
 }

@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { clsx } from 'clsx';
+import { Link } from '@/i18n/navigation';
 import { Icon } from '@/components/ui/Icon';
 
 /**
@@ -18,6 +19,8 @@ import { Icon } from '@/components/ui/Icon';
  * Ссылки на разделы сюда не добавляем — в макете их нет ни в шапке, ни в
  * футере (роль навигационного хаба играют карточки-действий, хлебные крошки
  * и сайдбар кабинета, см. Header.tsx). Переключатель языка — там же, в шапке.
+ * Исключение — «Документы»: это не навигация по разделам, а обязательная
+ * публикация лицензий, и в макете она стоит именно здесь.
  */
 export function Footer({ className }: { className?: string }) {
   const t = useTranslations('footer');
@@ -96,12 +99,14 @@ export function Footer({ className }: { className?: string }) {
             <div className="text-sm leading-[1.1] text-text-disabled md:text-xl md:leading-8 md:text-text-default">
               {t('additional')}
             </div>
-            {/* Реального адреса документов пока нет: текст без маркеров ссылки,
-                чтобы не выглядел кликабельным. */}
-            <span className="inline-flex items-center gap-2.5 text-base leading-5 text-text-default md:text-[28px] md:font-semibold md:leading-8 md:tracking-[-0.45px]">
+            {/* Единственная ссылка футера — раздел лицензий по отделениям. */}
+            <Link
+              href="/documents-license"
+              className="inline-flex items-center gap-2.5 text-base leading-5 text-text-default transition-colors hover:text-text-brand md:text-[28px] md:font-semibold md:leading-8 md:tracking-[-0.45px]"
+            >
               {t('documents')}
               <Icon name="arrow_outward" size={20} />
-            </span>
+            </Link>
           </div>
         </div>
 
