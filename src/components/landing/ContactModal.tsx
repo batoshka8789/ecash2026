@@ -230,7 +230,7 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
                     ref={phoneRef}
                     value={phone}
                     onChange={(e) => {
-                      setPhone(formatPhoneInput(e.target.value));
+                      setPhone(formatPhoneInput(e.target.value, phone));
                       setClientErr((c) => (c.phone ? { ...c, phone: undefined } : c));
                     }}
                     placeholder={t('phone')}

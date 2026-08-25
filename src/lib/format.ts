@@ -188,7 +188,7 @@ export function currencyFlagClass(code: string): string | null {
  * "starts with 7" без учёта длины эта цифра терялась у любого номера
  * из 10 цифр, набранного с нуля.
  */
-export function formatPhoneInput(raw: string): string {
+const phoneDigitsOf = (raw: string): string => {
   // Собственный префикс маски «+7» срезаем ДО извлечения цифр: контролируемый
   // input прогоняет уже отформатированное значение через маску заново на
   // каждом нажатии, и без этого «7» из префикса считалась цифрой номера —
@@ -199,7 +199,24 @@ export function formatPhoneInput(raw: string): string {
   if (digits.length === 11 && (digits.startsWith('7') || digits.startsWith('8'))) {
     digits = digits.slice(1);
   }
-  digits = digits.slice(0, 10);
+  return digits.slice(0, 10);
+};
+
+/**
+ * `prev` — предыдущее отформатированное значение того же контролируемого
+ * поля (то, что было в input ДО этого нажатия). Без него Backspace на
+ * скобке или пробеле визуально ничего не удалял: маска пересобирается из
+ * тех же цифр и тут же ставит стёртый символ оформления обратно — приходилось
+ * сначала жать стрелку влево, чтобы курсор оказался перед цифрой. Если raw
+ * короче prev (что-то стёрли), а число цифр не изменилось — стёрли именно
+ * оформление; довершаем удаление сами, срезая последнюю цифру.
+ */
+export function formatPhoneInput(raw: string, prev?: string): string {
+  let digits = phoneDigitsOf(raw);
+
+  if (prev !== undefined && raw.length < prev.length && digits.length === phoneDigitsOf(prev).length) {
+    digits = digits.slice(0, -1);
+  }
 
   if (digits.length === 0) return '';
   let out = `+7 (${digits.slice(0, 3)}`;

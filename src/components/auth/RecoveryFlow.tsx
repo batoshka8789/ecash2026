@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useMutation } from '@tanstack/react-query';
-import { useRouter } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { Logo } from '@/components/ui/Logo';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/Button';
@@ -104,9 +104,11 @@ export function RecoveryFlow() {
       </button>
 
       <form onSubmit={onSubmit} className="rounded-3xl bg-surface-page-surf1 p-6 sm:p-8" noValidate>
-        <div className="flex justify-center">
+        {/* /recovery — вся страница, шапки нет; клик по логотипу ведёт на
+            лендинг, как и везде на сайте (Header, AuthCard). */}
+        <Link href="/" aria-label="ecash" className="flex justify-center transition-opacity hover:opacity-80">
           <Logo />
-        </div>
+        </Link>
 
         <h1 className="mt-7 text-center text-xl font-bold text-text-default">{t('title')}</h1>
 
@@ -135,7 +137,7 @@ export function RecoveryFlow() {
               label={t('phonePlaceholder')}
               placeholder={t('phonePlaceholder')}
               value={phone}
-              onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
+              onChange={(e) => setPhone(formatPhoneInput(e.target.value, phone))}
               errors={err('phoneNumber')}
               autoComplete="tel"
               inputMode="tel"

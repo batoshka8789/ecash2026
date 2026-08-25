@@ -318,7 +318,7 @@ export function ProfileForm() {
           label={t('contact')}
           value={form.phoneNumber}
           editing={editing}
-          onChange={(v) => set('phoneNumber')(formatPhoneInput(v))}
+          onChange={(v) => set('phoneNumber')(formatPhoneInput(v, form.phoneNumber))}
           invalid={errField === 'phoneNumber'}
           describedBy={errId}
         />

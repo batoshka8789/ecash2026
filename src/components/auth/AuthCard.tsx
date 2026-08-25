@@ -310,9 +310,14 @@ export function AuthCard({
         className="relative flex w-full flex-col gap-9 rounded-[20px] bg-surface-page-surf1 px-5 py-10 max-[361px]:min-h-screen max-[361px]:justify-center max-[361px]:rounded-none md:px-10"
         noValidate
       >
-        <div className="flex justify-center">
+        {/* На /login и /signup эта карточка — вся страница, шапки с логотипом
+            нет вовсе (см. страницы (auth)/login, /signup); в модалке она
+            поверх любой другой страницы. В обоих случаях клик по логотипу
+            должен вести на лендинг, как и в Header, — раньше это была просто
+            картинка без ссылки. */}
+        <Link href="/" aria-label="ecash" className="flex justify-center transition-opacity hover:opacity-80">
           <Logo />
-        </div>
+        </Link>
 
         {withTabs ? (
           <>
@@ -351,7 +356,7 @@ export function AuthCard({
                         <Input
                           placeholder={t('phoneLabel')}
                           value={loginValue}
-                          onChange={(e) => setLoginValue(formatPhoneInput(e.target.value))}
+                          onChange={(e) => setLoginValue(formatPhoneInput(e.target.value, loginValue))}
                           errors={err('login').concat(err('phoneNumber'))}
                           autoComplete="username"
                           inputMode="tel"
@@ -401,7 +406,7 @@ export function AuthCard({
                     <Input
                       placeholder={t('phoneLabel')}
                       value={phone}
-                      onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
+                      onChange={(e) => setPhone(formatPhoneInput(e.target.value, phone))}
                       errors={err('login').concat(err('phoneNumber'))}
                       autoComplete="tel"
                       inputMode="tel"
@@ -435,7 +440,7 @@ export function AuthCard({
                       value={phone}
                       onChange={(e) => {
                         setFormError(null);
-                        setPhone(formatPhoneInput(e.target.value));
+                        setPhone(formatPhoneInput(e.target.value, phone));
                       }}
                       errors={err('login').concat(err('phoneNumber'))}
                       autoComplete="tel"
