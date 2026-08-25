@@ -23,6 +23,8 @@ const PUBLIC_PATHS = [
   '/subscribe',
   '/franchise',
   '/news',
+  '/documents-license',
+  '/legal/privacy',
 ];
 
 const localeUrl = (locale: string, path: string) =>

@@ -88,7 +88,8 @@
     "scheduleValue": "Mon - Sun; 9:00 AM — 10:00 PM",
     "additional": "More",
     "documents": "Documents",
-    "rights": "All rights reserved"
+    "rights": "All rights reserved",
+    "privacy": "Privacy and personal data processing policy"
   },
   "appBanner": {
     "text": "Even better in the app! Rate notifications, banknote orders, booking",
@@ -891,6 +892,14 @@
     "consent": {
       "title": "Personal data processing consent — ecash",
       "description": "Full text of the consent to the collection and processing of personal data by Ecash LLP."
+    },
+    "documents": {
+      "title": "Documents and licences — ecash",
+      "description": "National Bank of Kazakhstan exchange licences: a separate document for every ecash branch in Almaty and Astana, in PDF."
+    },
+    "privacy": {
+      "title": "Privacy policy — ecash",
+      "description": "Ecash LLP privacy and personal data processing policy: what data is collected, why, who it is shared with and how to withdraw consent."
     }
   },
   "push": {
@@ -915,5 +924,18 @@
     "toSignup": "Go to sign-up",
     "acceptAndContinue": "Accept and continue",
     "close": "Close"
+  },
+  "documents": {
+    "crumb": "Documents",
+    "title": "Documents and licences",
+    "hint": "PDF, opens in a new tab",
+    "soon": "Coming soon",
+    "cities": {
+      "almaty": "Almaty",
+      "astana": "Astana"
+    }
+  },
+  "privacy": {
+    "crumb": "Privacy policy"
   }
 }

@@ -27,7 +27,9 @@ type MetaKey =
   | 'notifications'
   | 'news'
   | 'requests'
-  | 'consent';
+  | 'consent'
+  | 'privacy'
+  | 'documents';
 
 const localePath = (locale: string, path: string) =>
   locale === routing.defaultLocale ? path || '/' : `/${locale}${path}`;
