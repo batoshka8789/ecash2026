@@ -4,7 +4,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { clsx } from "clsx";
 import { Link } from "@/i18n/navigation";
 import { Logo } from "@/components/ui/Logo";
@@ -1089,21 +1089,19 @@ function FaqRow({ q, a }: { q: string; a: string }) {
         </motion.span>
       </button>
 
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="overflow-hidden"
-          >
-            <div className="mt-6 border-t border-[#454545] pt-6 text-base leading-8 text-text-default lg:text-xl">
-              {a}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Обычный условный рендер + CSS-анимация вместо AnimatePresence с
+          height: 0 → "auto": JS-твин, поставленный на паузу уходом вкладки
+          в фон (сворачивание на телефоне, alt-tab), мог застрять на
+          промежуточном кадре навсегда — см. [[stuck-animation-pattern]].
+          anim-panel-in гарантированно доходит до конечного видимого
+          состояния (animation-fill-mode: both), даже если кадры пропущены.
+          Плавный рост высоты при этом теряется — сознательный компромисс,
+          тот же, что и у остальных мест по этому паттерну. */}
+      {open && (
+        <div className="anim-panel-in mt-6 border-t border-[#454545] pt-6 text-base leading-8 text-text-default lg:text-xl">
+          {a}
+        </div>
+      )}
     </div>
   );
 }

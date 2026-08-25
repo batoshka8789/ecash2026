@@ -22,7 +22,7 @@ import {
   writeConsent,
 } from '@/lib/legal/consent-storage';
 import { ConsentModal } from '@/components/legal/ConsentModal';
-import { fullNameSchema, passwordSchema } from '@/shared/schemas';
+import { fullNameSchema, passwordSchema, phoneSchema } from '@/shared/schemas';
 import { api, ApiError } from '@/lib/api';
 
 type Tab = 'login' | 'signup';
@@ -241,9 +241,16 @@ export function AuthCard({
       return;
     }
     if (regStep === 'form') {
-      // Согласие — первым: без него регистрации не будет, и незачем тратить SMS.
-      if (!consent) {
-        setConsentError(true);
+      /**
+       * Порядок проверок — сверху вниз по экрану (телефон → ФИО → пароль →
+       * повтор пароля → согласие), а не «сначала самое важное». Раньше
+       * согласие проверялось первым: пустая форма сразу показывала только
+       * его ошибку, а пустые телефон/ФИО/пароль над ним выглядели никак не
+       * провалидированными — человек не понимал, что заполнять первым.
+       */
+      const phoneCheck = phoneSchema.safeParse(phone);
+      if (!phoneCheck.success) {
+        setFormError({ field: 'phoneNumber', message: phoneCheck.error.issues[0].message });
         return;
       }
       // ФИО — там же, до SMS: поля для него на экране кода нет,
@@ -262,6 +269,12 @@ export function AuthCard({
       }
       if (password !== password2) {
         setFormError({ field: 'password2', message: 'errors.passwordMatch' });
+        return;
+      }
+      // Согласие — последним по экрану, но так же обязательно: без него
+      // регистрации не будет, и незачем тратить SMS.
+      if (!consent) {
+        setConsentError(true);
         return;
       }
       setFormError(null);
