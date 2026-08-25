@@ -48,6 +48,26 @@ export function LangSwitcher() {
     if (!ref.current?.contains(e.relatedTarget as Node | null)) setOpen(false);
   };
 
+  /**
+   * Мышиный клик по кнопке НЕ должен переносить на неё фокус — в отличие от
+   * Chrome, который сам это делает, WebKit (Safari, macOS и iOS) этого не
+   * делает никогда. Разница обнажает гонку: при открытом списке текущий
+   * язык сфокусирован программно (эффект ниже); клик по ДРУГОМУ языку в
+   * Safari просто снимает фокус с него в никуда — событие blur успевает
+   * раньше click и наш onBlur синхронно закрывает список (setOpen(false)),
+   * размонтировав кнопку языка ещё до того, как до неё дойдёт сам click.
+   * Внешне — «клик по языку ничего не делает», воспроизводимо только там,
+   * где мышиный клик не двигает фокус сам.
+   *
+   * preventDefault на mousedown убирает у браузера намерение вообще
+   * трогать фокус по этому клику — тогда blur не происходит нигде, гонки
+   * нет, а последующий click (он не зависит от preventDefault на mousedown)
+   * срабатывает как обычно. Работает одинаково во всех браузерах — это не
+   * заплатка под Safari, а устранение самой причины: клавиатурный Tab
+   * фокус не через mousedown и этим изменением не затронут.
+   */
+  const keepFocus = (e: React.MouseEvent) => e.preventDefault();
+
   const onTriggerKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
@@ -78,6 +98,7 @@ export function LangSwitcher() {
       <button
         ref={triggerRef}
         type="button"
+        onMouseDown={keepFocus}
         onClick={() => setOpen((v) => !v)}
         onKeyDown={onTriggerKeyDown}
         aria-haspopup="listbox"
@@ -100,6 +121,7 @@ export function LangSwitcher() {
               type="button"
               role="option"
               aria-selected={l === locale}
+              onMouseDown={keepFocus}
               onKeyDown={onOptionKeyDown}
               onClick={() => {
                 setOpen(false);
