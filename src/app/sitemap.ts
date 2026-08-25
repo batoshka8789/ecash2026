@@ -4,7 +4,8 @@ import { db } from '@/server/db/client';
 import { news } from '@/server/db/schema';
 import { routing } from '@/i18n/routing';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://ecash.kz';
+// `||`, не `??`: пустая строка из окружения не должна проходить мимо запасного значения
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://ecash.kz';
 
 /**
  * Пересборка раз в час В РАНТАЙМЕ: без revalidate sitemap запекается на

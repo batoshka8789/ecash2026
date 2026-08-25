@@ -8,7 +8,10 @@ import { routing } from '@/i18n/routing';
  * ru без префикса, /en и /kk с префиксом).
  */
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://ecash.kz';
+// `||`, не `??`: пустая строка из окружения (переменная объявлена в
+// build-аргументах, но не заполнена) раньше проходила мимо запасного
+// значения и падала на new URL('') ниже — TypeError: Invalid URL.
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://ecash.kz';
 
 type MetaKey =
   | 'home'

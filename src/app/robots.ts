@@ -1,7 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { routing } from '@/i18n/routing';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://ecash.kz';
+// `||`, не `??`: пустая строка из окружения не должна проходить мимо запасного значения
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://ecash.kz';
 
 /** Приватные разделы; /news стали публичными и индексируются. */
 const PRIVATE_PATHS = ['/profile', '/notifications', '/requests', '/admin'];

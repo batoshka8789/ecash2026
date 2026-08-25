@@ -12,7 +12,8 @@ import { Icon } from '@/components/ui/Icon';
 import { RichText } from '@/components/ui/RichText';
 import { NewsShell } from '@/components/news/NewsShell';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://ecash.kz';
+// `||`, не `??`: пустая строка из окружения не должна проходить мимо запасного значения
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://ecash.kz';
 
 /**
  * Всегда свежий рендер. Без этого Next кешировал ПЕРВЫЙ рендер страницы

@@ -79,7 +79,8 @@ function Section({
  * Раньше здесь было зашито «ecash.kz»: на чужом развёртывании админ видел
  * бы в предпросмотре чужой домен вместо своего.
  */
-const SITE_HOST = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://ecash.kz')
+// `||`, не `??`: пустая строка из окружения не должна проходить мимо запасного значения
+const SITE_HOST = (process.env.NEXT_PUBLIC_SITE_URL || 'https://ecash.kz')
   .replace(/^https?:\/\//, '')
   .replace(/\/+$/, '');
 
