@@ -18,7 +18,7 @@ ARG ECASH_CLIENT_ID=build
 ARG ECASH_CLIENT_SECRET=build
 ARG SESSION_SECRET=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
 ARG DATABASE_URL=postgres://build:build@localhost:5432/build
-ARG APP_ORIGIN=https://localhost:3000
+ARG APP_ORIGIN=https://ecash.kz
 
 # NEXT_PUBLIC_* — ОБЯЗАТЕЛЬНО здесь, задать их в рантайме невозможно: Next
 # подставляет их значения в клиентский бандл на этапе сборки. Без этого

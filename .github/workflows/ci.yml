@@ -1,39 +1,34 @@
-name: CI
+name: (PROD) Deploy PS
 
 on:
   push:
-    branches: [main]
-  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  verify:
+  build-and-push:
     runs-on: ubuntu-latest
+    outputs:
+      IMAGE_TAG: ${{ steps.tag.outputs.IMAGE_TAG }}
+
     steps:
-      - uses: actions/checkout@v4
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
+      - name: 🏷 Define Image Tag
+        id: tag
+        run: |
+          IMAGE_TAG=prod-v${{ github.run_number }}
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      - run: npm ci
+      - name: 🔐 Login to GHCR with PAT
+        run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u quiqautomation --password-stdin
 
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Unit tests
-        run: npm run test
-
-      - name: Build
-        run: npm run build
-        env:
-          # сборке нужен валидный env; секреты не требуются — внешних вызовов при билде нет
-          ECASH_API_BASE_URL: https://api-dev.quiq.kz
-          ECASH_CLIENT_ID: ci
-          ECASH_CLIENT_SECRET: ci
-          SESSION_SECRET: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
-          DATABASE_URL: postgres://ci:ci@localhost:5432/ci
-          APP_ORIGIN: http://localhost:3000
+      - name: 🐳 Build and Push to GHCR
+        run: |
+          IMAGE_BASE=ghcr.io/quiqautomation/ecash-web
+          docker build -t $IMAGE_BASE:$IMAGE_TAG -t $IMAGE_BASE:prod-lts .
+          docker push $IMAGE_BASE:$IMAGE_TAG
+          docker push $IMAGE_BASE:prod-lts
