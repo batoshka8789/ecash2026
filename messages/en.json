@@ -274,6 +274,8 @@
     "breadcrumbCalc": "Calculator",
     "badges": {
       "best": "Best rate",
+      "bestBuy": "Best buy rate",
+      "bestSale": "Best sell rate",
       "happyHours": "Happy hours",
       "nearest": "Nearest"
     },

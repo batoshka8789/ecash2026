@@ -3,6 +3,8 @@ import type { BranchMapBadgeTone, BranchMapMarker } from './types';
 
 const badgeTone: Record<BranchMapBadgeTone, string> = {
   best: 'bg-brand',
+  bestBuy: 'bg-brand',
+  bestSale: 'bg-brand',
   happyHours: 'bg-additional-2',
   nearest: 'bg-additional-3',
 };

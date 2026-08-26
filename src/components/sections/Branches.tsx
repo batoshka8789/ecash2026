@@ -224,14 +224,16 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
 
     // Курс выгоден клиенту либо со стороны покупки (обменник платит за
     // валюту больше всех), либо со стороны продажи (обменник отдаёт валюту
-    // дешевле всех) — это разные отделения, оба заслуживают бейдж.
+    // дешевле всех) — это разные отделения (или одно и то же — тогда оба
+    // бейджа у него), и подписи разные: иначе два одинаковых «Самый
+    // выгодный» на экране было не различить, к какой колонке они относятся.
     if (bestBuyDepId != null) {
       const hit = items.find((i) => i.depId === bestBuyDepId);
-      if (hit) hit.badges.push('best');
+      if (hit) hit.badges.push('bestBuy');
     }
-    if (bestSaleDepId != null && bestSaleDepId !== bestBuyDepId) {
+    if (bestSaleDepId != null) {
       const hit = items.find((i) => i.depId === bestSaleDepId);
-      if (hit) hit.badges.push('best');
+      if (hit) hit.badges.push('bestSale');
     }
     for (const item of items) {
       if (item.timetable && isHappyHours(item.timetable, hhmm)) item.badges.push('happyHours');

@@ -274,6 +274,8 @@
     "breadcrumbCalc": "Калькулятор",
     "badges": {
       "best": "Самый выгодный",
+      "bestBuy": "Лучшая покупка",
+      "bestSale": "Лучшая продажа",
       "happyHours": "Happy hours",
       "nearest": "Ближе всего"
     },

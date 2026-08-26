@@ -7,8 +7,8 @@
  * нового в тот же контейнер.
  */
 
-/** Тон бейджа у пина — те же три состояния, что и в списке отделений. */
-export type BranchMapBadgeTone = 'best' | 'happyHours' | 'nearest';
+/** Тон бейджа у пина — те же состояния, что и в списке отделений. */
+export type BranchMapBadgeTone = 'best' | 'bestBuy' | 'bestSale' | 'happyHours' | 'nearest';
 
 export type BranchMapMarker = {
   id: number;

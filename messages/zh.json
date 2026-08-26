@@ -274,6 +274,8 @@
     "breadcrumbCalc": "计算器",
     "badges": {
       "best": "最优汇率",
+      "bestBuy": "最优买入价",
+      "bestSale": "最优卖出价",
       "happyHours": "优惠时段",
       "nearest": "距离最近"
     },

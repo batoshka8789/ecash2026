@@ -274,6 +274,8 @@
     "breadcrumbCalc": "Калькулятор",
     "badges": {
       "best": "Ең тиімді",
+      "bestBuy": "Ең тиімді сатып алу",
+      "bestSale": "Ең тиімді сату",
       "happyHours": "Happy hours",
       "nearest": "Ең жақын"
     },

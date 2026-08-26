@@ -50,9 +50,17 @@ export function isHappyHours(tt: { openTime: string; closeTime: string }, hhmm: 
   return minutesToClose <= 120;
 }
 
-/** Бейджи отделения: цвета из палитры макета (badge, 12/700, r8). */
+/** Бейджи отделения: цвета из палитры макета (badge, 12/700, r8).
+ *  bestBuy/bestSale — для /locations, где Покупка и Продажа видны в одной
+ *  строке одновременно и могут быть выгодны в РАЗНЫХ отделениях: один
+ *  общий «best» было не различить, кто именно выгоднее — на покупку или
+ *  на продажу. Отдельный «best» остаётся для карточки брони (PairFields/
+ *  BookingFlow) — там на экране только одна сторона сделки, и бейдж
+ *  однозначен без уточнения. */
 export const badgeStyles = {
   best: 'bg-brand',
+  bestBuy: 'bg-brand',
+  bestSale: 'bg-brand',
   happyHours: 'bg-additional-2',
   nearest: 'bg-additional-3',
 } as const;
