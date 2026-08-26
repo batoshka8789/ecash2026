@@ -18,10 +18,10 @@
  * выводится неактивной плиткой с подписью «скоро» — кликнуть по ней
  * нельзя (см. hasLicenseFile в src/server/licenses.ts).
  *
- * ДОБАВИТЬ НЕДОСТАЮЩИЙ PDF: положить файл в public/documents/licenses под
- * именем, указанным в поле `file` этой записи, — и всё. Кода менять не
- * нужно: страница спрашивает у диска, есть ли файл (src/server/licenses.ts),
- * и сама превращает плитку в рабочую ссылку при следующей сборке. Если имя
+ * ДОБАВИТЬ НЕДОСТАЮЩИЙ PDF: положить файл в public/Licenses под именем,
+ * указанным в поле `file` этой записи, — и всё. Кода менять не нужно:
+ * страница спрашивает у диска, есть ли файл (src/server/licenses.ts), и
+ * сама превращает плитку в рабочую ссылку при следующей сборке. Если имя
  * файла удобнее другое — поменять `file` здесь на фактическое имя. Тест
  * src/server/licenses.test.ts ловит расхождение: лишний PDF в каталоге,
  * на который не ссылается ни одна запись, роняет прогон.
@@ -30,7 +30,7 @@
 export type License = {
   /** Имя документа, как в списке на сайте */
   name: string;
-  /** Файл в public/documents/licenses */
+  /** Файл в public/Licenses */
   file: string;
 };
 
@@ -40,8 +40,12 @@ export type LicenseCity = {
   licenses: License[];
 };
 
-/** Каталог PDF внутри public — один на все ссылки страницы. */
-export const LICENSES_DIR = '/documents/licenses';
+/**
+ * Каталог PDF внутри public — один на все ссылки страницы. С большой
+ * буквы и без сегмента /documents: заказчик хочет именно такой публичный
+ * путь у ссылок на лицензии — /Licenses/<file>, а не /documents/licenses/<file>.
+ */
+export const LICENSES_DIR = '/Licenses';
 
 export const licenseHref = (l: License) => `${LICENSES_DIR}/${l.file}`;
 

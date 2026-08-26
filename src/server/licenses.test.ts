@@ -22,7 +22,7 @@ describe('каталог лицензий', () => {
    * «License_Asia_Park_Astana.pdf») ничего не сломала бы — файл просто
    * лежал бы мёртвым грузом, а плитка осталась серой. Здесь это падение.
    */
-  it('на каждый PDF в public/documents/licenses есть запись', () => {
+  it('на каждый PDF в public/Licenses есть запись', () => {
     const onDisk = readdirSync(DIR).filter((f) => f.endsWith('.pdf'));
     const known = new Set(ALL.map((l) => l.file));
     expect(onDisk.filter((f) => !known.has(f))).toEqual([]);

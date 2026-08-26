@@ -7,7 +7,7 @@ import { hasLicenseFile } from '@/server/licenses';
 
 /**
  * «Документы» из футера: лицензии Нацбанка по отделениям, сгруппированные
- * по городам. Каждая строка открывает свой PDF из public/documents/licenses.
+ * по городам. Каждая строка открывает свой PDF из public/Licenses.
  *
  * Отдельной карточки на каждый город в макете нет, поэтому берём ритм
  * страниц-флоу (booking/individual-rate): одна плита surf1 с обводкой
@@ -21,7 +21,7 @@ import { hasLicenseFile } from '@/server/licenses';
  * выброшены: человек ищет знакомое название и по его отсутствию решил бы,
  * что отделение закрылось. Такая строка рисуется неактивной плиткой с
  * подписью «скоро» — и становится обычной ссылкой в тот момент, когда PDF
- * ляжет в public/documents/licenses (проверяем сам файл, см.
+ * ляжет в public/Licenses (проверяем сам файл, см.
  * src/server/licenses.ts, — отдельного флага в данных нет).
  */
 export default function DocumentsLicensePage() {
