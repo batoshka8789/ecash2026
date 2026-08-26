@@ -12,11 +12,11 @@
  * тем, что человек увидит внутри PDF. Переводится только обвязка
  * страницы (заголовки, города) — namespace `documents` в messages.
  *
- * Часть отделений на старом сайте есть, а PDF по ним нам не передали
- * (ASIA PARK, EURASIA, ARUJAN, АЭРОПОРТ). Строки для них здесь всё же
- * есть: список должен совпадать со старым сайтом, иначе человек ищет
- * знакомое отделение и решает, что оно закрылось. Такая строка выводится
- * неактивной плиткой с подписью «скоро» — кликнуть по ней нельзя.
+ * Если по какому-то отделению PDF ещё не передали, строка для него всё
+ * равно должна остаться в списке: человек ищет знакомое название и по
+ * его отсутствию решил бы, что отделение закрылось. Такая строка
+ * выводится неактивной плиткой с подписью «скоро» — кликнуть по ней
+ * нельзя (см. hasLicenseFile в src/server/licenses.ts).
  *
  * ДОБАВИТЬ НЕДОСТАЮЩИЙ PDF: положить файл в public/documents/licenses под
  * именем, указанным в поле `file` этой записи, — и всё. Кода менять не
@@ -36,7 +36,7 @@ export type License = {
 
 export type LicenseCity = {
   /** Ключ подписи города в messages (`documents.cities.*`) */
-  key: 'almaty' | 'astana';
+  key: 'almaty' | 'astana' | 'aktobe';
   licenses: License[];
 };
 
@@ -58,6 +58,7 @@ export const LICENSE_CITIES: LicenseCity[] = [
       { name: 'ДОКУМЕНТЫ ECASH KAZAKHSTAN - ALMATY MALL', file: 'License_Almaty_Mall_Almaty.pdf' },
       { name: 'ДОКУМЕНТЫ ECASH KAZAKHSTAN - РИТЦ-ПАЛАС', file: 'License_Ritc_Palace_Almaty.pdf' },
       { name: 'ДОКУМЕНТЫ ECASH KAZAKHSTAN - СПУТНИК', file: 'License_Sputnik_Almaty.pdf' },
+      { name: 'ДОКУМЕНТЫ ECASH - RIXOS', file: 'License_Rixos_Almaty.pdf' },
     ],
   },
   {
@@ -69,13 +70,17 @@ export const LICENSE_CITIES: LicenseCity[] = [
         name: 'ДОКУМЕНТЫ ECASH АСТАНИНСКИЙ ФИЛИАЛ - ASIA PARK',
         file: 'License_Asia_Park_Astana.pdf',
       },
-      { name: 'ДОКУМЕНТЫ ECASH АСТАНИНСКИЙ ФИЛИАЛ - EURASIA', file: 'License_Eurasia_Astana.pdf' },
-      { name: 'ДОКУМЕНТЫ ECASH АСТАНИНСКИЙ ФИЛИАЛ - ARUJAN', file: 'License_Arujan_Astana.pdf' },
-      { name: 'ДОКУМЕНТЫ TANDAU EXCHANGE - ABU DHABI', file: 'License_Abu_Dhabi_Astana.pdf' },
       {
-        name: 'ДОКУМЕНТЫ ECASH АСТАНИНСКИЙ ФИЛИАЛ - АЭРОПОРТ',
-        file: 'License_Aeroport_Astana.pdf',
+        name: 'ДОКУМЕНТЫ ECASH АСТАНИНСКИЙ ФИЛИАЛ - EURASIA-3',
+        file: 'License_Eurasia3_Astana.pdf',
       },
+      { name: 'ДОКУМЕНТЫ ECASH АСТАНИНСКИЙ ФИЛИАЛ - ARUZHAN', file: 'License_Aruzhan_Astana.pdf' },
+      { name: 'ДОКУМЕНТЫ TANDAU EXCHANGE - ABU DHABI', file: 'License_Abu_Dhabi_Astana.pdf' },
+      { name: 'ДОКУМЕНТЫ ECASH 4 - АЭРОПОРТ', file: 'License_Aeroport_Astana.pdf' },
     ],
+  },
+  {
+    key: 'aktobe',
+    licenses: [{ name: 'ДОКУМЕНТЫ E-EXCHANGE - АКТОБЕ', file: 'License_Aktobe_Aktobe.pdf' }],
   },
 ];

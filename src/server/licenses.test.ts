@@ -7,13 +7,8 @@ import { hasLicenseFile, licenseFilePath } from './licenses';
 const ALL = LICENSE_CITIES.flatMap((c) => c.licenses);
 const DIR = path.join(process.cwd(), 'public', ...LICENSES_DIR.split('/'));
 
-/** Отделения, по которым лицензию нам ещё не передали (на 24.08.2026). */
-const AWAITING_PDF = [
-  'License_Asia_Park_Astana.pdf',
-  'License_Eurasia_Astana.pdf',
-  'License_Arujan_Astana.pdf',
-  'License_Aeroport_Astana.pdf',
-];
+/** Отделения, по которым лицензию нам ещё не передали (на 26.08.2026). */
+const AWAITING_PDF: string[] = [];
 
 describe('каталог лицензий', () => {
   it('не содержит двух записей на один файл', () => {
