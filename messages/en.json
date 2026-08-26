@@ -909,6 +909,8 @@
     "onText": "We'll let you know in the browser the moment the rate reaches your target — even with the tab closed.",
     "offTitle": "Browser notifications",
     "offText": "Turn them on and you'll hear about the rate right away, not on your next visit.",
+    "unsupportedTitle": "Push isn't available here",
+    "unsupportedText": "On iPhone, Safari only supports notifications for a site added to the Home Screen: tap Share → Add to Home Screen, then open the site from there.",
     "deniedTitle": "Notifications blocked",
     "deniedText": "Permission was declined in your browser. To switch them on, allow notifications for this site in the site settings.",
     "turnOn": "Turn on",

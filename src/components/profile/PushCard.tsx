@@ -16,9 +16,12 @@ import { useAuth } from '@/lib/auth';
  * события — даже с закрытой вкладкой.
  *
  * Карточка сама себя прячет там, где она бессмысленна: гостю (подписки
- * привязаны к аккаунту), на стенде без ключей VAPID и в браузере без
- * поддержки push. Показывать неработающий переключатель хуже, чем не
- * показывать ничего.
+ * привязаны к аккаунту) и на стенде без ключей VAPID — включать там
+ * действительно нечего. А вот «браузер не поддерживает push» раньше тоже
+ * тихо прятала карточку — и человек, у которого это iPhone в обычной
+ * вкладке Safari (без добавления на «Домой»), никогда не узнавал, что
+ * переключателя и не может быть, пока сайт не добавлен на экран «Домой».
+ * Молчание здесь хуже неработающей кнопки: кнопки нет, но причина видна.
  */
 export function PushCard({ className }: { className?: string }) {
   const t = useTranslations('push');
@@ -26,10 +29,11 @@ export function PushCard({ className }: { className?: string }) {
   const { state, busy, error, enable, disable } = usePush();
 
   if (!authed) return null;
-  if (state === 'loading' || state === 'disabled' || state === 'unsupported') return null;
+  if (state === 'loading' || state === 'disabled') return null;
 
   const on = state === 'on';
   const denied = state === 'denied';
+  const unsupported = state === 'unsupported';
 
   return (
     <section
@@ -48,7 +52,11 @@ export function PushCard({ className }: { className?: string }) {
           on ? 'bg-brand text-text-always-white' : 'bg-surface-page-surf2 text-text-brand',
         )}
       >
-        <Icon name={denied ? 'notifications_off' : 'notifications_active'} size={28} filled={on} />
+        <Icon
+          name={denied || unsupported ? 'notifications_off' : 'notifications_active'}
+          size={28}
+          filled={on}
+        />
         {/* мягкий пульс только во включённом состоянии — знак, что канал живой */}
         {on && (
           <span className="absolute inset-0 animate-ping rounded-2xl bg-brand opacity-20 motion-reduce:animate-none" />
@@ -57,10 +65,10 @@ export function PushCard({ className }: { className?: string }) {
 
       <div className="min-w-0 flex-1">
         <h3 className="text-base font-bold text-text-default md:text-lg">
-          {denied ? t('deniedTitle') : on ? t('onTitle') : t('offTitle')}
+          {unsupported ? t('unsupportedTitle') : denied ? t('deniedTitle') : on ? t('onTitle') : t('offTitle')}
         </h3>
         <p className="mt-1 text-sm leading-relaxed text-text-disabled">
-          {denied ? t('deniedText') : on ? t('onText') : t('offText')}
+          {unsupported ? t('unsupportedText') : denied ? t('deniedText') : on ? t('onText') : t('offText')}
         </p>
         {error && (
           <p role="alert" className="mt-2 text-sm text-text-negative">
@@ -69,7 +77,7 @@ export function PushCard({ className }: { className?: string }) {
         )}
       </div>
 
-      {!denied && (
+      {!denied && !unsupported && (
         <Button
           variant={on ? 'surf2' : 'brand'}
           size="md"

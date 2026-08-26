@@ -12,6 +12,7 @@ import { Select } from '@/components/ui/Select';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { usePush } from '@/lib/usePush';
 import { useErrorText } from '@/lib/useErrorText';
 import { currencyName, currencySymbol, formatDateTime, formatNumber, intlLocale } from '@/lib/format';
 import type { RateAlert } from '@/lib/domain';
@@ -75,9 +76,11 @@ export function SubscribeFlow() {
   const t = useTranslations('subscribe');
   /** «Ваша заявка» — общий для всех ответов на заявку заголовок */
   const td = useTranslations('flows.done');
+  const tp = useTranslations('push');
   const locale = useLocale();
   const router = useRouter();
   const { authed } = useAuth();
+  const push = usePush();
   const errorText = useErrorText();
   const qc = useQueryClient();
 
@@ -335,6 +338,51 @@ export function SubscribeFlow() {
                 {untilDate}
               </p>
             </section>
+
+            {/* Само оповещение уже сработает и попадёт в колокольчик на
+                сайте в любом случае — а вот push на телефон/комп требует
+                ОТДЕЛЬНОГО включения, форма выше об этом никак не спрашивает.
+                Без этой подсказки человек создаёт оповещение, ждёт push,
+                а он не приходит: разрешение просто никогда не запрашивалось. */}
+            {push.state !== 'loading' && push.state !== 'disabled' && push.state !== 'on' && (
+              <section className="rounded-[22px] border border-stroke-surface1 bg-surface-page-surf1 p-4 md:rounded-[28px] md:p-8">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-surface-page-surf2 text-text-brand">
+                    <Icon
+                      name={push.state === 'idle' ? 'notifications_active' : 'notifications_off'}
+                      size={22}
+                    />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base font-bold text-text-default">
+                      {push.state === 'unsupported'
+                        ? tp('unsupportedTitle')
+                        : push.state === 'denied'
+                          ? tp('deniedTitle')
+                          : tp('offTitle')}
+                    </h3>
+                    <p className="mt-1 text-sm leading-relaxed text-text-disabled">
+                      {push.state === 'unsupported'
+                        ? tp('unsupportedText')
+                        : push.state === 'denied'
+                          ? tp('deniedText')
+                          : tp('offText')}
+                    </p>
+                  </div>
+                </div>
+                {push.state === 'idle' && (
+                  <Button
+                    variant="brand"
+                    size="md"
+                    disabled={push.busy}
+                    onClick={() => void push.enable()}
+                    className="mt-4 w-full sm:w-auto"
+                  >
+                    {push.busy ? tp('busy') : tp('turnOn')}
+                  </Button>
+                )}
+              </section>
+            )}
           </div>
         </div>
       </div>
