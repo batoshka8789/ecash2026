@@ -18,8 +18,16 @@ import { useNearestDepId } from '@/lib/user-place';
 import { sortCurrencyCodes } from '@/lib/currency-order';
 import type { Competitor, CurrencyCode, RateStat } from '@/lib/domain';
 
-/** Валюты «первого экрана» до нажатия «Показать все валюты». */
-const PRIMARY_CODES: readonly CurrencyCode[] = ['USD', 'EUR', 'RUB', 'CNY', 'GOLD1'];
+/**
+ * Валюты «первого экрана» до нажатия «Показать все валюты».
+ *
+ * Золота здесь раньше был GOLD1 — закреплённым пятым сверху, перед GBP,
+ * AED и остальными обычными валютами. Заказчик попросил золото после ВСЕХ
+ * валют, как оно уже стоит в калькуляторе и брони (sortCurrencyCodes:
+ * золотые слитки — рангом 3000, в самом конце). Без GOLD1 в закреплённых
+ * оно проваливается в «остальные» и сортируется туда же, в самый низ.
+ */
+const PRIMARY_CODES: readonly CurrencyCode[] = ['USD', 'EUR', 'RUB', 'CNY'];
 
 type RatesResponse = Awaited<ReturnType<typeof api.rates.forDep>>;
 
