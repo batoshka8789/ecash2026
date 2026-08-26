@@ -244,7 +244,17 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
 
   const cities = useMemo(() => {
     const set = new Set(rows.map((r) => r.city).filter((c): c is string => Boolean(c)));
-    return [...set].sort((a, b) => a.localeCompare(b, locale));
+    // Алматы/Астана/Актобе — приоритетные города по требованию заказчика,
+    // остальные — по алфавиту следом за ними.
+    const priority = ['Алматы', 'Астана', 'Актобе'];
+    return [...set].sort((a, b) => {
+      const ai = priority.indexOf(a);
+      const bi = priority.indexOf(b);
+      if (ai !== -1 || bi !== -1) {
+        return (ai === -1 ? priority.length : ai) - (bi === -1 ? priority.length : bi);
+      }
+      return a.localeCompare(b, locale);
+    });
   }, [rows, locale]);
 
   // Поиск по адресу/названию и фильтр по городу сужают и список, и пины карты.
@@ -593,41 +603,12 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                           </div>
                         )}
 
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                          <span className="flex min-w-0 items-center gap-2 text-sm text-text-default md:text-base">
-                            <Icon
-                              name="account_balance"
-                              size={20}
-                              className="shrink-0 text-text-default"
-                            />
-                            <span className="min-w-0 break-words" title={row.rawAddress}>
-                              {row.address}
-                            </span>
-                            {row.distanceKm != null && (
-                              <>
-                                <Dot />
-                                <span className="whitespace-nowrap">
-                                  {formatNumber(row.distanceKm, locale, 1)} {tb('km')}
-                                </span>
-                              </>
-                            )}
-                          </span>
-                          <button
-                            type="button"
-                            aria-label={tb('copy')}
-                            onClick={() =>
-                              copyAddress(
-                                row.depId,
-                                row.city ? `${row.city}, ${row.address}` : row.address,
-                              )
-                            }
-                            className="-my-2.5 inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-disabled transition-colors hover:text-text-default"
-                          >
-                            <Iconsax name="copy" size={20} />
-                          </button>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-disabled">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-default md:text-base">
+                          <Icon
+                            name="account_balance"
+                            size={20}
+                            className="shrink-0 text-text-default"
+                          />
                           <span>{row.title}</span>
                           {row.city && (
                             <>
@@ -642,13 +623,36 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
                                 {row.timetable.openTime} - {row.timetable.closeTime}
                               </span>
                               <Dot />
-                              <span
-                                className={row.open ? 'text-text-positive' : 'text-text-negative'}
-                              >
-                                {row.open ? tb('open') : tb('closed')}
+                              <span>{row.open ? tb('open') : tb('closed')}</span>
+                            </>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-text-disabled">
+                          <span className="min-w-0 break-words" title={row.rawAddress}>
+                            {row.address}
+                          </span>
+                          {row.distanceKm != null && (
+                            <>
+                              <Dot />
+                              <span className="whitespace-nowrap">
+                                {formatNumber(row.distanceKm, locale, 1)} {tb('km')}
                               </span>
                             </>
                           )}
+                          <button
+                            type="button"
+                            aria-label={tb('copy')}
+                            onClick={() =>
+                              copyAddress(
+                                row.depId,
+                                row.city ? `${row.city}, ${row.address}` : row.address,
+                              )
+                            }
+                            className="-my-2.5 inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-disabled transition-colors hover:text-text-default"
+                          >
+                            <Iconsax name="copy" size={20} />
+                          </button>
                         </div>
                       </div>
 
