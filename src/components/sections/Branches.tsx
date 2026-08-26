@@ -138,10 +138,13 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
   /** Валюта секции: из ?currency= (пришли из строки курсов), иначе USD. */
   const activeCurrency = currency ?? 'USD';
 
-  // Лучший курс по сети для ВЫБРАННОЙ валюты — бейдж «Самый выгодный».
+  // Лучший курс для ВЫБРАННОЙ валюты — бейдж «Самый выгодный». Считаем в
+  // границах текущего фильтра города: при «Все города» — по всей сети, при
+  // выбранном городе — только среди его отделений (city уходит в API), иначе
+  // бейдж мог достаться отделению из другого города и просто не быть видно.
   const best = useQuery({
-    queryKey: ['rates', 'best', activeCurrency],
-    queryFn: ({ signal }) => api.rates.best(activeCurrency, undefined, signal),
+    queryKey: ['rates', 'best', activeCurrency, city],
+    queryFn: ({ signal }) => api.rates.best(activeCurrency, city ?? undefined, signal),
     staleTime: 5 * 60_000,
   });
 
@@ -194,6 +197,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
     const infoById = new Map((infos.data ?? []).map((i) => [i.depId, i]));
     const hhmm = almatyTime.format(nowMs);
     const bestBuyDepId = best.data?.best.bestBuy?.depId ?? null;
+    const bestSaleDepId = best.data?.best.bestSale?.depId ?? null;
 
     const items = deps.map((dep) => {
       const info = infoById.get(dep.depId);
@@ -218,8 +222,15 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
       };
     });
 
+    // Курс выгоден клиенту либо со стороны покупки (обменник платит за
+    // валюту больше всех), либо со стороны продажи (обменник отдаёт валюту
+    // дешевле всех) — это разные отделения, оба заслуживают бейдж.
     if (bestBuyDepId != null) {
       const hit = items.find((i) => i.depId === bestBuyDepId);
+      if (hit) hit.badges.push('best');
+    }
+    if (bestSaleDepId != null && bestSaleDepId !== bestBuyDepId) {
+      const hit = items.find((i) => i.depId === bestSaleDepId);
       if (hit) hit.badges.push('best');
     }
     for (const item of items) {
