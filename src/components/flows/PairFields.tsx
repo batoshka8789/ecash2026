@@ -6,7 +6,7 @@ import { clsx } from 'clsx';
 import { Icon } from '@/components/ui/Icon';
 import { CurrencyFlag } from '@/components/ui/CurrencyFlag';
 import { Select, type SelectOption } from '@/components/ui/Select';
-import { currencyFlagClass, formatNumber } from '@/lib/format';
+import { currencyFlagClass, currencySymbol, formatNumber } from '@/lib/format';
 import { badgeStyles, type BadgeKind } from '@/lib/branch-status';
 import type { DepartmentInfo } from '@/lib/domain';
 
@@ -163,6 +163,9 @@ export function BranchAddress({
   departments,
   depId,
   onChangeDep,
+  kztGive,
+  currentRate,
+  foreign,
 }: {
   department: DepartmentInfo | null;
   /** км до отделения от «Моего адреса»; null — координат нет (гость без адреса) */
@@ -177,10 +180,19 @@ export function BranchAddress({
   departments?: BranchOption[];
   depId?: number;
   onChangeDep?: (depId: number) => void;
+  /** true — клиент отдаёт тенге и покупает валюту; нужно вместе с betterOffer,
+   *  чтобы плашка сказала «дешевле купить»/«выгоднее продать», а не просто
+   *  голое число — иначе меньшее число при покупке выглядит как ухудшение,
+   *  хотя платить за 1 валюты меньше тенге как раз и значит «дешевле». */
+  kztGive?: boolean;
+  /** курс ТЕКУЩЕГО отделения — для сравнения «было → стало» рядом с лучшим */
+  currentRate?: number;
+  foreign?: string;
 }) {
   const t = useTranslations('flows.address');
   const tb = useTranslations('branches');
   const tLoc = useTranslations('locations');
+  const tr = useTranslations('rates');
   const locale = useLocale();
 
   return (
@@ -270,11 +282,24 @@ export function BranchAddress({
           <span className="flex min-w-0 items-center gap-3">
             <Icon name="directions_run" size={32} className="shrink-0 text-brand" />
             <span>
-              {t('betterAt')} <span className="text-text-brand">{betterOffer.address}</span>,
+              {kztGive ? t('betterBuyAt') : t('betterSaleAt')}{' '}
+              <span className="text-text-brand">{betterOffer.address}</span>
               <br />
-              {t('betterRate')} ={' '}
+              {/* «было → стало» одними и теми же единицами измерения — при
+                  покупке меньшее число само по себе выглядит хуже, если не
+                  видно, с чем его сравнивают; со «стрелкой» разница видна
+                  без вычислений в уме, а не только по глаголу выше. */}
+              {currentRate != null && currentRate > 0 && (
+                <span className="text-text-disabled">
+                  {tr('perUnit', { rate: formatNumber(currentRate, locale), code: currencySymbol(foreign ?? '') })}
+                  {' → '}
+                </span>
+              )}
               <span className="text-text-positive">
-                {betterOffer.rate.toLocaleString('ru-RU')} ₸
+                {tr('perUnit', {
+                  rate: formatNumber(betterOffer.rate, locale),
+                  code: currencySymbol(foreign ?? ''),
+                })}
               </span>
             </span>
           </span>

@@ -329,8 +329,8 @@
       "km": "公里",
       "open": "营业中",
       "closed": "已打烊",
-      "betterAt": "位于以下地址的网点",
-      "betterRate": "汇率更优",
+      "betterBuyAt": "以下网点购买更便宜：",
+      "betterSaleAt": "以下网点出售更划算：",
       "change": "更改"
     },
     "banknotes": {

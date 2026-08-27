@@ -474,6 +474,9 @@ export function BookingFlow({ mode }: { mode: Mode }) {
             departments={departmentOptions}
             depId={depId ?? undefined}
             onChangeDep={setDepId}
+            kztGive={kztGive}
+            currentRate={rate}
+            foreign={foreign}
           />
         </div>
       </section>

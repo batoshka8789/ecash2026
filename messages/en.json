@@ -329,8 +329,8 @@
       "km": "km",
       "open": "Open",
       "closed": "Closed",
-      "betterAt": "At the branch on",
-      "betterRate": "the rate is better",
+      "betterBuyAt": "Cheaper to buy at the branch on",
+      "betterSaleAt": "Better to sell at the branch on",
       "change": "Change"
     },
     "banknotes": {
