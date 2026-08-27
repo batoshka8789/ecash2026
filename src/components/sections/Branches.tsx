@@ -12,6 +12,7 @@ import { BranchMap, type BranchMapMarker } from '@/components/ui/BranchMap';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import { canonicalCity, formatBranchAddress, formatBranchTitle } from '@/lib/branch-address';
+import { bestOffer, type BranchRate } from '@/lib/best-offer';
 import {
   almatyTime,
   badgeStyles,
@@ -138,16 +139,6 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
   /** Валюта секции: из ?currency= (пришли из строки курсов), иначе USD. */
   const activeCurrency = currency ?? 'USD';
 
-  // Лучший курс для ВЫБРАННОЙ валюты — бейдж «Самый выгодный». Считаем в
-  // границах текущего фильтра города: при «Все города» — по всей сети, при
-  // выбранном городе — только среди его отделений (city уходит в API), иначе
-  // бейдж мог достаться отделению из другого города и просто не быть видно.
-  const best = useQuery({
-    queryKey: ['rates', 'best', activeCurrency, city],
-    queryFn: ({ signal }) => api.rates.best(activeCurrency, city ?? undefined, signal),
-    staleTime: 5 * 60_000,
-  });
-
   // «Мой адрес» как запасная позиция: геолокацию давать не обязаны,
   // а сохранённый адрес у пользователя уже есть — от него и считаем
   // расстояния/«Рядом с вами», и его же показываем точкой на карте.
@@ -196,8 +187,37 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
     const deps = list.data?.departments ?? [];
     const infoById = new Map((infos.data ?? []).map((i) => [i.depId, i]));
     const hhmm = almatyTime.format(nowMs);
-    const bestBuyDepId = best.data?.best.bestBuy?.depId ?? null;
-    const bestSaleDepId = best.data?.best.bestSale?.depId ?? null;
+    /**
+     * Лучшие курсы считаем САМИ из тех же buy/sell, которыми рисуются
+     * колонки «Покупка»/«Продажа» ниже в этих же строках — расхождение
+     * бейджа и цифры рядом с ним становится невозможным по построению.
+     * Апстримный /rates/best для этого не годится: его bestBuy/bestSale
+     * названы в семантике клиента, а не обменника, и бейдж вставал не на
+     * ту строку (см. src/lib/best-offer.ts).
+     *
+     * Границы — текущий фильтр города: при «Все города» лучшее ищется по
+     * всей сети, при выбранном городе — только среди его отделений.
+     */
+    const rateRows: BranchRate[] = deps.flatMap((dep) => {
+      const info = infoById.get(dep.depId);
+      const cur = info?.currencies.find((c) => c.code === activeCurrency);
+      return cur
+        ? [
+            {
+              depId: dep.depId,
+              city: canonicalCity(info?.city),
+              address: info?.address ?? dep.address,
+              buy: cur.buy,
+              sell: cur.sell,
+            },
+          ]
+        : [];
+    });
+    // «Лучшая покупка» — колонка «Покупка»: обменник платит за валюту
+    // больше всех (клиенту выгодно ПРОДАВАТЬ). «Лучшая продажа» — колонка
+    // «Продажа»: обменник отдаёт валюту дешевле всех (выгодно ПОКУПАТЬ).
+    const bestBuyDepId = bestOffer(rateRows, 'selling', city)?.depId ?? null;
+    const bestSaleDepId = bestOffer(rateRows, 'buying', city)?.depId ?? null;
 
     const items = deps.map((dep) => {
       const info = infoById.get(dep.depId);
@@ -222,11 +242,9 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
       };
     });
 
-    // Курс выгоден клиенту либо со стороны покупки (обменник платит за
-    // валюту больше всех), либо со стороны продажи (обменник отдаёт валюту
-    // дешевле всех) — это разные отделения (или одно и то же — тогда оба
-    // бейджа у него), и подписи разные: иначе два одинаковых «Самый
-    // выгодный» на экране было не различить, к какой колонке они относятся.
+    // Это могут быть разные отделения (или одно и то же — тогда оба бейджа
+    // у него), и подписи разные: иначе два одинаковых «Самый выгодный» на
+    // экране было не различить, к какой колонке они относятся.
     if (bestBuyDepId != null) {
       const hit = items.find((i) => i.depId === bestBuyDepId);
       if (hit) hit.badges.push('bestBuy');
@@ -253,7 +271,7 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
       if (b.distanceKm != null) return 1;
       return a.depId - b.depId;
     });
-  }, [list.data, infos.data, best.data, effectivePos, nowMs, activeCurrency]);
+  }, [list.data, infos.data, city, effectivePos, nowMs, activeCurrency]);
 
   const cities = useMemo(() => {
     const set = new Set(rows.map((r) => r.city).filter((c): c is string => Boolean(c)));

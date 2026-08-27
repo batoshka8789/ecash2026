@@ -14,6 +14,8 @@ import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useErrorText } from '@/lib/useErrorText';
 import { useNearestDepId, useUserPlace } from '@/lib/user-place';
+import { canonicalCity } from '@/lib/branch-address';
+import { bestOffer, isBetterRate, type BranchRate, type OfferSide } from '@/lib/best-offer';
 import {
   almatyTime,
   haversineKm,
@@ -159,14 +161,18 @@ export function BookingFlow({ mode }: { mode: Mode }) {
     queryFn: ({ signal }) => api.rates.forDep(depId!, signal),
     staleTime: 20_000,
   });
-  // Город — из выбранного отделения: без этого «лучшее предложение» искалось
-  // по всей сети и могло указывать на отделение в другом регионе (выбрали
-  // Алматы — тизер сравнивал с Астаной), это и есть тот самый API-параметр
-  // city, который /locations уже использует для своего бейджа «выгоднее».
-  const depCity = depQ.data?.department?.city;
-  const bestQ = useQuery({
-    queryKey: ['rates', 'best', foreign, depCity ?? null],
-    queryFn: ({ signal }) => api.rates.best(foreign, depCity, signal),
+  /**
+   * Курсы ВСЕХ отделений одним ответом — из них считается «в другом
+   * отделении выгоднее». Раньше здесь стоял апстримный /rates/best, но его
+   * bestBuy/bestSale названы в семантике клиента, а не обменника, и читались
+   * ровно наоборот: плашка обещала курс покупки обменника (460,5), а после
+   * переключения экран показывал курс продажи (463,5) — см. lib/best-offer.ts.
+   * Тот же ключ, что у /locations: список отделений и бронь делят один запрос.
+   */
+  const infosQ = useQuery({
+    queryKey: ['departmentsDetails'],
+    queryFn: ({ signal }) => api.departments.details(signal),
+    select: (r) => r.departments,
     staleTime: 20_000,
   });
 
@@ -174,17 +180,43 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   // клиент отдаёт валюту → обменник ПОКУПАЕТ (buy); отдаёт тенге → обменник ПРОДАЁТ (sell)
   const rate = stat ? (kztGive ? stat.sell : stat.buy) : 0;
 
-  /** Тизер «в другом отделении выгоднее»: kztGive — сравниваем с bestSale
-   *  (обменник продаёт дешевле = выгоднее клиенту), иначе — с bestBuy
-   *  (обменник покупает дороже = выгоднее клиенту). Только если это другое
-   *  отделение и оно реально выгоднее текущего курса. */
-  const bestOffer = kztGive ? bestQ.data?.best.bestSale : bestQ.data?.best.bestBuy;
+  /** Сторона сделки глазами клиента — единая для расчёта и для подписи. */
+  const side: OfferSide = kztGive ? 'buying' : 'selling';
+  // Город выбранного отделения: подсказка ищется в его пределах, иначе
+  // «выгоднее» могло увести человека в отделение другого региона.
+  const depCity = canonicalCity(depQ.data?.department?.city);
+
+  /**
+   * Лучшее предложение по городу для текущей стороны сделки — посчитано из
+   * тех же buy/sell, которыми рисуется «Текущий курс», поэтому обещанное
+   * число совпадает с тем, что покажется после переключения. Один источник
+   * и для плашки «выгоднее», и для бейджа «Самый выгодный»: раньше они
+   * могли расходиться между собой.
+   */
+  const bestInCity = useMemo(() => {
+    const rows: BranchRate[] = (infosQ.data ?? []).flatMap((d) => {
+      const cur = d.currencies.find((c) => c.code === foreign);
+      return cur
+        ? [
+            {
+              depId: d.depId,
+              city: canonicalCity(d.city),
+              address: d.address,
+              buy: cur.buy,
+              sell: cur.sell,
+            },
+          ]
+        : [];
+    });
+    return bestOffer(rows, side, depCity);
+  }, [infosQ.data, foreign, side, depCity]);
+
+  /** Плашка показывается только если лучшее — это ДРУГОЕ отделение и оно
+   *  действительно выгоднее текущего курса. */
   const betterOffer = useMemo(() => {
-    if (rate <= 0) return null;
-    if (!bestOffer || bestOffer.depId === depId) return null;
-    const better = kztGive ? bestOffer.rate < rate : bestOffer.rate > rate;
-    return better ? bestOffer : null;
-  }, [bestOffer, kztGive, rate, depId]);
+    if (rate <= 0 || !bestInCity || bestInCity.depId === depId) return null;
+    return isBetterRate(side, bestInCity.rate, rate) ? bestInCity : null;
+  }, [bestInCity, side, rate, depId]);
 
   const department = depQ.data?.department ?? null;
   const timetable = department?.timetable ?? null;
@@ -209,11 +241,11 @@ export function BookingFlow({ mode }: { mode: Mode }) {
    *  «Happy hours» — по расписанию. */
   const badges = useMemo(() => {
     const list: BadgeKind[] = [];
-    if (bestOffer && bestOffer.depId === depId && rate > 0) list.push('best');
+    if (bestInCity && bestInCity.depId === depId && rate > 0) list.push('best');
     if (timetable && isHappyHours(timetable, hhmm)) list.push('happyHours');
     if (userCoords && depId === nearestDep) list.push('nearest');
     return list;
-  }, [bestOffer, depId, rate, timetable, hhmm, nearestDep, userCoords]);
+  }, [bestInCity, depId, rate, timetable, hhmm, nearestDep, userCoords]);
 
   /** Список для «Изменить» — первым идёт отделение, ближайшее к «Моему
    *  адресу» (nearestDep), остальные следом в исходном порядке апстрима. */
