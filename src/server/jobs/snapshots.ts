@@ -96,9 +96,11 @@ async function fireAlerts(rows: (typeof rateSnapshots.$inferInsert)[]): Promise<
     const best = direction === 'buying' ? bestSell.get(code) : bestBuy.get(code);
     if (!alertReached(direction, Number(a.targetRate), best)) continue;
 
+    // firedRate — тот же best, что уходит и в push ниже: одно число на оба
+    // канала, иначе кабинет и push называют разные курсы одного события.
     const hit = await db
       .update(rateAlerts)
-      .set({ firedAt: new Date() })
+      .set({ firedAt: new Date(), firedRate: String(best) })
       .where(and(eq(rateAlerts.id, a.id), isNull(rateAlerts.firedAt)))
       .returning({ accountId: rateAlerts.accountId });
 

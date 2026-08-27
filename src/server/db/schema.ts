@@ -64,6 +64,12 @@ export const rateAlerts = pgTable(
     active: boolean('active').notNull().default(true),
     /** отметка срабатывания — чтобы не слать повторно */
     firedAt: timestamp('fired_at', { withTimezone: true }),
+    /** курс, который РЕАЛЬНО вызвал срабатывание (см. fireAlerts в
+     *  snapshots.ts) — раньше карточка в кабинете показывала targetRate,
+     *  то есть свою же цель, а не то, что произошло на рынке: push и
+     *  кабинет могли называть разные числа, потому что push брал live-курс
+     *  снапшота, а кабинет — константу, заданную при создании подписки. */
+    firedRate: numeric('fired_rate', { precision: 14, scale: 4 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index('rate_alerts_account_idx').on(t.accountId)],

@@ -102,6 +102,11 @@ export const GET = withUser(async (req, token) => {
       // выставлялся никогда, и сработавшая подписка выглядела так же,
       // как только что созданная.
       const reached = a.firedAt !== null;
+      // Сработавшей показываем курс, который её РЕАЛЬНО вызвал (firedRate),
+      // а не targetRate — свою же цель, заданную при создании. До миграции
+      // firedRate у старых сработавших подписок нет — targetRate тут остаётся
+      // честным приближением (курс был не хуже цели, раз подписка сработала).
+      const displayRate = reached && a.firedRate != null ? Number(a.firedRate) : Number(a.targetRate);
 
       return {
         id: `alert-${a.id}`,
@@ -112,7 +117,7 @@ export const GET = withUser(async (req, token) => {
         createdAt: (a.firedAt ?? a.createdAt).toISOString(),
         // направление закодировано порядком пары: KZT→валюта — покупка
         side: a.currencyFrom === 'KZT' ? 'buy' : 'sell',
-        amount: `${Number(a.targetRate)} (₸)`,
+        amount: `${displayRate} (₸)`,
         currencyFrom: a.currencyFrom as CurrencyCode,
         currencyTo: a.currencyTo as CurrencyCode,
         requestId: null,

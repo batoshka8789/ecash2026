@@ -1,0 +1,1 @@
+ALTER TABLE "rate_alerts" ADD COLUMN "fired_rate" numeric(14, 4);
