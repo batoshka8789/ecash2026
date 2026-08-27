@@ -351,7 +351,9 @@
       "phoneFromAccount": "Number from your account",
       "guestTitle": "Log in to book",
       "guestCta": "Log in or sign up",
-      "amountRequired": "Enter an amount to continue"
+      "amountRequired": "Enter an amount to continue",
+      "departmentClosed": "The branch is closed right now — a request can only be created during its working hours",
+      "kassaClosed": "This branch's till is closed right now. Choose another branch or try again later"
     },
     "done": {
       "booking30": "Booking · 30min",

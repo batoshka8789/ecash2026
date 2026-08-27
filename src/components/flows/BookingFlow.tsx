@@ -81,6 +81,12 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   const [individual, setIndividual] = useState(mode === 'individual');
   const [showErrors, setShowErrors] = useState(false);
   const [duplicate, setDuplicate] = useState<ExchangeRequest | null>(null);
+  /** Ядро сообщает «касса или отделение закрыты» только В ОТВЕТ на попытку
+   *  создания (REQUEST_NOT_CREATED, ~15 c через Camunda) — заранее этого не
+   *  знает никто, у API нет отдельного признака «касса открыта». depId, а не
+   *  boolean: другое отделение — новая попытка, и флаг сам «сбрасывается»
+   *  сравнением с текущим depId, без отдельного useEffect. */
+  const [kassaClosedDepId, setKassaClosedDepId] = useState<number | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [graphOpen, setGraphOpen] = useState(false);
   const [period, setPeriod] = useState<Period>('year');
@@ -112,6 +118,7 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   const known = (id: number | null) =>
     id != null && (depsQ.data?.departments.some((d) => d.depId === id) ?? false);
   const depId = (known(pickedDep) ? pickedDep : null) ?? nearestDep;
+  const kassaClosed = kassaClosedDepId != null && kassaClosedDepId === depId;
 
   const depQ = useQuery({
     queryKey: ['department', depId],
@@ -125,9 +132,14 @@ export function BookingFlow({ mode }: { mode: Mode }) {
     queryFn: ({ signal }) => api.rates.forDep(depId!, signal),
     staleTime: 60_000,
   });
+  // Город — из выбранного отделения: без этого «лучшее предложение» искалось
+  // по всей сети и могло указывать на отделение в другом регионе (выбрали
+  // Алматы — тизер сравнивал с Астаной), это и есть тот самый API-параметр
+  // city, который /locations уже использует для своего бейджа «выгоднее».
+  const depCity = depQ.data?.department?.city;
   const bestQ = useQuery({
-    queryKey: ['rates', 'best', foreign],
-    queryFn: ({ signal }) => api.rates.best(foreign, undefined, signal),
+    queryKey: ['rates', 'best', foreign, depCity ?? null],
+    queryFn: ({ signal }) => api.rates.best(foreign, depCity, signal),
     staleTime: 60_000,
   });
 
@@ -273,6 +285,13 @@ export function BookingFlow({ mode }: { mode: Mode }) {
           return;
         }
       }
+      // Недокументированный код ядра: касса или отделение закрыты (см.
+      // HANDOFF.md). Помечаем ИМЕННО ЭТО отделение как недоступное для
+      // заявки — иначе кнопка звала бы пробовать снова и снова ждать те же
+      // ~15 c Camunda.
+      if (e instanceof ApiError && e.message === 'errors.REQUEST_NOT_CREATED') {
+        setKassaClosedDepId(depId);
+      }
       setShowErrors(true);
     },
   });
@@ -282,6 +301,14 @@ export function BookingFlow({ mode }: { mode: Mode }) {
     // depId == null означает «список отделений ещё не пришёл»: без отделения
     // заявку не примет ни схема, ни ядро — не даём отправить пустую
     if (!validAmount || rate <= 0 || depId == null) {
+      setShowErrors(true);
+      return;
+    }
+    // Заявка доступна только при ОБОИХ условиях сразу: график работы и
+    // касса открыта. Проверку графика делаем сами (timetable уже под рукой),
+    // кассу заранее не знает никто — про неё узнаём только из ответа ядра
+    // (onError выше), отсюда и отдельный флаг kassaClosed.
+    if (open === false || kassaClosed) {
       setShowErrors(true);
       return;
     }
@@ -543,11 +570,14 @@ export function BookingFlow({ mode }: { mode: Mode }) {
 
           {/* Сумма обязательна: кнопка недоступна, пока её не ввели, — раньше
               операцию можно было отправить с пустым полем и узнать об ошибке
-              только из тоста. Подпись ниже объясняет, почему кнопка неактивна. */}
+              только из тоста. Подпись ниже объясняет, почему кнопка неактивна.
+              Заявка доступна ТОЛЬКО когда одновременно верно и график работы
+              (open === true — знаем заранее), и касса открыта (kassaClosed —
+              узнаём только из ответа ядра, заранее этого не знает никто). */}
           <Button
             type="submit"
             className="mt-6 w-full md:mt-8 md:w-auto"
-            disabled={create.isPending || !validAmount}
+            disabled={create.isPending || !validAmount || open === false || kassaClosed}
           >
             {/* Создание идёт через Camunda и легитимно длится до ~25 с —
                 без живой подписи кнопка выглядела «залипшей», человек уходил
@@ -560,6 +590,12 @@ export function BookingFlow({ mode }: { mode: Mode }) {
           </Button>
           {!validAmount && (
             <p className="mt-2 text-sm text-text-disabled">{t('data.amountRequired')}</p>
+          )}
+          {validAmount && open === false && (
+            <p className="mt-2 text-sm text-text-disabled">{t('data.departmentClosed')}</p>
+          )}
+          {validAmount && open !== false && kassaClosed && (
+            <p className="mt-2 text-sm text-text-disabled">{t('data.kassaClosed')}</p>
           )}
           {/* Сделка идёт целыми единицами валюты, поэтому от введённой суммы
               остаётся хвост. Показываем итог ДО отправки — ровно как советует

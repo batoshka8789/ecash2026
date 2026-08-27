@@ -351,7 +351,9 @@
       "phoneFromAccount": "来自您账户的号码",
       "guestTitle": "登录后即可锁定汇率",
       "guestCta": "登录或注册",
-      "amountRequired": "请输入金额以继续"
+      "amountRequired": "请输入金额以继续",
+      "departmentClosed": "该网点目前已打烊——只能在营业时间内提交申请",
+      "kassaClosed": "该网点的收银台目前已关闭。请选择其他网点或稍后再试"
     },
     "done": {
       "booking30": "预订 · 30分钟",
