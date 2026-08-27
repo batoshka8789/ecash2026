@@ -353,6 +353,7 @@
       "guestCta": "登录或注册",
       "amountRequired": "请输入金额以继续",
       "departmentClosed": "该网点目前已打烊——只能在营业时间内提交申请",
+      "closingSoon": "距离网点打烊还剩30分钟或更短——现在无法提交新申请",
       "kassaClosed": "该网点的收银台目前已关闭。请选择其他网点或稍后再试"
     },
     "done": {

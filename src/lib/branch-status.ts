@@ -40,14 +40,19 @@ const toMinutes = (hhmm: string): number => {
   return h * 60 + m;
 };
 
+/** Минут до закрытия по расписанию; ночной график (open > close) учитывается
+ *  через модуль суток. Осмыслен только пока отделение открыто (isOpenNow) —
+ *  вне часов работы «сколько осталось» не имеет смысла. */
+export function minutesToClose(tt: { openTime: string; closeTime: string }, hhmm: string): number {
+  return (toMinutes(tt.closeTime) - toMinutes(hhmm) + 1440) % 1440;
+}
+
 /** «Happy hours» — последние 2 часа перед закрытием, пока отделение открыто:
  *  вечернее окно, когда обменники традиционно дают выгодный курс постоянным
- *  клиентам. Ночной график (open > close) учитывается через модуль суток.
- *  Это фронтовый дефолт до появления признака от бэкенда. */
+ *  клиентам. Это фронтовый дефолт до появления признака от бэкенда. */
 export function isHappyHours(tt: { openTime: string; closeTime: string }, hhmm: string): boolean {
   if (!isOpenNow(tt, hhmm)) return false;
-  const minutesToClose = (toMinutes(tt.closeTime) - toMinutes(hhmm) + 1440) % 1440;
-  return minutesToClose <= 120;
+  return minutesToClose(tt, hhmm) <= 120;
 }
 
 /** Бейджи отделения: цвета из палитры макета (badge, 12/700, r8).

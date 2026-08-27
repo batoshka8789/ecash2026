@@ -353,6 +353,7 @@
       "guestCta": "Log in or sign up",
       "amountRequired": "Enter an amount to continue",
       "departmentClosed": "The branch is closed right now — a request can only be created during its working hours",
+      "closingSoon": "The branch closes in 30 minutes or less — a new request can no longer be created",
       "kassaClosed": "This branch's till is closed right now. Choose another branch or try again later"
     },
     "done": {

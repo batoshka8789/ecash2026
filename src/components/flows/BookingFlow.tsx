@@ -14,7 +14,14 @@ import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useErrorText } from '@/lib/useErrorText';
 import { useNearestDepId, useUserPlace } from '@/lib/user-place';
-import { almatyTime, haversineKm, isHappyHours, isOpenNow, type BadgeKind } from '@/lib/branch-status';
+import {
+  almatyTime,
+  haversineKm,
+  isHappyHours,
+  isOpenNow,
+  minutesToClose,
+  type BadgeKind,
+} from '@/lib/branch-status';
 import {
   currencyName,
   currencySymbol,
@@ -169,6 +176,9 @@ export function BookingFlow({ mode }: { mode: Mode }) {
     [userCoords, department],
   );
   const open = timetable ? isOpenNow(timetable, hhmm) : null;
+  /** До закрытия ≤30 минут — новую заявку не начать, даже если формально
+   *  ещё открыто: на неё физически не успеть до конца рабочего дня кассы. */
+  const closingSoon = open === true && timetable != null && minutesToClose(timetable, hhmm) <= 30;
 
   /** Бейджи карточки: «Ближе всего» — совпадает с гео-ближайшим отделением,
    *  и только если координаты реально известны (иначе useNearestDepId молча
@@ -307,8 +317,10 @@ export function BookingFlow({ mode }: { mode: Mode }) {
     // Заявка доступна только при ОБОИХ условиях сразу: график работы и
     // касса открыта. Проверку графика делаем сами (timetable уже под рукой),
     // кассу заранее не знает никто — про неё узнаём только из ответа ядра
-    // (onError выше), отсюда и отдельный флаг kassaClosed.
-    if (open === false || kassaClosed) {
+    // (onError выше), отсюда и отдельный флаг kassaClosed. closingSoon — та
+    // же проверка графика с запасом: до закрытия ≤30 минут заявку уже не
+    // успеть, хотя формально отделение ещё открыто.
+    if (open === false || closingSoon || kassaClosed) {
       setShowErrors(true);
       return;
     }
@@ -574,13 +586,17 @@ export function BookingFlow({ mode }: { mode: Mode }) {
           {/* Сумма обязательна: кнопка недоступна, пока её не ввели, — раньше
               операцию можно было отправить с пустым полем и узнать об ошибке
               только из тоста. Подпись ниже объясняет, почему кнопка неактивна.
-              Заявка доступна ТОЛЬКО когда одновременно верно и график работы
-              (open === true — знаем заранее), и касса открыта (kassaClosed —
-              узнаём только из ответа ядра, заранее этого не знает никто). */}
+              Заявка доступна ТОЛЬКО когда верно всё сразу: график работы
+              (open === true — знаем заранее), до закрытия больше 30 минут
+              (closingSoon — та же проверка графика, с запасом на саму
+              операцию), и касса открыта (kassaClosed — узнаём только из
+              ответа ядра, заранее этого не знает никто). */}
           <Button
             type="submit"
             className="mt-6 w-full md:mt-8 md:w-auto"
-            disabled={create.isPending || !validAmount || open === false || kassaClosed}
+            disabled={
+              create.isPending || !validAmount || open === false || closingSoon || kassaClosed
+            }
           >
             {/* Создание идёт через Camunda и легитимно длится до ~25 с —
                 без живой подписи кнопка выглядела «залипшей», человек уходил
@@ -597,7 +613,10 @@ export function BookingFlow({ mode }: { mode: Mode }) {
           {validAmount && open === false && (
             <p className="mt-2 text-sm text-text-disabled">{t('data.departmentClosed')}</p>
           )}
-          {validAmount && open !== false && kassaClosed && (
+          {validAmount && open !== false && closingSoon && (
+            <p className="mt-2 text-sm text-text-disabled">{t('data.closingSoon')}</p>
+          )}
+          {validAmount && open !== false && !closingSoon && kassaClosed && (
             <p className="mt-2 text-sm text-text-disabled">{t('data.kassaClosed')}</p>
           )}
           {/* Сделка идёт целыми единицами валюты, поэтому от введённой суммы
