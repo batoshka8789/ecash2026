@@ -3,7 +3,7 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/Button';
@@ -53,6 +53,7 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   const params = useSearchParams();
   const { account, authed } = useAuth();
   const errorText = useErrorText();
+  const qc = useQueryClient();
 
   // пара: одна сторона всегда KZT (модель курсов Ecash)
   const paramTo = params.get('to');
@@ -72,7 +73,22 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   const paramDep = Number(params.get('depId')) || null;
   const { depId: nearestDep } = useNearestDepId();
   const [pickedDep, setPickedDep] = useState<number | null>(paramDep);
-  const setDepId = setPickedDep;
+  /**
+   * Смена отделения (ручной выбор «Изменить» или клик по тизеру «дешевле
+   * купить») — не просто setState. На боевом курс меняется в реальном
+   * времени, а у ratesQ/bestQ свой клиентский кэш поверх серверного: тизер
+   * мог показать 461,2, честно бывшие актуальными секунд 20-30 назад, а
+   * после клика — тот же самый протухший кэш ещё какое-то время, из-за чего
+   * итоговый курс не совпадал с обещанным (боевой инцидент: обещали 461,2,
+   * после переключения показывало 464,7). Префикс 'rates' без уточнения —
+   * невидимая часть контракта: под ним лежит и ['rates', depId] (курс
+   * конкретного отделения), и ['rates', 'best', ...] (тизер) — оба
+   * замешаны в одном и том же расхождении, оба должны перезапроситься.
+   */
+  const setDepId = (id: number) => {
+    void qc.invalidateQueries({ queryKey: ['rates'] });
+    setPickedDep(id);
+  };
   const [banknotes, setBanknotes] = useState<string | null>(null);
   const [name, setName] = useState('');
   // Заполняем ФИО из аккаунта один раз на сессию (см. ProfileForm.tsx —
@@ -133,11 +149,15 @@ export function BookingFlow({ mode }: { mode: Mode }) {
     queryFn: ({ signal }) => api.departments.info(depId!, signal),
     staleTime: 5 * 60_000,
   });
+  // 20 c — вровень с серверным кэшем самого курса (RATES_TTL_MS в
+  // src/server/ecash/endpoints/rates.ts): держать клиентский кэш ДОЛЬШЕ
+  // серверного просто добавляет своё отставание поверх чужого без всякой
+  // пользы — сервер всё равно не отдаст более свежих данных чаще этого.
   const ratesQ = useQuery({
     queryKey: ['rates', depId],
     enabled: depId != null,
     queryFn: ({ signal }) => api.rates.forDep(depId!, signal),
-    staleTime: 60_000,
+    staleTime: 20_000,
   });
   // Город — из выбранного отделения: без этого «лучшее предложение» искалось
   // по всей сети и могло указывать на отделение в другом регионе (выбрали
@@ -147,7 +167,7 @@ export function BookingFlow({ mode }: { mode: Mode }) {
   const bestQ = useQuery({
     queryKey: ['rates', 'best', foreign, depCity ?? null],
     queryFn: ({ signal }) => api.rates.best(foreign, depCity, signal),
-    staleTime: 60_000,
+    staleTime: 20_000,
   });
 
   const stat = ratesQ.data?.rates.find((r) => r.currencyCode === foreign);
