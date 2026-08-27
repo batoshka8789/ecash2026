@@ -2,11 +2,20 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/server/db/client';
 import { competitors, favorites } from '@/server/db/schema';
 import { rateStatistics } from '@/server/ecash/endpoints/rates';
-import { assertVisibleDep, depList } from '@/server/ecash/endpoints/departments';
+import { assertVisibleDep, depInfo, depList } from '@/server/ecash/endpoints/departments';
 import { allMarketRates, marketRate } from '@/server/ecash/market-rate';
 import { sessionAccountId } from '@/server/session';
 import { fromError, ok } from '@/server/api/respond';
+import { canonicalCity } from '@/lib/branch-address';
 import type { Competitor } from '@/lib/domain';
+
+/**
+ * Заказчик попросил не показывать «синего» конкурента (реальный бизнес за
+ * анонимным цветом — в Астане и Актобе его нет) в отделениях этих городов:
+ * сравнение с конкурентом, которого там физически не существует, вводит
+ * в заблуждение, даром что сама цифра и так синтетическая (см. ниже).
+ */
+const NO_BLUE_CITIES = ['Астана', 'Актобе'];
 
 /**
  * Насколько курс конкурента хуже нашего для клиента, по id конкурента.
@@ -88,16 +97,18 @@ export async function GET(req: Request) {
   try {
     const { depId, rates } = await resolveRates(explicit);
 
-    const [marketResult, allResult, compsResult, favsResult] = await Promise.allSettled([
-      marketRate('USD'),
-      allMarketRates(),
-      db.select().from(competitors),
-      sessionAccountId().then((accountId) =>
-        accountId
-          ? db.select().from(favorites).where(eq(favorites.accountId, accountId))
-          : Promise.resolve([]),
-      ),
-    ]);
+    const [marketResult, allResult, compsResult, favsResult, depInfoResult] =
+      await Promise.allSettled([
+        marketRate('USD'),
+        allMarketRates(),
+        db.select().from(competitors),
+        sessionAccountId().then((accountId) =>
+          accountId
+            ? db.select().from(favorites).where(eq(favorites.accountId, accountId))
+            : Promise.resolve([]),
+        ),
+        depInfo(depId),
+      ]);
 
     const all = allResult.status === 'fulfilled' ? allResult.value : {};
     const marketRates: Record<string, number> = {};
@@ -106,8 +117,11 @@ export async function GET(req: Request) {
       if (typeof v === 'number') marketRates[r.currencyCode] = v;
     }
 
+    const depCity = depInfoResult.status === 'fulfilled' ? canonicalCity(depInfoResult.value.city) : null;
     const compRows = compsResult.status === 'fulfilled' ? compsResult.value : [];
-    const comps = compRows.length ? compRows : DEFAULT_COMPETITORS;
+    const comps = (compRows.length ? compRows : DEFAULT_COMPETITORS).filter(
+      (c) => !(c.nameKey === 'blue' && depCity && NO_BLUE_CITIES.includes(depCity)),
+    );
     // Ряды конкурентов по каждой валюте отделения. Неквотируемые валюты
     // (API отдаёт их с нулевыми курсами) пропускаем: панель из трёх нулей
     // ничего не «сравнивает» — фронт для них кнопку не показывает.
