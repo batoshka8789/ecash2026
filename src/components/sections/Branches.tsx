@@ -12,7 +12,7 @@ import { BranchMap, type BranchMapMarker } from '@/components/ui/BranchMap';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import { canonicalCity, formatBranchAddress, formatBranchTitle } from '@/lib/branch-address';
-import { bestOffer, type BranchRate } from '@/lib/best-offer';
+import { bestOffer, isBetterRate, type BranchRate } from '@/lib/best-offer';
 import {
   almatyTime,
   badgeStyles,
@@ -216,8 +216,8 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
     // «Лучшая покупка» — колонка «Покупка»: обменник платит за валюту
     // больше всех (клиенту выгодно ПРОДАВАТЬ). «Лучшая продажа» — колонка
     // «Продажа»: обменник отдаёт валюту дешевле всех (выгодно ПОКУПАТЬ).
-    const bestBuyDepId = bestOffer(rateRows, 'selling', city)?.depId ?? null;
-    const bestSaleDepId = bestOffer(rateRows, 'buying', city)?.depId ?? null;
+    const bestBuy = bestOffer(rateRows, 'selling', city);
+    const bestSale = bestOffer(rateRows, 'buying', city);
 
     const items = deps.map((dep) => {
       const info = infoById.get(dep.depId);
@@ -245,13 +245,36 @@ export function Branches({ initialView = 'list' }: { initialView?: 'list' | 'map
     // Это могут быть разные отделения (или одно и то же — тогда оба бейджа
     // у него), и подписи разные: иначе два одинаковых «Самый выгодный» на
     // экране было не различить, к какой колонке они относятся.
-    if (bestBuyDepId != null) {
-      const hit = items.find((i) => i.depId === bestBuyDepId);
-      if (hit) hit.badges.push('bestBuy');
-    }
-    if (bestSaleDepId != null) {
-      const hit = items.find((i) => i.depId === bestSaleDepId);
-      if (hit) hit.badges.push('bestSale');
+    //
+    // Метим ВСЕ отделения с таким курсом, а не только то единственное,
+    // что выбрал bestOffer как тай-брейк-победителя (при равных курсах он
+    // произвольно берёт меньший depId — это нужно тизеру брони, чтобы
+    // указывать на конкретный адрес, но здесь при ничьей бейдж доставался
+    // только одному из них, и второе отделение с точно таким же лучшим
+    // курсом оставалось вообще без бейджа). Сравниваем курсы напрямую:
+    // «не хуже лучшего» — значит тоже лучший, сколько бы отделений его ни
+    // делили. Отдельно проверяем город: bestOffer уже искал в его
+    // границах, но items — по всей сети, и совпадение курса с отделением
+    // другого города не должно давать ему чужой бейдж.
+    const inScope = (depCity: string | null) => !city || depCity === city;
+    for (const item of items) {
+      if (!item.rate) continue;
+      if (
+        bestBuy &&
+        item.rate.buy > 0 &&
+        inScope(item.city) &&
+        !isBetterRate('selling', bestBuy.rate, item.rate.buy)
+      ) {
+        item.badges.push('bestBuy');
+      }
+      if (
+        bestSale &&
+        item.rate.sell > 0 &&
+        inScope(item.city) &&
+        !isBetterRate('buying', bestSale.rate, item.rate.sell)
+      ) {
+        item.badges.push('bestSale');
+      }
     }
     for (const item of items) {
       if (item.timetable && isHappyHours(item.timetable, hhmm)) item.badges.push('happyHours');

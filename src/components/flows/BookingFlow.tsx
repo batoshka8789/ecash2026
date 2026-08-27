@@ -241,11 +241,22 @@ export function BookingFlow({ mode }: { mode: Mode }) {
    *  «Happy hours» — по расписанию. */
   const badges = useMemo(() => {
     const list: BadgeKind[] = [];
-    if (bestInCity && bestInCity.depId === depId && rate > 0) list.push('best');
+    /**
+     * bestInCity — ОДНО каноничное отделение-победитель (при равенстве
+     * курсов побеждает меньший depId — это нужно тизеру «выгоднее», чтобы
+     * указывать на конкретный адрес). Для бейджа это не годится: при
+     * ничьей человек мог реально стоять в отделении с точно таким же
+     * лучшим курсом, но не быть «победителем» по этому произвольному
+     * критерию — бейдж не появлялся, тизер тоже (курс не хуже — не
+     * «выгоднее»), и виджет пропадал целиком. Сравниваем курсы, а не depId:
+     * «не хуже лучшего» — это и есть «лучший», сколько бы отделений его ни
+     * делили.
+     */
+    if (bestInCity && rate > 0 && !isBetterRate(side, bestInCity.rate, rate)) list.push('best');
     if (timetable && isHappyHours(timetable, hhmm)) list.push('happyHours');
     if (userCoords && depId === nearestDep) list.push('nearest');
     return list;
-  }, [bestInCity, depId, rate, timetable, hhmm, nearestDep, userCoords]);
+  }, [bestInCity, side, rate, timetable, hhmm, nearestDep, userCoords, depId]);
 
   /** Список для «Изменить» — первым идёт отделение, ближайшее к «Моему
    *  адресу» (nearestDep), остальные следом в исходном порядке апстрима. */
