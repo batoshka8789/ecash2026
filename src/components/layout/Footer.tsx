@@ -118,7 +118,7 @@ export function Footer({
             )}
           >
             <div className={clsx('flex gap-2', landing && 'md:gap-4')}>
-              <SocialLink href="https://wa.me/77059089073" label="WhatsApp" landing={landing}>
+              <SocialLink href="https://wa.me/77003332223" label="WhatsApp" landing={landing}>
                 {/* знак из набора макета (whatsApp.svg): кольцо обводкой,
                     трубка заливкой — поэтому fill/stroke заданы у путей,
                     а не у корня */}
@@ -155,10 +155,10 @@ export function Footer({
               </SocialLink>
             </div>
             <a
-              href="tel:+77059089073"
+              href="tel:+77003332223"
               className={clsx(value, 'transition-colors hover:text-text-brand')}
             >
-              +7 (705) 908 90 73
+              +7 (700) 333 22 23
             </a>
           </div>
 
