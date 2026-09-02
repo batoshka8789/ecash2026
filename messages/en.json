@@ -89,7 +89,8 @@
     "additional": "More",
     "documents": "Documents",
     "rights": "All rights reserved",
-    "privacy": "Privacy and personal data processing policy"
+    "privacy": "Privacy and personal data processing policy",
+    "terms": "Terms of use"
   },
   "appBanner": {
     "text": "Even better in the app! Rate notifications, banknote orders, booking",
@@ -905,6 +906,10 @@
     "privacy": {
       "title": "Privacy policy — ecash",
       "description": "Ecash LLP privacy and personal data processing policy: what data is collected, why, who it is shared with and how to withdraw consent."
+    },
+    "terms": {
+      "title": "Terms of use — ecash",
+      "description": "Ecash LLP terms of use: how currency rate booking and individual rates work, the security deposit, and the rights and obligations of the parties."
     }
   },
   "push": {
@@ -945,5 +950,8 @@
   },
   "privacy": {
     "crumb": "Privacy policy"
+  },
+  "terms": {
+    "crumb": "Terms of use"
   }
 }

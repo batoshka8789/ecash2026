@@ -89,7 +89,8 @@
     "additional": "更多",
     "documents": "文件资料",
     "rights": "版权所有",
-    "privacy": "隐私及个人数据处理政策"
+    "privacy": "隐私及个人数据处理政策",
+    "terms": "用户协议"
   },
   "appBanner": {
     "text": "使用 App 更方便！汇率通知、预订钞票面额、锁定汇率",
@@ -905,6 +906,10 @@
     "privacy": {
       "title": "隐私政策 — ecash",
       "description": "Ecash 有限责任合伙企业的隐私及个人数据处理政策：收集哪些数据、用于何种目的、向谁提供以及如何撤回同意。"
+    },
+    "terms": {
+      "title": "用户协议 — ecash",
+      "description": "Ecash 有限责任合伙企业用户协议：货币汇率预约流程、个人汇率、保证金以及双方的权利与义务。"
     }
   },
   "push": {
@@ -945,5 +950,8 @@
   },
   "privacy": {
     "crumb": "隐私政策"
+  },
+  "terms": {
+    "crumb": "用户协议"
   }
 }

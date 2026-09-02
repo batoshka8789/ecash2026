@@ -78,6 +78,17 @@ export function Footer({
     landing && 'md:items-center md:gap-6 lg:items-start lg:gap-10',
   );
 
+  // Ссылки на юридические документы (соглашение, политика) — один и тот же
+  // вид у обеих, чтобы они читались строкой, а не двумя разными по весу
+  // элементами.
+  const legalLink = clsx(
+    'transition-colors hover:text-text-brand',
+    'md:text-balance',
+    landing
+      ? 'md:text-base md:leading-[1.24] lg:text-right'
+      : 'md:text-right md:text-sm md:leading-[1.24] lg:text-base',
+  );
+
   return (
     <footer
       className={clsx(
@@ -205,26 +216,28 @@ export function Footer({
             © {new Date().getFullYear()}. {t('rights')}
           </div>
           {/* Раньше отсюда открывался PDF из public/documents. Теперь это
-              страница сайта (/legal/privacy) с тем же текстом: документ
-              читают чаще всего с телефона, и чужой просмотрщик, в котором
-              А4 разводят пальцами, для этого не годится. Сам файл никуда не
-              делся — он лежит кнопкой «Скачать» в шапке той страницы.
+              страницы сайта (/legal/privacy, /legal/terms) с тем же текстом:
+              документ читают чаще всего с телефона, и чужой просмотрщик, в
+              котором А4 разводят пальцами, для этого не годится. Сам файл
+              никуда не делся — он лежит кнопкой «Скачать» в шапке той страницы.
 
-              На 768 колонка контента всего 664 — политика в 16 туда не встаёт
-              рядом с копирайтом и ломает строку (а с ней и высоту футера),
-              поэтому до 1024 держим её на ступень мельче. */}
-          <Link
-            href="/legal/privacy"
+              На 768 колонка контента всего 664 — двум ссылкам рядом с
+              копирайтом там тесно и они ломают строку (а с ней и высоту
+              футера), поэтому до 1024 держим их на ступень мельче и в один
+              wrap-ряд, а не жёстко в одну строку. */}
+          <div
             className={clsx(
-              'transition-colors hover:text-text-brand',
-              'md:text-balance',
-              landing
-                ? 'md:text-base md:leading-[1.24] lg:text-right'
-                : 'md:text-right md:text-sm md:leading-[1.24] lg:text-base',
+              'flex flex-wrap gap-x-4 gap-y-1',
+              landing ? 'md:justify-center lg:justify-end' : 'md:justify-end',
             )}
           >
-            {t('privacy')}
-          </Link>
+            <Link href="/legal/terms" className={legalLink}>
+              {t('terms')}
+            </Link>
+            <Link href="/legal/privacy" className={legalLink}>
+              {t('privacy')}
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

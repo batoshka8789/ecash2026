@@ -29,6 +29,7 @@ type MetaKey =
   | 'requests'
   | 'consent'
   | 'privacy'
+  | 'terms'
   | 'documents';
 
 const localePath = (locale: string, path: string) =>
